@@ -89,7 +89,10 @@ body{
   font-family:var(--font-display);
   box-shadow:0 0 0 1px rgba(138,107,255,.08) inset, 0 8px 24px rgba(0,0,0,.4);
 }
-.hud .stat{display:flex;flex-direction:column;gap:2px;min-width:0;}
+/* flex-shrink:0 —— HUD 上多了三个图标按钮之后，这几块被压到了 11~27px 宽，
+   里面的"分数""关卡""生命"就跟旁边的数字挤成一团。它们的宽度本来就由内容
+   决定，不该参与收缩；该让步的是中间那根连击条。 */
+.hud .stat{display:flex;flex-direction:column;gap:2px;min-width:0;flex-shrink:0;}
 .hud .stat .k{font-size:9px;letter-spacing:.14em;color:var(--text-dim);white-space:nowrap;}
 .hud .stat .v{font-size:16px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .hud .lives{display:flex;gap:4px;align-items:center;}
@@ -375,6 +378,9 @@ body{
   gap:2px;
   max-height:150px;
   overflow-y:auto;
+  /* 弹层是竖向 flex，榜单作为其中一项会被压扁——实测只剩 20px，两行记录
+     叠在一起看不清。它自己已经能滚，不需要再靠收缩让位。 */
+  flex-shrink:0;
 }
 .board-title{
   color:var(--text-dim);
@@ -438,6 +444,11 @@ body{
 
 
 @media (max-width:420px){
+  /* HUD 上三个图标按钮 + 三块数值，375 宽下要精打细算 */
+  .hud{padding:8px 10px;gap:7px;}
+  .icon-btn{width:29px;height:29px;}
+  .icon-btn svg{width:16px;height:16px;}
+  .combo-wrap{max-width:78px;min-width:44px;}
   /* 把弹层压紧，让开始页在一屏内装得下 */
   .overlay{gap:9px;padding:14px 12px;}
   .overlay p{font-size:12px;line-height:1.55;}
