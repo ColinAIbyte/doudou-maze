@@ -289,6 +289,12 @@ body{
   letter-spacing:.03em;
 }
 
+/* 竖屏空间够，长说明照常显示，这行指路藏起来；横屏反过来。
+   这条基础规则必须写在横屏媒体查询之前——媒体查询并不自带更高的优先级，
+   同样特指度下谁写在后面谁生效，写反了横屏那条 display:block 会被这里盖掉。 */
+.short-intro{display:none;font-size:11px !important;color:var(--text-dim);}
+.short-intro b{color:var(--amber);}
+
 /* 署名。刻意压得很轻：它出现在开始页和结算页，两处都是玩家真正想看的东西
    （排行榜、本局得分）旁边，抢眼了就成了干扰。 */
 .credits{
@@ -440,6 +446,17 @@ body{
     font-size:22px;
     border-radius:12px;
   }
+  /* 横屏可视高度只有三百多像素，弹层里的长段落会把按钮挤出屏幕。
+     详细规则已经在「?」里，这里只留一行指路。 */
+  .long-intro{display:none;}
+  .short-intro{display:block;}
+  .overlay{gap:7px;padding:10px 14px;}
+  .overlay h2{font-size:19px;}
+  .overlay .big-score{font-size:26px;}
+  .board{max-height:74px;font-size:10px;}
+  .credits{margin-top:5px;font-size:9px;}
+  .btn{padding:8px 22px;font-size:13px;}
+  .help-doc{gap:9px;}
 }
 
 @media (max-width:420px){
@@ -491,8 +508,11 @@ body{
 
     <div class="overlay" id="startOverlay">
       <h2>投币</h2>
-      <p>方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
-      <p class="bonus-hint">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
+      <p class="long-intro">方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
+      <p class="bonus-hint long-intro">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
+      <!-- 横屏高度只有三百多像素，上面那两段会把"开始"按钮挤到屏幕外面。
+           反正详细规则已经收进右上角的「?」了，这里换成一行指路。 -->
+      <p class="short-intro">滑动屏幕或按两侧方向键移动　·　玩法点右上角 <b>?</b></p>
       <div class="board" id="startBoard"></div>
       <button class="btn" id="startBtn">开始</button>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
