@@ -39,10 +39,6 @@ body {
 }
 /* 连点方向键时那层灰色高亮很碍眼 */
 * { -webkit-tap-highlight-color:transparent; }
-/* 手机横屏：把整页交给游戏，两侧不留白 */
-@media (orientation: landscape) and (max-height: 520px){
-  body{ align-items:stretch; padding:2px env(safe-area-inset-right) 2px env(safe-area-inset-left); }
-}
 </style>
 </head>
 <body>
@@ -90,12 +86,12 @@ body{
   display:grid;
   grid-template-columns:1fr auto 1fr;
   grid-template-areas:
-    "marquee marquee marquee"
-    "hud     hud     hud"
-    "stage   stage   stage"
-    ".       padup   ."
-    "padleft .       padright"
-    ".       paddown .";
+    "marquee marquee  marquee"
+    "hud     hud      hud"
+    "stage   stage    stage"
+    ".       padup    ."
+    "padleft padpause padright"
+    ".       paddown  .";
   justify-items:center;
   gap:8px;
 }
@@ -141,18 +137,35 @@ body{
 .hud .stat .k{font-size:9px;letter-spacing:.14em;color:var(--text-dim);white-space:nowrap;}
 .hud .stat .v{font-size:16px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
 .hud .lives{display:flex;gap:4px;align-items:center;}
-.mute-btn{
+/* HUD 上的图标按钮。图形一律用内联 SVG 描边画：emoji 在各家手机上字形、
+   粗细、基线都不一样，三个挨在一起时高矮不齐很明显，而且没法跟着主题变色。 */
+.icon-btn{
   flex-shrink:0;
   background:transparent;
   border:1px solid var(--panel-border);
   border-radius:8px;
-  width:30px;height:30px;
-  font-size:14px;
-  line-height:1;
+  width:32px;height:32px;
+  padding:0;
+  display:flex;align-items:center;justify-content:center;
   cursor:pointer;
-  color:var(--text);
+  color:var(--text-dim);
+  transition:color .15s ease, border-color .15s ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
-.mute-btn:active{background:var(--wall-core);}
+.icon-btn svg{
+  width:18px;height:18px;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.9;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+.icon-btn svg .solid{fill:currentColor;stroke:none;}
+.icon-btn:active{background:var(--wall-core);color:var(--text);}
+/* 关掉方向键时按钮本身要显出"已关"的状态，否则玩家看不出是自己关的 */
+.icon-btn.off{color:var(--panel-border);}
+.icon-btn.on{color:var(--amber);border-color:var(--amber);}
 .combo-wrap{display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px;max-width:120px;}
 .combo-bar{height:6px;border-radius:4px;background:#1c1436;overflow:hidden;border:1px solid var(--panel-border);}
 .combo-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--tang),var(--danger));transition:width .12s ease;box-shadow:0 0 8px var(--tang);}
@@ -298,6 +311,13 @@ body{
 .pad.left {grid-area:padleft;}
 .pad.right{grid-area:padright;}
 .pad.down {grid-area:paddown;}
+.pad.pause{grid-area:padpause;background:transparent;color:var(--text-dim);}
+.pad.pause svg{
+  width:44%;height:44%;
+  fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;
+}
+/* 方向键被藏起来时整块一起消失，栅格行也跟着塌掉，棋盘下方不会留一片空白 */
+.cabinet.pad-hidden > .pad{display:none;}
 .toast{
   position:absolute;
   left:50%;top:14%;
@@ -336,12 +356,6 @@ body{
   color:var(--tang) !important;
   letter-spacing:.03em;
 }
-
-/* 竖屏空间够，长说明照常显示，这行指路藏起来；横屏反过来。
-   这条基础规则必须写在横屏媒体查询之前——媒体查询并不自带更高的优先级，
-   同样特指度下谁写在后面谁生效，写反了横屏那条 display:block 会被这里盖掉。 */
-.short-intro{display:none;font-size:11px !important;color:var(--text-dim);}
-.short-intro b{color:var(--amber);}
 
 /* 署名。刻意压得很轻：它出现在开始页和结算页，两处都是玩家真正想看的东西
    （排行榜、本局得分）旁边，抢眼了就成了干扰。 */
@@ -450,62 +464,22 @@ body{
    宽度；上下键不必那么宽，但太薄一样容易点空，所以给它加高。 */
 @media (orientation: portrait){
   .cabinet{
-    grid-template-columns:1fr min(104px,27vw) 1fr;
+    /* 左右键不再用 1fr 铺满两侧，改成有上限的定宽后整体居中。之前顶到边
+       的版本按着确实爽，但拇指贴着屏幕边缘划容易蹭到系统手势（iOS 的侧滑
+       返回就在那条边上），而且视觉上压过了棋盘。 */
+    grid-template-columns:min(98px,26vw) min(86px,23vw) min(98px,26vw);
+    justify-content:center;
     gap:9px;
   }
   .cabinet > .pad{
     width:100%;
-    height:min(74px,19vw);
-    font-size:23px;
+    height:min(62px,16vw);
+    font-size:21px;
     border-radius:12px;
   }
-  .pad.up, .pad.down{height:min(68px,17vw);}
+  .pad.up, .pad.down{height:min(58px,15vw);}
 }
 
-/* ---------- 手机横屏 ----------
-   方向键拆到棋盘两侧，两个拇指各管一个轴：左手管左右（拇指本来就是横着扫的），
-   右手管上下。比把四个键全堆在一侧快得多 —— 迷宫里每次只按一个方向，两只手
-   分工就等于两只手都在待命。
-
-   限定 max-height:520px 是为了只命中"手机横过来"这一种情况。电脑显示器同样是
-   横向的，但高度有八百多像素，套上这套布局会把棋盘压成一条窄带。 */
-@media (orientation: landscape) and (max-height: 520px){
-  .cabinet{
-    width:100%;
-    height:100%;
-    grid-template-columns:auto minmax(0,1fr) auto;
-    grid-template-areas:
-      "hud     hud   hud"
-      "padleft stage padup"
-      "padright stage paddown";
-    grid-template-rows:auto 1fr 1fr;
-    align-items:center;
-    gap:8px 12px;
-  }
-  /* 横屏高度本来就紧张，标题就别占地方了 */
-  .marquee{display:none;}
-  .hud{margin-bottom:0;padding:6px 12px;}
-  .stage{margin-bottom:0;height:100%;display:flex;align-items:center;justify-content:center;padding:6px;}
-  /* 竖屏是按宽度铺满，横屏必须改成按高度收敛，否则棋盘会顶出屏幕 */
-  #mazeCanvas{width:auto;height:100%;max-width:100%;margin:0 auto;}
-  .cabinet > .pad{
-    width:min(96px,15vw);
-    height:100%;
-    font-size:22px;
-    border-radius:12px;
-  }
-  /* 横屏可视高度只有三百多像素，弹层里的长段落会把按钮挤出屏幕。
-     详细规则已经在「?」里，这里只留一行指路。 */
-  .long-intro{display:none;}
-  .short-intro{display:block;}
-  .overlay{gap:7px;padding:10px 14px;}
-  .overlay h2{font-size:19px;}
-  .overlay .big-score{font-size:26px;}
-  .board{max-height:74px;font-size:10px;}
-  .credits{margin-top:5px;font-size:9px;}
-  .btn{padding:8px 22px;font-size:13px;}
-  .help-doc{gap:9px;}
-}
 
 @media (max-width:420px){
   /* 把弹层压紧，让开始页在一屏内装得下 */
@@ -542,9 +516,27 @@ body{
       <span class="k">生命</span>
       <span class="v lives" id="livesVal"></span>
     </div>
-    <button class="mute-btn" id="pauseBtn" title="暂停" aria-label="暂停">⏸</button>
-    <button class="mute-btn" id="helpBtn" title="玩法说明" aria-label="玩法说明">?</button>
-    <button class="mute-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">🔊</button>
+    <!-- 图标用内联 SVG 而不是 emoji：🔊 在不同手机上字形差别很大，安卓上
+         偏细偏灰，和旁边的线条图标凑不到一起，尺寸也不受控。 -->
+    <button class="icon-btn" id="padBtn" title="显示/隐藏方向键" aria-label="显示或隐藏方向键">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/>
+      </svg>
+    </button>
+    <button class="icon-btn" id="helpBtn" title="玩法说明" aria-label="玩法说明">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="12" r="9"/>
+        <path d="M9.2 9.3a2.9 2.9 0 1 1 3.6 3.4c-.6.2-.9.7-.9 1.3v.6"/>
+        <circle cx="12" cy="17.6" r="1.15" class="solid"/>
+      </svg>
+    </button>
+    <button class="icon-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" class="solid"/>
+        <g id="soundWaves"><path d="M15.4 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M18 7a7.3 7.3 0 0 1 0 10"/></g>
+        <g id="soundCross" hidden><path d="M16 9.6l4.6 4.8M20.6 9.6L16 14.4"/></g>
+      </svg>
+    </button>
   </div>
 
   <div class="stage">
@@ -556,11 +548,8 @@ body{
 
     <div class="overlay" id="startOverlay">
       <h2>投币</h2>
-      <p class="long-intro">方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
-      <p class="bonus-hint long-intro">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
-      <!-- 横屏高度只有三百多像素，上面那两段会把"开始"按钮挤到屏幕外面。
-           反正详细规则已经收进右上角的「?」了，这里换成一行指路。 -->
-      <p class="short-intro">滑动屏幕或按两侧方向键移动　·　玩法点右上角 <b>?</b></p>
+      <p>方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
+      <p class="bonus-hint">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
       <div class="board" id="startBoard"></div>
       <button class="btn" id="startBtn">开始</button>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
@@ -623,11 +612,16 @@ body{
     </div>
   </div>
 
-  <!-- 四个方向键和棋盘是同一个栅格的直接子元素。这样竖屏排成十字放在棋盘下方、
-       横屏拆成左右两列夹住棋盘，只要换一套 grid-template-areas 就行，DOM 不用动，
-       也就不会出现两套按钮、两套事件绑定。 -->
+  <!-- 方向键和棋盘同属 .cabinet 这一个栅格，靠 grid-area 定位排成十字。
+       暂停键占据十字正中那格 —— 那里本来就是空的，而拇指停在方向键上时
+       它是最顺手的位置。 -->
   <button class="pad up"    data-dir="up"    aria-label="上">▲</button>
   <button class="pad left"  data-dir="left"  aria-label="左">◀</button>
+  <button class="pad pause" id="pauseBtn" title="暂停" aria-label="暂停">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M9 6.5v11M15 6.5v11"/>
+    </svg>
+  </button>
   <button class="pad right" data-dir="right" aria-label="右">▶</button>
   <button class="pad down"  data-dir="down"  aria-label="下">▼</button>
 </div>
@@ -2050,11 +2044,43 @@ stage.addEventListener('touchend', (e)=>{
                                          : (dy > 0 ? 'down'  : 'up'));
 }, { passive: true });
 document.getElementById('pauseBtn').addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
-document.getElementById('muteBtn').addEventListener('click', ()=>{
+/* 静音图标是一个 SVG 里的两组线条，切换的是显隐而不是重画整段 markup ——
+   每次点击都重设 innerHTML 会把 SVG 拆了重建，在低端机上看得见闪一下。 */
+const muteBtn = document.getElementById('muteBtn');
+function paintMute(){
+  const muted = Audio2.isMuted();
+  document.getElementById('soundWaves').toggleAttribute('hidden', muted);
+  document.getElementById('soundCross').toggleAttribute('hidden', !muted);
+  muteBtn.classList.toggle('off', muted);
+  muteBtn.title = muted ? '取消静音' : '静音';
+}
+muteBtn.addEventListener('click', ()=>{
   Audio2.unlock();
   Audio2.setMuted(!Audio2.isMuted());
-  document.getElementById('muteBtn').textContent = Audio2.isMuted() ? '🔇' : '🔊';
+  paintMute();
 });
+paintMute();
+
+/* ---------- 方向键显隐 ----------
+ * 习惯了滑动操作的人不需要那四个键，藏起来能把棋盘下方的空间还回去。
+ * 记进 localStorage，不然每开一局都得重按一次 —— 那样这个开关就成了负担。
+ * 存储在无痕模式下会直接抛异常而不是返回 null，所以照例包一层 try。
+ */
+const PAD_KEY = 'doudou.padHidden';
+const cabinet = document.querySelector('.cabinet');
+const padBtn = document.getElementById('padBtn');
+function setPadHidden(hidden){
+  cabinet.classList.toggle('pad-hidden', hidden);
+  padBtn.classList.toggle('off', hidden);
+  padBtn.title = hidden ? '显示方向键' : '隐藏方向键';
+  try { localStorage.setItem(PAD_KEY, hidden ? '1' : '0'); } catch {}
+}
+padBtn.addEventListener('click', ()=>{
+  Audio2.unlock();
+  setPadHidden(!cabinet.classList.contains('pad-hidden'));
+});
+try { setPadHidden(localStorage.getItem(PAD_KEY) === '1'); }
+catch { setPadHidden(false); }
 
 /* ---------- 玩法说明 ----------
  * 读说明的时候幽灵不能还在追 —— 否则玩家一边看字一边掉命，而且是看不见的
