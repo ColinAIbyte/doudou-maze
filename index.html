@@ -559,8 +559,11 @@ body{
 
     <div class="overlay" id="startOverlay">
       <h2>投币</h2>
-      <p>方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
-      <p class="bonus-hint">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
+      <!-- 开始页只留一句。原来这里是六行说明，加上榜单和署名之后总高超出
+           弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
+           文字和一个找不到的按钮。完整规则已经在右上角的「?」里了。 -->
+      <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
+      <p class="bonus-hint">完整玩法与幽灵习性　点右上角 <b style="color:var(--amber)">?</b></p>
       <div class="board" id="startBoard"></div>
       <button class="btn" id="startBtn">开始</button>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
