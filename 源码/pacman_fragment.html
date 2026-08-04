@@ -34,12 +34,30 @@ body{
   padding:24px 12px;
   overflow-x:hidden;
 }
+/* 默认（电脑横屏）：十字方向键在棋盘下方，按钮小巧。
+   行间距统一 8px，标题/HUD/棋盘之间靠各自的 margin 撑开 —— 栅格只有一个
+   row-gap，而"HUD 到棋盘"和"上键到左右键"想要的间距差得很远。 */
 .cabinet{
   width:min(560px, 100%);
-  display:flex;
-  flex-direction:column;
-  gap:14px;
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  grid-template-areas:
+    "marquee marquee marquee"
+    "hud     hud     hud"
+    "stage   stage   stage"
+    ".       padup   ."
+    "padleft .       padright"
+    ".       paddown .";
+  justify-items:center;
+  gap:8px;
 }
+.marquee{grid-area:marquee;}
+.hud{grid-area:hud;}
+.stage{grid-area:stage;}
+.marquee, .hud, .stage{width:100%;}
+.hud{margin-bottom:6px;}
+.stage{margin-bottom:10px;}
+.cabinet > .pad{width:36px;height:36px;}
 .marquee{
   text-align:center;
   padding:2px 0 4px;
@@ -91,6 +109,10 @@ body{
 .combo-bar{height:6px;border-radius:4px;background:#1c1436;overflow:hidden;border:1px solid var(--panel-border);}
 .combo-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--tang),var(--danger));transition:width .12s ease;box-shadow:0 0 8px var(--tang);}
 .stage{
+  /* none 而不是 manipulation：棋盘上不该有任何浏览器手势——不缩放、不双击
+     放大、也不跟着手指滚。滑动转向是自己在 JS 里读 touch 事件算的，
+     touch-action 只影响浏览器的默认行为，不影响事件本身。 */
+  touch-action:none;
   position:relative;
   border-radius:14px;
   padding:10px;
@@ -205,23 +227,11 @@ body{
   flex-shrink:0;
   box-shadow:0 0 7px currentColor;
 }
-/* 方向键永远居中。原来是 space-between，靠旁边那段操作提示把它顶到右侧；
-   提示删掉之后只剩方向键，space-between 会把它推到最左边 —— 单个子元素的
-   两端对齐就是左对齐。改成 center，跟旁边有没有别的元素无关。 */
-.controls-row{
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:12px;
-}
-.dpad{
-  display:grid;
-  grid-template-columns:repeat(3,36px);
-  grid-template-rows:repeat(3,36px);
-  gap:4px;
-  flex-shrink:0;
-}
-.dpad button{
+/* 方向键 —— 四个键和棋盘同属 .cabinet 这一个栅格，靠 grid-template-areas
+   换排布：竖屏排成十字放在棋盘下方，横屏拆成左右两列夹住棋盘。
+   同一批 DOM 元素换位置，不是两套按钮互相显隐，所以不会有重复的事件绑定，
+   也不会出现"改了一处另一处忘了改"。 */
+.pad{
   background:var(--panel);
   border:1px solid var(--panel-border);
   border-radius:8px;
@@ -230,13 +240,16 @@ body{
   cursor:pointer;
   touch-action:manipulation;
   user-select:none;
+  -webkit-user-select:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
 }
-.dpad button:active{background:var(--wall-core);}
-.dpad .up{grid-column:2;grid-row:1;}
-.dpad .left{grid-column:1;grid-row:2;}
-.dpad .pause-mini{grid-column:2;grid-row:2;font-size:12px;}
-.dpad .right{grid-column:3;grid-row:2;}
-.dpad .down{grid-column:2;grid-row:3;}
+.pad:active{background:var(--wall-core);}
+.pad.up   {grid-area:padup;}
+.pad.left {grid-area:padleft;}
+.pad.right{grid-area:padright;}
+.pad.down {grid-area:paddown;}
 .toast{
   position:absolute;
   left:50%;top:14%;
@@ -377,24 +390,56 @@ body{
 }
 .board-top .board-score{color:var(--amber);}
 .board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
-/* 竖屏时把方向键放大，并做成"两侧宽、中间窄"的形状。
-   正方形按钮在手机上并不好按：拇指在屏幕上是横向扫的，左右转向也最频繁，
-   所以左右键最需要的是横向命中宽度；上下键不必那么宽，但太薄一样容易点空，
-   所以给它加高。栅格三列三行本来等宽等高，这里改成两侧列宽、中间列窄，
-   首末行高、中间行矮 —— 左右键落在中间行的两侧列因而变长，上下键落在中间
-   列的首末行因而变厚。
-
-   尺寸用 min(固定值, vw) 而不是写死像素：写死 300 多像素在 375 的屏幕上正好，
-   到 320 宽的小屏（iPhone SE 那一档）就会顶到边甚至溢出；只用 vw 又会在大屏
-   手机上长成一片。min() 让它跟着屏幕缩，同时有个不再变大的上限。 */
+/* ---------- 竖屏 ----------
+   左右键直接铺到两边（1fr），中间留给上下键。正方形按钮在手机上并不好按：
+   拇指在屏幕上是横向扫的，左右转向也最频繁，所以左右键最需要的是横向命中
+   宽度；上下键不必那么宽，但太薄一样容易点空，所以给它加高。 */
 @media (orientation: portrait){
-  .dpad{
-    grid-template-columns:min(112px,29vw) min(94px,24vw) min(112px,29vw);
-    grid-template-rows:min(66px,17vw) min(60px,16vw) min(66px,17vw);
-    gap:8px;
+  .cabinet{
+    grid-template-columns:1fr min(104px,27vw) 1fr;
+    gap:9px;
   }
-  .dpad button{font-size:21px;border-radius:11px;}
-  .dpad .pause-mini{font-size:15px;}
+  .cabinet > .pad{
+    width:100%;
+    height:min(74px,19vw);
+    font-size:23px;
+    border-radius:12px;
+  }
+  .pad.up, .pad.down{height:min(68px,17vw);}
+}
+
+/* ---------- 手机横屏 ----------
+   方向键拆到棋盘两侧，两个拇指各管一个轴：左手管左右（拇指本来就是横着扫的），
+   右手管上下。比把四个键全堆在一侧快得多 —— 迷宫里每次只按一个方向，两只手
+   分工就等于两只手都在待命。
+
+   限定 max-height:520px 是为了只命中"手机横过来"这一种情况。电脑显示器同样是
+   横向的，但高度有八百多像素，套上这套布局会把棋盘压成一条窄带。 */
+@media (orientation: landscape) and (max-height: 520px){
+  .cabinet{
+    width:100%;
+    height:100%;
+    grid-template-columns:auto minmax(0,1fr) auto;
+    grid-template-areas:
+      "hud     hud   hud"
+      "padleft stage padup"
+      "padright stage paddown";
+    grid-template-rows:auto 1fr 1fr;
+    align-items:center;
+    gap:8px 12px;
+  }
+  /* 横屏高度本来就紧张，标题就别占地方了 */
+  .marquee{display:none;}
+  .hud{margin-bottom:0;padding:6px 12px;}
+  .stage{margin-bottom:0;height:100%;display:flex;align-items:center;justify-content:center;padding:6px;}
+  /* 竖屏是按宽度铺满，横屏必须改成按高度收敛，否则棋盘会顶出屏幕 */
+  #mazeCanvas{width:auto;height:100%;max-width:100%;margin:0 auto;}
+  .cabinet > .pad{
+    width:min(96px,15vw);
+    height:100%;
+    font-size:22px;
+    border-radius:12px;
+  }
 }
 
 @media (max-width:420px){
@@ -432,6 +477,7 @@ body{
       <span class="k">生命</span>
       <span class="v lives" id="livesVal"></span>
     </div>
+    <button class="mute-btn" id="pauseBtn" title="暂停" aria-label="暂停">⏸</button>
     <button class="mute-btn" id="helpBtn" title="玩法说明" aria-label="玩法说明">?</button>
     <button class="mute-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">🔊</button>
   </div>
@@ -509,15 +555,13 @@ body{
     </div>
   </div>
 
-  <div class="controls-row">
-    <div class="dpad">
-      <button class="up" data-dir="up">▲</button>
-      <button class="left" data-dir="left">◀</button>
-      <button class="pause-mini" id="pauseBtn">⏸</button>
-      <button class="right" data-dir="right">▶</button>
-      <button class="down" data-dir="down">▼</button>
-    </div>
-  </div>
+  <!-- 四个方向键和棋盘是同一个栅格的直接子元素。这样竖屏排成十字放在棋盘下方、
+       横屏拆成左右两列夹住棋盘，只要换一套 grid-template-areas 就行，DOM 不用动，
+       也就不会出现两套按钮、两套事件绑定。 -->
+  <button class="pad up"    data-dir="up"    aria-label="上">▲</button>
+  <button class="pad left"  data-dir="left"  aria-label="左">◀</button>
+  <button class="pad right" data-dir="right" aria-label="右">▶</button>
+  <button class="pad down"  data-dir="down"  aria-label="下">▼</button>
 </div>
 
 <script>
@@ -1876,7 +1920,7 @@ window.addEventListener('keydown', (e)=>{
   if (dir){ requestDir(dir); e.preventDefault(); }
   if (e.key==='p' || e.key==='P'){ togglePause(); }
 });
-document.querySelectorAll('.dpad [data-dir]').forEach(btn=>{
+document.querySelectorAll('[data-dir]').forEach(btn=>{
   btn.addEventListener('click', ()=>{ Audio2.unlock(); requestDir(btn.dataset.dir); });
 });
 
@@ -1892,6 +1936,26 @@ document.querySelectorAll('.dpad [data-dir]').forEach(btn=>{
  * 阈值用的是 CSS 像素而不是格子数 —— 这里量的是手指的动作，不是游戏世界的
  * 距离，跟玩家速度无关。24px 在各种尺寸的手机上都足够区分"点"和"划"。
  */
+/* ---------- 锁死缩放 ----------
+ * 玩的时候误触双击 / 双指，整个画面突然放大，是最败兴的一种手感问题。
+ *
+ * 光靠 viewport 里的 user-scalable=no 和 maximum-scale=1 不够：iOS Safari
+ * 从 10 起就故意忽略这两个值（出于无障碍考虑），双击照样放大。真正管用的是
+ * 两件事——
+ *   1. CSS 的 touch-action，见样式表里的 html/body 和 .stage；
+ *   2. Safari 私有的 gesture* 事件，双指缩放走的是这条路，必须显式拦掉。
+ * 再补一道双击兜底：两次触摸间隔小于 300ms 就吃掉后一次的默认行为。
+ */
+['gesturestart','gesturechange','gestureend'].forEach(t=>{
+  document.addEventListener(t, e => e.preventDefault(), { passive:false });
+});
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e)=>{
+  const now = Date.now();
+  if (now - lastTouchEnd < 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive:false });
+
 const SWIPE_MIN_PX = 24;
 let swipeFrom = null;
 const stage = document.getElementById('mazeCanvas').parentElement;
