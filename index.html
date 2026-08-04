@@ -417,20 +417,24 @@ body{
 }
 .board-top .board-score{color:var(--amber);}
 .board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
-/* 竖屏时把方向键做成"横宽竖厚"的形状。
-   正方形按钮在手机上并不好按：拇指在屏幕上是横向扫的，左右转向最频繁，
-   所以左右键需要的是**横向命中宽度**；上下键不需要那么宽，但按钮太薄同样
-   容易点空，所以给它加高。
-   栅格三列三行本来是等宽等高，这里改成两侧列宽、中间列窄，首末行高、中间
-   行矮 —— 左右键落在中间行的两侧列（变长），上下键落在中间列的首末行（变厚）。 */
+/* 竖屏时把方向键放大，并做成"两侧宽、中间窄"的形状。
+   正方形按钮在手机上并不好按：拇指在屏幕上是横向扫的，左右转向也最频繁，
+   所以左右键最需要的是横向命中宽度；上下键不必那么宽，但太薄一样容易点空，
+   所以给它加高。栅格三列三行本来等宽等高，这里改成两侧列宽、中间列窄，
+   首末行高、中间行矮 —— 左右键落在中间行的两侧列因而变长，上下键落在中间
+   列的首末行因而变厚。
+
+   尺寸用 min(固定值, vw) 而不是写死像素：写死 300 多像素在 375 的屏幕上正好，
+   到 320 宽的小屏（iPhone SE 那一档）就会顶到边甚至溢出；只用 vw 又会在大屏
+   手机上长成一片。min() 让它跟着屏幕缩，同时有个不再变大的上限。 */
 @media (orientation: portrait){
   .dpad{
-    grid-template-columns:78px 58px 78px;
-    grid-template-rows:54px 50px 54px;
-    gap:6px;
+    grid-template-columns:min(112px,29vw) min(94px,24vw) min(112px,29vw);
+    grid-template-rows:min(66px,17vw) min(60px,16vw) min(66px,17vw);
+    gap:8px;
   }
-  .dpad button{font-size:17px;}
-  .dpad .pause-mini{font-size:13px;}
+  .dpad button{font-size:21px;border-radius:11px;}
+  .dpad .pause-mini{font-size:15px;}
 }
 
 @media (max-width:420px){
