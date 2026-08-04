@@ -345,8 +345,23 @@ body{
 }
 .board-top .board-score{color:var(--amber);}
 .board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
+/* 竖屏时把方向键做成"横宽竖厚"的形状。
+   正方形按钮在手机上并不好按：拇指在屏幕上是横向扫的，左右转向最频繁，
+   所以左右键需要的是**横向命中宽度**；上下键不需要那么宽，但按钮太薄同样
+   容易点空，所以给它加高。
+   栅格三列三行本来是等宽等高，这里改成两侧列宽、中间列窄，首末行高、中间
+   行矮 —— 左右键落在中间行的两侧列（变长），上下键落在中间列的首末行（变厚）。 */
+@media (orientation: portrait){
+  .dpad{
+    grid-template-columns:78px 58px 78px;
+    grid-template-rows:54px 50px 54px;
+    gap:6px;
+  }
+  .dpad button{font-size:17px;}
+  .dpad .pause-mini{font-size:13px;}
+}
+
 @media (max-width:420px){
-  .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);}
   .help-text{display:none;}
   /* controls-row 是 space-between，手机上 help-text 一隐藏就只剩方向键，
      被推到最左边。这里改成居中。 */
@@ -399,7 +414,7 @@ body{
       <p class="bonus-hint">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
       <div class="board" id="startBoard"></div>
       <button class="btn" id="startBtn">开始</button>
-      <div class="credits">游戏制作者　超级奶爸　微信 fancifulman</div>
+      <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
     </div>
 
     <div class="overlay hidden" id="pauseOverlay">
@@ -418,7 +433,7 @@ body{
       </div>
       <div class="board" id="overBoard"></div>
       <button class="btn" id="restartBtn">再来一局</button>
-      <div class="credits">游戏制作者　超级奶爸　微信 fancifulman</div>
+      <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
     </div>
   </div>
 

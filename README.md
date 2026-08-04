@@ -4,7 +4,7 @@
 
 👉 **[点这里开始玩](https://colinaibyte.github.io/doudou-maze/)**
 
-制作者：超级奶爸　微信 fancifulman
+设计者：超级奶爸　微信：superpapa2011
 
 ---
 
