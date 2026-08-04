@@ -1,0 +1,2152 @@
+<meta charset="utf-8">
+<title>豆豆迷宫</title>
+<style>
+:root{
+  --void:#0a0612;
+  --void-deep:#050308;
+  --panel:#130b26;
+  --panel-border:#2f2058;
+  --wall:#8a6bff;
+  --wall-core:#4b2fce;
+  --amber:#ffcf5c;
+  --amber-glow:rgba(255,207,92,.55);
+  --danger:#ff4d6d;
+  --pink:#ff8fd0;
+  --tang:#ffa552;
+  --cyan:#5be3ff;
+  --text:#ece7fb;
+  --text-dim:#9c8fc9;
+  --mega:#ffffff;
+  --font-display: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --font-body: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  min-height:100vh;
+  background:
+    radial-gradient(ellipse at 50% -10%, #1b1140 0%, var(--void) 55%, var(--void-deep) 100%);
+  color:var(--text);
+  font-family:var(--font-body);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px 12px;
+  overflow-x:hidden;
+}
+.cabinet{
+  width:min(560px, 100%);
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+}
+.marquee{
+  text-align:center;
+  padding:2px 0 4px;
+}
+.marquee h1{
+  font-family:var(--font-display);
+  font-size:clamp(20px,5.5vw,30px);
+  letter-spacing:.14em;
+  margin:0;
+  font-weight:700;
+  color:var(--amber);
+  text-shadow:0 0 6px var(--amber-glow), 0 0 22px rgba(255,207,92,.25);
+}
+.marquee p{
+  margin:6px 0 0;
+  font-size:12px;
+  letter-spacing:.08em;
+  color:var(--text-dim);
+}
+.hud{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  background:linear-gradient(180deg, var(--panel), #0e0820);
+  border:1px solid var(--panel-border);
+  border-radius:10px;
+  padding:10px 14px;
+  font-family:var(--font-display);
+  box-shadow:0 0 0 1px rgba(138,107,255,.08) inset, 0 8px 24px rgba(0,0,0,.4);
+}
+.hud .stat{display:flex;flex-direction:column;gap:2px;min-width:0;}
+.hud .stat .k{font-size:9px;letter-spacing:.14em;color:var(--text-dim);white-space:nowrap;}
+.hud .stat .v{font-size:16px;font-weight:700;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap;}
+.hud .lives{display:flex;gap:4px;align-items:center;}
+.mute-btn{
+  flex-shrink:0;
+  background:transparent;
+  border:1px solid var(--panel-border);
+  border-radius:8px;
+  width:30px;height:30px;
+  font-size:14px;
+  line-height:1;
+  cursor:pointer;
+  color:var(--text);
+}
+.mute-btn:active{background:var(--wall-core);}
+.combo-wrap{display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px;max-width:120px;}
+.combo-bar{height:6px;border-radius:4px;background:#1c1436;overflow:hidden;border:1px solid var(--panel-border);}
+.combo-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--tang),var(--danger));transition:width .12s ease;box-shadow:0 0 8px var(--tang);}
+.stage{
+  position:relative;
+  border-radius:14px;
+  padding:10px;
+  background:linear-gradient(180deg,#150c2c,#0b0618);
+  border:1px solid var(--panel-border);
+  box-shadow:0 0 0 1px rgba(138,107,255,.06) inset, 0 20px 50px rgba(0,0,0,.55);
+}
+#mazeCanvas{
+  display:block;
+  width:100%;
+  height:auto;
+  border-radius:8px;
+  background:var(--void-deep);
+}
+.scanlines{
+  position:absolute;inset:10px;
+  border-radius:8px;
+  pointer-events:none;
+  background:repeating-linear-gradient(0deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 1px, transparent 2px, transparent 3px);
+  mix-blend-mode:overlay;
+}
+.overlay{
+  position:absolute;inset:10px;
+  border-radius:8px;
+  background:rgba(6,3,16,.86);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap:14px;
+  padding:20px;
+  backdrop-filter:blur(1px);
+}
+.overlay.hidden{display:none;}
+.overlay h2{
+  font-family:var(--font-display);
+  letter-spacing:.1em;
+  font-size:clamp(18px,5vw,26px);
+  margin:0;
+  color:var(--amber);
+  text-shadow:0 0 12px var(--amber-glow);
+}
+.overlay p{margin:0;color:var(--text-dim);font-size:13px;line-height:1.7;max-width:340px;}
+.overlay .big-score{font-family:var(--font-display);font-size:34px;color:var(--text);font-weight:700;}
+.btn{
+  font-family:var(--font-display);
+  letter-spacing:.08em;
+  background:linear-gradient(180deg,#ffdd8a,var(--amber));
+  color:#2a1a05;
+  border:none;
+  padding:11px 26px;
+  border-radius:8px;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 4px 0 #c99a2e, 0 8px 16px rgba(255,207,92,.25);
+  transition:transform .08s ease;
+}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c99a2e;}
+.btn.ghost{
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--panel-border);
+  box-shadow:none;
+}
+.legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px 14px;
+  justify-content:center;
+  font-size:11px;
+  color:var(--text-dim);
+  padding:2px 4px;
+}
+.legend span{display:inline-flex;align-items:center;gap:5px;white-space:nowrap;}
+.legend i{width:9px;height:9px;border-radius:50%;display:inline-block;box-shadow:0 0 6px currentColor;}
+.controls-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+.help-text{font-size:11px;color:var(--text-dim);line-height:1.6;flex:1;}
+.dpad{
+  display:grid;
+  grid-template-columns:repeat(3,36px);
+  grid-template-rows:repeat(3,36px);
+  gap:4px;
+  flex-shrink:0;
+}
+.dpad button{
+  background:var(--panel);
+  border:1px solid var(--panel-border);
+  border-radius:8px;
+  color:var(--text);
+  font-size:15px;
+  cursor:pointer;
+  touch-action:manipulation;
+  user-select:none;
+}
+.dpad button:active{background:var(--wall-core);}
+.dpad .up{grid-column:2;grid-row:1;}
+.dpad .left{grid-column:1;grid-row:2;}
+.dpad .pause-mini{grid-column:2;grid-row:2;font-size:12px;}
+.dpad .right{grid-column:3;grid-row:2;}
+.dpad .down{grid-column:2;grid-row:3;}
+.toast{
+  position:absolute;
+  left:50%;top:14%;
+  transform:translate(-50%,0);
+  font-family:var(--font-display);
+  font-size:13px;
+  letter-spacing:.06em;
+  padding:6px 14px;
+  border-radius:20px;
+  background:rgba(0,0,0,.55);
+  border:1px solid var(--panel-border);
+  color:var(--amber);
+  opacity:0;
+  pointer-events:none;
+  transition:opacity .25s ease, transform .25s ease;
+  white-space:nowrap;
+}
+.toast.show{opacity:1;transform:translate(-50%,6px);}
+
+/* Fireworks sit above the maze but below the overlay text.
+   A canvas is a replaced element, so `inset` positions it WITHOUT stretching
+   it — left to itself it stays at its intrinsic 300x150. The explicit
+   width/height are what actually size it to the stage. */
+.fx{
+  position:absolute;inset:10px;
+  width:calc(100% - 20px);
+  height:calc(100% - 20px);
+  border-radius:8px;
+  pointer-events:none;
+  display:none;
+}
+.fx.on{display:block;}
+
+.bonus-hint{
+  font-size:11px !important;
+  color:var(--tang) !important;
+  letter-spacing:.03em;
+}
+
+/* 署名。刻意压得很轻：它出现在开始页和结算页，两处都是玩家真正想看的东西
+   （排行榜、本局得分）旁边，抢眼了就成了干扰。 */
+.credits{
+  margin-top:14px;
+  font-family:var(--font-display);
+  font-size:10px;
+  letter-spacing:.10em;
+  color:var(--text-dim);
+  opacity:.75;
+  text-align:center;
+}
+
+/* Name entry on the end screen. Shown only when the run actually made the
+   board — asking for a name you're about to throw away is worse than not
+   asking, so a run that missed the cut gets a note instead of an input. */
+.name-row{
+  display:flex;
+  align-items:stretch;
+  gap:6px;
+  width:100%;
+  max-width:300px;
+}
+.name-row.hidden{display:none;}
+.name-input{
+  flex:1;
+  min-width:0;
+  font-family:var(--font-display);
+  font-size:13px;
+  letter-spacing:.06em;
+  padding:8px 12px;
+  border-radius:8px;
+  background:rgba(138,107,255,.10);
+  border:1px solid var(--panel-border);
+  color:var(--text);
+  outline:none;
+  transition:border-color .15s ease, box-shadow .15s ease;
+}
+.name-input::placeholder{color:var(--text-dim);letter-spacing:.04em;}
+.name-input:focus{
+  border-color:var(--amber);
+  box-shadow:0 0 0 2px rgba(255,207,92,.18);
+}
+.btn.btn-sm{padding:8px 16px;font-size:12px;box-shadow:0 3px 0 #c99a2e;}
+.btn.btn-sm:active{transform:translateY(2px);box-shadow:0 1px 0 #c99a2e;}
+.name-done{
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:.06em;
+  color:var(--amber);
+  text-align:center;
+  width:100%;
+}
+.board{
+  width:100%;
+  max-width:300px;
+  font-family:var(--font-display);
+  font-size:11px;
+  display:flex;
+  flex-direction:column;
+  gap:2px;
+  max-height:150px;
+  overflow-y:auto;
+}
+.board-title{
+  color:var(--text-dim);
+  letter-spacing:.14em;
+  font-size:9px;
+  margin-bottom:2px;
+}
+.board-empty{color:var(--text-dim);font-size:11px;}
+.board-row{
+  display:flex;align-items:baseline;gap:8px;
+  padding:3px 8px;
+  border-radius:5px;
+  background:rgba(138,107,255,.07);
+}
+.board-row.board-top{
+  background:rgba(255,207,92,.14);
+  box-shadow:0 0 0 1px rgba(255,207,92,.25) inset;
+}
+.board-row.board-mine{
+  background:rgba(90,224,255,.16);
+  box-shadow:0 0 0 1px rgba(90,224,255,.4) inset;
+}
+.board-rank{color:var(--text-dim);min-width:14px;}
+.board-name{
+  color:var(--text);
+  min-width:0;
+  flex:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.board-score{
+  color:var(--text);font-weight:700;
+  font-variant-numeric:tabular-nums;
+  min-width:56px;
+  text-align:right;
+}
+.board-top .board-score{color:var(--amber);}
+.board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
+@media (max-width:420px){
+  .dpad{grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);}
+  .help-text{display:none;}
+}
+</style>
+
+<div class="cabinet">
+  <div class="marquee">
+    <h1>豆豆迷宫</h1>
+    <p>连吃 · 闪避 · 穿越</p>
+  </div>
+
+  <div class="hud">
+    <div class="stat">
+      <span class="k">分数</span>
+      <span class="v" id="scoreVal">0</span>
+    </div>
+    <div class="combo-wrap">
+      <span class="k" id="comboLabel" style="font-size:9px;letter-spacing:.14em;color:var(--text-dim);">连击 x1</span>
+      <div class="combo-bar"><div class="combo-fill" id="comboFill"></div></div>
+    </div>
+    <div class="stat">
+      <span class="k">关卡</span>
+      <span class="v" id="levelVal">1</span>
+    </div>
+    <div class="stat">
+      <span class="k">生命</span>
+      <span class="v lives" id="livesVal"></span>
+    </div>
+    <button class="mute-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">🔊</button>
+  </div>
+
+  <div class="stage">
+    <canvas id="mazeCanvas" width="494" height="546"></canvas>
+    <div class="scanlines"></div>
+    <div class="toast" id="toast"></div>
+
+    <canvas id="fxCanvas" class="fx"></canvas>
+
+    <div class="overlay" id="startOverlay">
+      <h2>投币</h2>
+      <p>方向键 / WASD 移动，吃豆连击叠加倍率。吃到能量豆可反杀幽灵——两只受惊幽灵相撞会融合成"超级幽灵"，一口吃掉赢取巨额分数。踩到彩色传送门瞬间穿越迷宫。神秘水果会赐予 10 秒"穿墙"能力。</p>
+      <p class="bonus-hint">奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤</p>
+      <div class="board" id="startBoard"></div>
+      <button class="btn" id="startBtn">开始</button>
+      <div class="credits">游戏制作者　超级奶爸　微信 fancifulman</div>
+    </div>
+
+    <div class="overlay hidden" id="pauseOverlay">
+      <h2>暂停</h2>
+      <button class="btn" id="resumeBtn">继续</button>
+    </div>
+
+    <div class="overlay hidden" id="overOverlay">
+      <h2 id="overTitle">游戏结束</h2>
+      <div class="big-score" id="finalScore">0</div>
+      <p id="overSub">再接再厉，虫洞与融合幽灵在等着你。</p>
+      <div class="name-row hidden" id="nameRow">
+        <input id="nameInput" class="name-input" type="text" maxlength="8"
+               placeholder="留下名字" autocomplete="off" spellcheck="false">
+        <button class="btn btn-sm" id="nameSaveBtn">记录</button>
+      </div>
+      <div class="board" id="overBoard"></div>
+      <button class="btn" id="restartBtn">再来一局</button>
+      <div class="credits">游戏制作者　超级奶爸　微信 fancifulman</div>
+    </div>
+  </div>
+
+  <div class="legend">
+    <span><i style="color:var(--danger);background:var(--danger);"></i>追击者 · 直线追踪</span>
+    <span><i style="color:var(--pink);background:var(--pink);"></i>伏击者 · 预判拦截</span>
+    <span><i style="color:var(--tang);background:var(--tang);"></i>怕生鬼 · 靠近就跑</span>
+    <span><i style="color:var(--cyan);background:var(--cyan);"></i>巡逻者 · 固定路线</span>
+  </div>
+
+  <div class="controls-row">
+    <div class="help-text">方向键/WASD 移动 &middot; P 暂停<br>虫洞传送门成对出现，颜色相同即相连。</div>
+    <div class="dpad">
+      <button class="up" data-dir="up">▲</button>
+      <button class="left" data-dir="left">◀</button>
+      <button class="pause-mini" id="pauseBtn">⏸</button>
+      <button class="right" data-dir="right">▶</button>
+      <button class="down" data-dir="down">▼</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+
+/* ---------- maze data (generated + validated: fully connected, 19x21) ----------
+ * Every maze keeps the same footprint, ghost-house box, tunnel row and player
+ * spawn so the shared SPAWN / HOUSE_DOOR / HOUSE_EXIT_TILE / PATROL_ROUTE
+ * constants below stay valid across levels — only the wall layout changes.
+ * Each is validated 100% reachable by walking alone, with portals placed only
+ * at true dead ends (never mid-corridor, which would strand pellets behind a
+ * warp) and never on the ghost-house exit path (which would teleport ghosts
+ * the instant they leave home).
+ */
+const MAZE_LEVEL_1 = [
+"###################",
+"#o....#.....#....o#",
+"###.#.###.###.#.###",
+"#1#...#.....#...#1#",
+"#.#.#.#.#.#.#.#.#.#",
+"#.#.#...#.#...#.#.#",
+"#.#.#.###.###.#.#.#",
+"#.....#.....#.....#",
+"#.###.###D###.###.#",
+"#...#.#ggggg#.#...#",
+"T.....#ggggg#....oT",
+"#...#.#ggggg#.#...#",
+"#.###.###D###.###.#",
+"#...#.........#...#",
+"###.#####.#####.###",
+"#.......#P#.......#",
+"#.#######.#######.#",
+"#.......#.#.......#",
+"#.#####.#.#.#####.#",
+"#o...2#.....#2....#",
+"###################",
+];
+
+const MAZE_LEVEL_2 = [
+"###################",
+"#1.......o.......2#",
+"###.#.#.#.#.#.#.###",
+"#...#.#.#.#.#.#...#",
+"#.#.#.#.#.#.#.#.#.#",
+"#.#o#.#.#.#.#.#o#.#",
+"#.###.#.#.#.#.###.#",
+"#.#.....#.#.....#.#",
+"#.#.#####D#####.#.#",
+"#.#...#ggggg#...#.#",
+"T.....#ggggg#.....T",
+"#...#.#ggggg#.#...#",
+"#.###.###D###.###.#",
+"#.................#",
+"#.#######.#######.#",
+"#...#...#P#...#...#",
+"###o#.#.#.#.#.#o###",
+"#...#.#.....#.#...#",
+"#.#.#.###.###.#.#.#",
+"#2....#.....#....1#",
+"###################",
+];
+
+const MAZE_LEVEL_3 = [
+"###################",
+"#1..o.#.....#.o..2#",
+"#.###.#.###.#.###.#",
+"#.....#.....#.....#",
+"#.#######.#######.#",
+"#.#.............#.#",
+"#.#####.#.#.#####.#",
+"#.#.....#.#.....#.#",
+"#.#.#####D#####.#.#",
+"#.#...#ggggg#...#.#",
+"T.....#ggggg#.....T",
+"#o..#.#ggggg#.#..o#",
+"###.#.###D###.#.###",
+"#...#.........#...#",
+"#.#.#####.#####.#.#",
+"#.#.#....P....#.#.#",
+"#.#.#.###.###.#.#.#",
+"#.#...#.....#...#.#",
+"#.#.#.#.###.#.#.#.#",
+"#2..o.#.....#.o..1#",
+"###################",
+];
+
+const MAZE_LEVEL_4 = [
+"###################",
+"#1..#....o....#..2#",
+"#.#.###.#.#.###.#.#",
+"#.#...#.....#...#.#",
+"#.###.#.###.#.###.#",
+"#.#...#.....#...#.#",
+"#.#.###.#.#.###.#.#",
+"#.#.............#.#",
+"#.###.###D###.###.#",
+"#...#.#ggggg#.#...#",
+"T.....#ggggg#.....T",
+"#o#.#.#ggggg#.#.#o#",
+"###.#.###D###.#.###",
+"#.....#.....#.....#",
+"#.###.###.###.###.#",
+"#...#....P....#...#",
+"###.#####.#####.###",
+"#...#.........#...#",
+"#.###.#######.###.#",
+"#2..o.........o..1#",
+"###################",
+];
+
+const MAZE_LEVEL_5 = [
+"###################",
+"#1##o.........o##2#",
+"#.###.###.###.###.#",
+"#.......#.#.......#",
+"#.#.###.#.#.###.#.#",
+"#...#.........#...#",
+"#####.###.###.#####",
+"#.#.............#.#",
+"#o#.#####D#####.#o#",
+"#...#.#ggggg#.#...#",
+"T.....#ggggg#.....T",
+"#.#...#ggggg#...#.#",
+"#.#.#.###D###.#.#.#",
+"#.#.#.........#.#.#",
+"#.#####.#.#.#####.#",
+"#.......#P#.......#",
+"#####.###.###.#####",
+"#.o.#...#.#...#.o.#",
+"#.#.###.#.#.###.#.#",
+"#2...............1#",
+"###################",
+];
+
+const MAZE_LEVEL_6 = [
+"###################",
+"#1##o...#.#...o##2#",
+"#.###.#.#.#.#.###.#",
+"#.....#.....#.....#",
+"#.#.#.#.#.#.#.#.#.#",
+"#...#...#o#...#...#",
+"#####.#.#.#.#.#####",
+"#o#...#.....#...#o#",
+"#.#.#####D#####.#.#",
+"#.#...#ggggg#...#.#",
+"T.....#ggggg#.....T",
+"#.....#ggggg#.....#",
+"#.#.#####D#####.#.#",
+"#.#.............#.#",
+"#.#######.#######.#",
+"#..o....#P#....o..#",
+"#######.#.#.#######",
+"#.......#.#.......#",
+"#.#.#####.#####.#.#",
+"#2...............1#",
+"###################",
+];
+
+const MAZE_TEMPLATES = [
+  MAZE_LEVEL_1, MAZE_LEVEL_2, MAZE_LEVEL_3,
+  MAZE_LEVEL_4, MAZE_LEVEL_5, MAZE_LEVEL_6,
+];
+/** Total levels in a run; clearing this many ends the game in victory. */
+const MAX_LEVEL = 6;
+const COLS = MAZE_LEVEL_1[0].length; // 19
+const ROWS = MAZE_LEVEL_1.length;    // 21
+const TILE = 26;
+const canvas = document.getElementById('mazeCanvas');
+canvas.width = COLS*TILE; canvas.height = ROWS*TILE;
+const ctx = canvas.getContext('2d');
+
+/** Cycles through the available mazes once levels outrun the list. */
+function templateForLevel(lvl){
+  return MAZE_TEMPLATES[(Math.max(1, lvl) - 1) % MAZE_TEMPLATES.length];
+}
+
+function emptyGrid(){
+  return templateForLevel(level).map(row=>row.split(''));
+}
+
+/* entity-specific walkability */
+function walkableFor(ch, kind){
+  if (ch === '#') return false;
+  if (ch === 'g') return kind !== 'player';
+  if (ch === 'D') return kind !== 'player';
+  return true;
+}
+
+/* ---------- game state ---------- */
+let grid, pelletsLeft, pelletsTotal, score, level, lives, combo, comboTimer, gameState, startTime, elapsed, frightTimer = 0;
+let ghosts, player, fruit, toastTimer, invuln, warpCooldownEntities;
+
+/* ---------- bonus scoring ----------
+ * Four bonuses, each rewarding a different skill so they don't all pay out for
+ * the same behaviour:
+ *   PERFECT_LEVEL  clear a level untouched — scaled by level number, since the
+ *                  later ones are genuinely harder
+ *   GHOST_SWEEP    eat every ghost within ONE power pellet. The fright window
+ *                  shrinks 9s -> 4s across the run, so this goes from tough to
+ *                  near-heroic
+ *   LIFE_LEFT      each life still in hand at the finish
+ *   FLAWLESS_RUN   clear all six levels without dying once
+ * Every award is logged so the player is told WHAT they earned and why — an
+ * unexplained score jump just reads as noise.
+ */
+const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 2000, LIFE_LEFT: 1500, FLAWLESS_RUN: 10000 };
+
+/**
+ * Ghost speed per level, written out rather than generated.
+ *
+ * This was a compounding formula twice over (1.15, then 1.11), and both times
+ * the same thing went wrong: a single growth rate cannot know what ELSE changes
+ * on a given level. The ramp is not just speed — ghost count goes 4,5,6,6,6,7,
+ * the fright window shrinks, and the maps differ in how easily they corner you.
+ * A formula gives every level the same step by construction, which is exactly
+ * how level 5 and then level 6 each became a wall.
+ *
+ * The figures are set from measured clear rates, not from a curve. 工具/autoplay.js
+ * plays each level forty times and reports how often a deliberately mediocre bot
+ * finishes; the target is a rate that falls gently across the six levels rather
+ * than falling off a cliff at one of them.
+ *
+ *   1  2.35  frozen, the owner's reference level — do not touch
+ *   2  2.61  +1 ghost
+ *   3  2.90  +1 ghost (6 now)
+ *   4  3.22  nothing else changes, so speed carries the step
+ *   5  3.40  its map is the meanest of the six — 10 dead ends against 6 and 7
+ *            on its neighbours — so it needs a SMALLER speed step than the
+ *            ramp suggests. At 3.57 it measured harder than level 6.
+ *   6  3.78  +1 ghost (7) AND the shortest fright window: a small step, because
+ *            the level is already gaining the two harshest levers at once.
+ *            Under the old curve this was 3.96 and simply unclearable.
+ *
+ * Widening level 5's corridors was tried first and made it measurably WORSE
+ * (70% -> 40%): opening a dead end also opens a flanking route for six ghosts.
+ * Speed is the lever that moves difficulty in the direction you expect.
+ *
+ * The 85% cap below is a safety net, not a design knob: above it a ghost
+ * catches a fleeing player in an open corridor and the run stops being winnable.
+ */
+const GHOST_SPEED_BY_LEVEL = [2.35, 2.61, 2.90, 3.22, 3.40, 3.78];
+let deathsThisLevel = 0, deathsThisRun = 0, sweepsThisRun = 0;
+let levelBonuses = [];   // earned within the current level, shown on level clear
+let runBonuses = [];     // everything across the run, shown on the end screen
+
+/**
+ * Global payout multiplier. EVERY point earned goes through addScore, so the
+ * multiplier is applied in exactly one place — the toasts and the end-screen
+ * breakdown all read back the returned amount rather than the base figure,
+ * which is what keeps "幽灵! +400" and the score counter telling the same story.
+ * Raising a base constant instead would have meant touching four call sites and
+ * every string that quotes one.
+ */
+const SCORE_MULT = 1.5;
+
+/**
+ * Adds points at the current multiplier and returns what was actually banked.
+ * Rounded because 1.5x turns odd base values into halves — a pellet eaten at an
+ * odd combo would post "15" then "37.5", and a decimal point in an arcade score
+ * looks like a bug even when the arithmetic is right.
+ */
+function addScore(base){
+  const points = Math.round(base * SCORE_MULT);
+  score += points;
+  return points;
+}
+
+function awardBonus(label, base){
+  const points = addScore(base);
+  levelBonuses.push({ label, points });
+  runBonuses.push({ label, points });
+  updateHud();
+  return points;
+}
+
+// 7 slots: the roster grows to 7 by the final level. All sit on ghost-house
+// floor tiles (x 7..11, y 9..11 are 'g' in every maze).
+const SPAWN = { player:{x:9,y:15}, ghosts:[
+  {x:8,y:10},{x:10,y:10},{x:8,y:11},{x:10,y:11},
+  {x:9,y:10},{x:9,y:11},{x:7,y:10},
+] };
+const HOUSE_DOOR = {x:9, y:8};
+const HOUSE_EXIT_TILE = {x:9, y:7};
+
+const GHOST_DEFS = [
+  {id:'chaser',  color:'--danger', label:'追击者'},
+  {id:'ambush',  color:'--pink',   label:'伏击者'},
+  {id:'shy',     color:'--tang',   label:'怕生鬼'},
+  {id:'patrol',  color:'--cyan',   label:'巡逻者'},
+];
+
+// 5th ghost, joins from level 2 on: a second chaser. Same id so every
+// id-keyed lookup (targeting AI, color) treats it exactly like the first,
+// but flagged `flank` so it aims beside the player instead of at them.
+const EXTRA_CHASER_DEF = {id:'chaser', color:'--danger', label:'追击者', flank:true};
+const FLANK_OFFSET_TILES = 4;
+
+// 6th ghost (level 3+): an ambusher that reads much further ahead, so it cuts
+// you off well before the regular ambusher would.
+const EXTRA_AMBUSH_DEF = {id:'ambush', color:'--pink', label:'伏击者', lookahead:7};
+// 7th ghost (final level only): a patroller running the loop backwards, so the
+// two patrollers sweep opposite halves instead of trailing each other.
+const EXTRA_PATROL_DEF = {id:'patrol', color:'--cyan', label:'巡逻者', reverseRoute:true};
+
+/** Roster grows with the level: 4 -> 5 (L2) -> 6 (L3) -> 7 (final). */
+function ghostDefsForLevel(lvl){
+  const defs = GHOST_DEFS.slice();
+  if (lvl >= 2) defs.push(EXTRA_CHASER_DEF);
+  if (lvl >= 3) defs.push(EXTRA_AMBUSH_DEF);
+  if (lvl >= MAX_LEVEL) defs.push(EXTRA_PATROL_DEF);
+  return defs;
+}
+const PATROL_ROUTE = [{x:2,y:2},{x:16,y:2},{x:16,y:18},{x:2,y:18}];
+const PATROL_ROUTE_REV = PATROL_ROUTE.slice().reverse();
+
+const cssVar = (name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+/* ---------- retro synthesized audio (no external assets) ---------- */
+const Audio2 = (()=>{
+  let actx = null, muted = false, pelletToggle = 0;
+  // Each entry is a [lo, hi] "waka" pair, stepping up a pentatonic-ish scale
+  // (A4/C5 -> C5/E5 -> D5/G5 -> E5/A5 -> G5/C6): musical intervals rather
+  // than arbitrary frequencies, so later steps read as melody, not siren.
+  const PELLET_SCALE = [
+    [440, 523],
+    [523, 659],
+    [587, 784],
+    [659, 880],
+    [784, 1047],
+  ];
+  function ctx(){
+    if (!actx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      actx = new AC();
+    }
+    if (actx.state === 'suspended') actx.resume();
+    return actx;
+  }
+  function unlock(){ ctx(); }
+  function tone(freq, t0, dur, {type='square', gain=0.16, slideTo=null, slideDur=null}={}){
+    const ac = ctx(); if (!ac || muted) return;
+    const osc = ac.createOscillator();
+    const g = ac.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, t0);
+    if (slideTo) osc.frequency.exponentialRampToValueAtTime(Math.max(slideTo,1), t0+(slideDur||dur));
+    g.gain.setValueAtTime(0.0001, t0);
+    g.gain.exponentialRampToValueAtTime(gain, t0+0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0+dur);
+    osc.connect(g).connect(ac.destination);
+    osc.start(t0); osc.stop(t0+dur+0.03);
+  }
+  function now(){ const ac=ctx(); return ac ? ac.currentTime : 0; }
+  return {
+    unlock,
+    setMuted(v){ muted = v; },
+    isMuted(){ return muted; },
+    /**
+     * `progress` is 0 at the start of a level and 1 when the last pellet is
+     * eaten. Rather than sliding the pitch continuously upward (which, on a
+     * square wave, read as a siren winding up by the end of a level), the
+     * two-tone "waka" pair steps up a short scale in whole discrete jumps —
+     * a rounder triangle wave and an eased curve that holds near the base
+     * pitch for most of the level and only climbs in the final stretch.
+     */
+    pellet(progress){
+      const p = Math.max(0, Math.min(1, progress || 0));
+      const step = Math.min(PELLET_SCALE.length - 1, Math.floor(p * p * PELLET_SCALE.length));
+      const [lo, hi] = PELLET_SCALE[step];
+      const t = now();
+      pelletToggle = 1 - pelletToggle;
+      const freq = pelletToggle ? hi : lo;
+      const dur = 0.058 - p * 0.016;
+      const gain = 0.115 - p * 0.02; // taper slightly so the higher steps don't read as louder/harsher
+      tone(freq, t, dur, {type:'triangle', gain});
+    },
+    power(){ const t=now(); tone(220, t, 0.32, {type:'sawtooth', gain:0.14, slideTo:440, slideDur:0.32}); },
+    eatGhost(){ const t=now(); [660,880,1100,1320].forEach((f,i)=>tone(f, t+i*0.045, 0.09, {type:'square', gain:0.15})); },
+    fusion(){ const t=now(); tone(160,t,0.5,{type:'sawtooth',gain:0.13,slideTo:60,slideDur:0.5}); tone(320,t+0.05,0.45,{type:'sawtooth',gain:0.1,slideTo:120,slideDur:0.45}); },
+    warp(){ const t=now(); tone(300,t,0.22,{type:'sine',gain:0.14,slideTo:1200,slideDur:0.22}); },
+    fruit(){ const t=now(); tone(700,t,0.09,{type:'triangle',gain:0.16}); tone(1050,t+0.09,0.14,{type:'triangle',gain:0.16}); },
+    death(){ const t=now(); [520,440,360,280,200].forEach((f,i)=>tone(f, t+i*0.11, 0.13, {type:'sawtooth', gain:0.15})); },
+    levelUp(){ const t=now(); [440,554,660,880].forEach((f,i)=>tone(f, t+i*0.09, 0.14, {type:'square', gain:0.14})); },
+    gameOver(){ const t=now(); [392,349,294,220,164].forEach((f,i)=>tone(f, t+i*0.16, 0.2, {type:'sawtooth', gain:0.15})); },
+    victory(){ const t=now(); [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f, t+i*0.13, 0.22, {type:'triangle', gain:0.15})); },
+  };
+})();
+
+function inBounds(x,y){ return y>=0 && y<ROWS && x>=0 && x<COLS; }
+function tileAt(x,y){
+  let nx=x, ny=y;
+  if (nx<0) nx=COLS-1; if (nx>=COLS) nx=0;
+  if (!inBounds(nx,ny)) return '#';
+  return grid[ny][nx];
+}
+
+function resetLevel(fullReset){
+  if (fullReset){ score=0; level=1; lives=3; }
+  grid = emptyGrid();
+  pelletsLeft = 0;
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    const ch = grid[y][x];
+    if (ch==='.' || ch==='o') pelletsLeft++;
+  }
+  pelletsTotal = pelletsLeft; // fixed at level load, so eating progress reads 0 -> 1
+  const playerSpeed = 5.408 + (level-1)*0.2912;
+  player = {
+    x: SPAWN.player.x, y: SPAWN.player.y, dir:{x:0,y:0}, want:{x:0,y:0},
+    baseSpeed: playerSpeed, speed: playerSpeed,
+    mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0,
+    // odometer driving the distance-based turn buffer (see player control)
+    distTravelled:0, wantAtDist:0,
+    // tiles run without changing direction, and the fading motion trail it drives
+    straightTiles:0, trail:[],
+  };
+  const ghostSpeed = Math.min(GHOST_SPEED_BY_LEVEL[level-1] ?? GHOST_SPEED_BY_LEVEL[MAX_LEVEL-1],
+                              playerSpeed * 0.85);
+  ghosts = ghostDefsForLevel(level).map((def,i)=>({
+    ...def,
+    x: SPAWN.ghosts[i].x, y: SPAWN.ghosts[i].y,
+    dir:{x:0,y:-1},
+    baseSpeed: ghostSpeed, speed: ghostSpeed,
+    // every ghost leaves home immediately — no staggered release. They still
+    // file out one at a time because the house has a single door.
+    state: 'exiting',
+    releaseAt: 0,
+    eatenFlashUntil:0, warpCd:0,
+    fusedWith:null, isFusionHost:false,
+    routeIdx:0, wobble:Math.random()*Math.PI*2,
+  }));
+  fruit = { active:false, x:9, y:13, timer:0, nextAt: 60, path:0 };
+  comboTimer = 0; combo = 1;
+  frightTimer = 0; ghostEatChain = 0;
+  deathsThisLevel = 0; levelBonuses = [];
+  if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; runBonuses = []; maxComboSeen = 1; }
+  invuln = 2.4;
+  elapsed = 0;
+}
+
+function fullNewGame(){
+  resetLevel(true);
+  gameState='ready';
+  updateHud();
+}
+
+/* ---------- movement helpers ---------- */
+const DIRS = { up:{x:0,y:-1}, down:{x:0,y:1}, left:{x:-1,y:0}, right:{x:1,y:0} };
+function opposite(d){ return {x:-d.x,y:-d.y}; }
+function nearCenter(v){ return Math.abs(v - Math.round(v)) < 0.001; }
+
+/**
+ * THE single rule for "may this entity enter that tile". Everything that asks
+ * the question has to come through here.
+ *
+ * It exists because the question used to be answered in two places that
+ * disagreed, and the mystery fruit's phase power was the casualty: stepEntity
+ * allowed walking into a wall while phasing, but openDirs — which runs FIRST,
+ * at every tile centre — filtered wall directions out unconditionally. So the
+ * chooser had already zeroed the heading before the permissive check could ever
+ * see it, and the phase branch in stepEntity was dead code. Eating the fruit
+ * played the sound, paid the score, tinted the player cyan, and did nothing at
+ * all. One rule, one place, so the two cannot drift apart again.
+ *
+ * Phasing is deliberately limited to '#' walls strictly inside the border: the
+ * outer ring must stay solid or the player leaves the board entirely, and the
+ * ghost house ('g'/'D') stays off-limits so the fruit can't be used to camp
+ * inside it.
+ */
+function canEnter(ent, tx, ty){
+  const ch = tileAt(tx, ty);
+  if (walkableFor(ch, ent.kind)) return true;
+  return ent.phase > 0 && ch === '#' &&
+         tx > 0 && tx < COLS-1 && ty > 0 && ty < ROWS-1;
+}
+
+function openDirs(ent, excludeReverse){
+  const cx = Math.round(ent.x), cy = Math.round(ent.y);
+  const out = [];
+  for (const key in DIRS){
+    const d = DIRS[key];
+    if (excludeReverse && ent.dir.x===-d.x && ent.dir.y===-d.y && (ent.dir.x||ent.dir.y)) continue;
+    if (canEnter(ent, cx+d.x, cy+d.y)) out.push(d);
+  }
+  return out;
+}
+
+function stepEntity(ent, dt, chooseDir, onArrive){
+  // an entity can cross more than one tile-center within a single frame; onArrive
+  // must fire for every one of them, not just wherever the entity ends the frame,
+  // or things sitting mid-corridor (pellets, portals) get silently skipped.
+  if (onArrive && nearCenter(ent.x) && nearCenter(ent.y)) onArrive(ent);
+  let remaining = ent.speed*dt;
+  let guard = 0;
+  while (remaining > 1e-9 && guard++ < 8){
+    const atCenter = nearCenter(ent.x) && nearCenter(ent.y);
+    if (atCenter){
+      ent.x = Math.round(ent.x); ent.y = Math.round(ent.y);
+      const newDir = chooseDir(ent);
+      if (newDir) ent.dir = newDir;
+      if (ent.dir.x || ent.dir.y){
+        // Same rule the chooser used — see canEnter. Duplicating the logic here
+        // is what broke the phase power in the first place.
+        if (!canEnter(ent, ent.x+ent.dir.x, ent.y+ent.dir.y)) ent.dir = {x:0,y:0};
+      }
+    }
+    if (!(ent.dir.x || ent.dir.y)) break;
+    // use floor/ceil (not round) so the "current cell" stays correct even once
+    // the entity is more than halfway across the tile toward its destination
+    const cellOf = (pos,d)=> d>0 ? Math.floor(pos+1e-9) : d<0 ? Math.ceil(pos-1e-9) : Math.round(pos);
+    const distToCenter = ent.dir.x
+      ? Math.abs((cellOf(ent.x,ent.dir.x)+ent.dir.x) - ent.x)
+      : Math.abs((cellOf(ent.y,ent.dir.y)+ent.dir.y) - ent.y);
+    const move = Math.min(remaining, distToCenter);
+    ent.x += ent.dir.x*move; ent.y += ent.dir.y*move;
+    remaining -= move;
+    if (distToCenter - move < 1e-6){
+      ent.x = Math.round(ent.x); ent.y = Math.round(ent.y);
+      if (onArrive) onArrive(ent);
+    }
+  }
+  // tunnel wrap
+  if (ent.x < -0.5) ent.x = COLS-0.5;
+  if (ent.x > COLS-0.5) ent.x = -0.5;
+}
+
+/** How long the mystery fruit lets the player walk through walls. */
+const FRUIT_PHASE_SECONDS = 10;
+
+/**
+ * Puts the player back on a legal tile if the phase power left them inside a
+ * wall. Without this the run can SOFTLOCK outright: six wall tiles across
+ * levels 2, 3 and 6 — the ones flanking the ghost-house door — have no
+ * player-walkable neighbour at all, so once phase expires there, every
+ * direction is refused and nothing can reach the player to kill them either.
+ * The level cannot be finished and the game cannot be lost; the only way out
+ * is to reload.
+ *
+ * Checked every frame rather than only at the moment phase hits zero, so any
+ * other route into an illegal tile recovers too. BFS picks the nearest legal
+ * tile, which is at most a step or two away and reads as being nudged out of
+ * the wall.
+ */
+function rescueFromWall(){
+  if (player.phase > 0) return;
+  const px = Math.round(player.x), py = Math.round(player.y);
+  if (walkableFor(tileAt(px,py), 'player')) return;
+
+  const seen = new Set([`${px},${py}`]);
+  const q = [[px,py]];
+  while (q.length){
+    const [x,y] = q.shift();
+    for (const [dx,dy] of [[0,-1],[0,1],[-1,0],[1,0]]){
+      const nx = x+dx, ny = y+dy;
+      if (nx<0 || nx>=COLS || ny<0 || ny>=ROWS) continue;
+      const key = `${nx},${ny}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      if (walkableFor(tileAt(nx,ny), 'player')){
+        player.x = nx; player.y = ny;
+        player.dir = {x:0,y:0}; player.want = {x:0,y:0};
+        player.straightTiles = 0; player.trail.length = 0;
+        return;
+      }
+      q.push([nx,ny]);
+    }
+  }
+}
+
+/* ---------- portal warp ---------- */
+// A full second after landing before the exit portal can fire again, so the
+// player has time to read the new surroundings and pick a direction instead of
+// being bounced straight back.
+const PORTAL_COOLDOWN_SECONDS = 1.0;
+
+function checkPortal(ent){
+  const cx = Math.round(ent.x), cy = Math.round(ent.y);
+  if (!nearCenter(ent.x) || !nearCenter(ent.y)) return;
+  const ch = grid[cy] && grid[cy][cx];
+  if (ch !== '1' && ch !== '2') return;
+  // Cooldown runs on simulation time (ticked in update), not a wall-clock
+  // setTimeout — a timeout would keep running while the game is paused and
+  // could expire mid-pause. It also stops an idle entity that lands on the
+  // exit portal from being bounced straight back, over and over.
+  if (ent.warpCd > 0) return;
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    if (grid[y][x]===ch && !(x===cx&&y===cy)){
+      ent.x = x; ent.y = y;
+      ent.warpCd = PORTAL_COOLDOWN_SECONDS;
+      if (ent===player) Audio2.warp();
+      return;
+    }
+  }
+}
+
+/* ---------- player control ----------
+ * Direction is otherwise only ever re-evaluated when the player sits exactly
+ * on a tile centre, which is the root of every "my turn didn't register"
+ * complaint. Three things relax that:
+ *   1. a 180 needs no junction at all, so honour it the moment it's pressed
+ *   2. a perpendicular turn may begin slightly BEFORE the junction, instead of
+ *      demanding pixel-exact alignment and sailing past when you're a hair late
+ *   3. a buffered press expires by DISTANCE, so it can't lie dormant and then
+ *      fire at some unrelated junction many tiles later
+ * The expiry window is measured in tiles rather than seconds so the feel stays
+ * identical if the player's speed is ever retuned.
+ */
+const TURN_ASSIST_TILES = 0.45;  // how early a perpendicular turn may start
+const TURN_BUFFER_TILES = 3;     // how far a pending press stays alive
+
+/** Current cell along an axis. Not Math.round: past the halfway point that
+ *  flips to the destination tile early and breaks the distance maths. */
+function cellOf(pos, d){
+  return d > 0 ? Math.floor(pos + 1e-9) : d < 0 ? Math.ceil(pos - 1e-9) : Math.round(pos);
+}
+
+function wantIsFresh(ent){
+  if (!(ent.want.x || ent.want.y)) return false;
+  return (ent.distTravelled - ent.wantAtDist) <= TURN_BUFFER_TILES;
+}
+
+/** Reversal takes effect immediately, mid-tile — no junction required. */
+function applyInstantReversal(ent){
+  if (!(ent.dir.x || ent.dir.y) || !wantIsFresh(ent)) return;
+  const w = ent.want;
+  if (w.x !== -ent.dir.x || w.y !== -ent.dir.y) return;
+  if (nearCenter(ent.x) && nearCenter(ent.y)){
+    // sitting on a centre, so there's no partial tile to retrace into:
+    // the tile behind has to actually be open
+    const bx = Math.round(ent.x) + w.x, by = Math.round(ent.y) + w.y;
+    if (!walkableFor(tileAt(bx, by), ent.kind)) return;
+  }
+  // mid-tile a reversal just retraces the tile already being crossed, which
+  // was necessarily entered from — no walkability check needed
+  ent.dir = { x: w.x, y: w.y };
+}
+
+/** Lets a perpendicular turn start just short of the junction. */
+function applyCornerAssist(ent){
+  if (!(ent.dir.x || ent.dir.y) || !wantIsFresh(ent)) return;
+  const w = ent.want;
+  if (w.x === ent.dir.x && w.y === ent.dir.y) return;          // straight on
+  if (w.x === -ent.dir.x && w.y === -ent.dir.y) return;        // reversal's job
+
+  const nx = ent.dir.x ? cellOf(ent.x, ent.dir.x) + ent.dir.x : Math.round(ent.x);
+  const ny = ent.dir.y ? cellOf(ent.y, ent.dir.y) + ent.dir.y : Math.round(ent.y);
+  const gap = Math.abs(nx - ent.x) + Math.abs(ny - ent.y);
+  if (gap === 0 || gap > TURN_ASSIST_TILES) return;
+  if (!walkableFor(tileAt(nx + w.x, ny + w.y), ent.kind)) return;
+
+  // snap the remaining sliver onto the junction and take the turn. stepEntity
+  // fires onArrive for a centre it starts on, so the pellet here still counts.
+  ent.x = nx; ent.y = ny;
+  ent.dir = { x: w.x, y: w.y };
+}
+
+function choosePlayerDir(ent){
+  const opts = openDirs({...ent, kind:'player'}, false);
+  if (wantIsFresh(ent)){
+    const wantMatch = opts.find(d=>d.x===ent.want.x && d.y===ent.want.y);
+    if (wantMatch) return wantMatch;
+  }
+  const keepGoing = opts.find(d=>d.x===ent.dir.x && d.y===ent.dir.y);
+  if (keepGoing) return ent.dir;
+  return {x:0,y:0};
+}
+
+/* ---------- ghost AI ---------- */
+function ghostTarget(g){
+  if (g.state==='frightened') return null; // handled separately
+  if (g.state==='eaten') return HOUSE_EXIT_TILE;
+  if (g.state==='house' || g.state==='exiting') return HOUSE_DOOR;
+  const px = player.x, py = player.y;
+  const dist = Math.hypot(px-g.x, py-g.y);
+  switch(g.id){
+    case 'chaser':
+      // The level-2 second chaser aims to one SIDE of the player (perpendicular
+      // to their heading) rather than straight at them. Two ghosts running the
+      // identical pure-pursuit target end up stacked on the same tile acting as
+      // one wall; offsetting the twin makes it approach at an angle, which both
+      // reads more clearly and leaves the player an escape line.
+      if (g.flank){
+        return {x: px + player.dir.y * FLANK_OFFSET_TILES,
+                y: py + player.dir.x * FLANK_OFFSET_TILES};
+      }
+      return {x:px, y:py};
+    case 'ambush': {
+      const reach = g.lookahead || 4; // the level-3 twin reads further ahead
+      return {x:px+player.dir.x*reach, y:py+player.dir.y*reach};
+    }
+    case 'shy':
+      return dist > 7 ? {x:px,y:py} : {x:1,y:ROWS-2};
+    case 'patrol': {
+      const route = g.reverseRoute ? PATROL_ROUTE_REV : PATROL_ROUTE;
+      const wp = route[g.routeIdx % route.length];
+      if (Math.hypot(g.x-wp.x, g.y-wp.y) < 0.6) g.routeIdx++;
+      return wp;
+    }
+  }
+  return {x:px,y:py};
+}
+
+function chooseGhostDir(g){
+  if (g.state==='house'){ return null; }
+  if (g.state==='exiting'){
+    if (Math.round(g.x)===HOUSE_DOOR.x && Math.round(g.y)===HOUSE_DOOR.y){
+      // rejoin as edible if the power pellet is still running — the global
+      // timer is authoritative, never the ghost's own (now removed) field
+      g.state = frightTimer > 0 ? 'frightened' : 'chase';
+      applySpeedModifiers();
+    }
+    const target = HOUSE_DOOR;
+    return bestDirTo({...g,kind:'ghost'}, target, true);
+  }
+  if (g.state==='eaten'){
+    const target = HOUSE_EXIT_TILE;
+    if (Math.round(g.x)===target.x && Math.round(g.y)===target.y){
+      g.state='exiting';
+    }
+    return bestDirTo({...g,kind:'ghost'}, target, true);
+  }
+  if (g.state==='frightened'){
+    const opts = openDirs({...g,kind:'ghost'}, true);
+    if (!opts.length) return g.dir;
+    // mostly flee (maximize distance from player), with some randomness
+    if (Math.random() < 0.28) return opts[Math.floor(Math.random()*opts.length)];
+    let best=opts[0], bestD=-1;
+    for (const d of opts){
+      const nx=Math.round(g.x)+d.x, ny=Math.round(g.y)+d.y;
+      const dist = Math.hypot(nx-player.x, ny-player.y);
+      if (dist>bestD){ bestD=dist; best=d; }
+    }
+    return best;
+  }
+  const target = ghostTarget(g);
+  return bestDirTo({...g,kind:'ghost'}, target, true);
+}
+
+function bestDirTo(ent, target, excludeReverse){
+  const opts = openDirs(ent, excludeReverse);
+  if (!opts.length) return ent.dir;
+  let best=opts[0], bestD=Infinity;
+  for (const d of opts){
+    const nx=Math.round(ent.x)+d.x, ny=Math.round(ent.y)+d.y;
+    const dist = (nx-target.x)**2 + (ny-target.y)**2;
+    if (dist<bestD){ bestD=dist; best=d; }
+  }
+  return best;
+}
+
+/* ---------- combo / scoring ---------- */
+function addPelletScore(base){
+  addScore(base * combo);
+  combo = combo + 1; // uncapped — keep the chain alive and the multiplier keeps climbing
+  comboTimer = 1.15;
+  updateHud();
+}
+function toast(msg){
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>el.classList.remove('show'), 1400);
+}
+
+/* ---------- collisions / eating ---------- */
+
+/** 0 at level start, 1 once the last pellet is gone — drives the rising munch pitch. */
+function eatProgress(){
+  return pelletsTotal ? 1 - pelletsLeft / pelletsTotal : 0;
+}
+
+/** One full open-and-close of the mouth per pellet swallowed. */
+const CHOMP_SECONDS = 0.16;
+function triggerChomp(){
+  player.chompT = 0;
+}
+
+function eatPelletAt(x,y){
+  const ch = grid[y][x];
+  if (ch==='.'){
+    grid[y][x]=' '; pelletsLeft--; addPelletScore(10);
+    Audio2.pellet(eatProgress());
+    triggerChomp();
+  }
+  else if (ch==='o'){
+    grid[y][x]=' '; pelletsLeft--; addPelletScore(50);
+    triggerChomp();
+    startPowerMode();
+    ghostEatChain = 0;
+    toast('能量豆！幽灵受惊 ×' + combo);
+    Audio2.power();
+  }
+}
+
+let ghostEatChain = 0;
+
+/* ---------- power mode ----------
+ * Fright is tracked as ONE global timer rather than a per-ghost countdown.
+ * Per-ghost timers caused a real bug: eating a ghost zeroed its own fright,
+ * so when it respawned it came back out as a lethal chaser while the power
+ * pellet was still visibly active — killing players who reasonably expected
+ * to be able to eat it. Anything asking "are ghosts edible right now?" must
+ * consult frightTimer, never a ghost's own field.
+ */
+// 1.15, down from 1.30. At 1.30 the base 5.41 tiles/sec jumped to 7.03, fast
+// enough that turns started overshooting right when the player most wants
+// precision (threading toward a fleeing ghost). 1.15 still reads clearly as
+// "I got faster" without costing control.
+const FRIGHT_PLAYER_SPEED_MULT = 1.15;
+const FRIGHT_GHOST_SPEED_MULT = 0.85;
+/**
+ * How long ghosts stay edible, per level. A table for the same reason the speed
+ * ramp is one: the levels do not differ by a constant amount, so a constant
+ * decay cannot fit them.
+ *
+ * 9s on level 1, down from an earlier 18s. 18s was long enough that a single
+ * power pellet cleared most of the threat and the level went quiet — the reward
+ * stopped feeling like a burst and became an intermission. 9s is enough to run
+ * down two or three ghosts if the player commits.
+ *
+ * The two hand-set figures:
+ *   5  6s  a plain -1 per level put this at 5s, and full-run playtests then
+ *          ended here in 10 of 14 failures — level 5 had become the wall, past
+ *          the level 6 it is supposed to lead into. Its map is the meanest of
+ *          the six (10 dead ends), so it needs the wider window that level 4
+ *          gets, not a narrower one.
+ *   6  5s  the shortest window in the game, and it stays that way: level 6 is
+ *          meant to be the peak. It was 4s, which against SEVEN ghosts was not
+ *          a window at all — by the time you turned and closed on the first one
+ *          it was already flashing.
+ */
+const FRIGHT_BY_LEVEL = [9, 8, 7, 6, 6, 5];
+function frightSeconds(){
+  return FRIGHT_BY_LEVEL[level-1] ?? FRIGHT_BY_LEVEL[FRIGHT_BY_LEVEL.length-1];
+}
+
+function startPowerMode(){
+  frightTimer = frightSeconds();
+  ghosts.forEach(g=>{
+    // A ghost already heading home stays 'eaten'. 'fused-hidden' must be left
+    // alone too: it is not a ghost on the board but one absorbed INTO a super
+    // ghost, and reviving it here pops it back out while both halves are still
+    // bonded. From there the pair desynchronises — the freed half can be eaten
+    // on its own, yet the host still points at it, so unfusing later drags the
+    // eaten ghost back to life on top of the player. Eating a second power
+    // pellet during a fusion is common enough that this was a routine unfair
+    // death, and it looks exactly like the fright timer failing.
+    if (g.state!=='house' && g.state!=='eaten' && g.state!=='fused-hidden'){
+      if (g.state!=='frightened') g.dir = opposite(g.dir);
+      g.state = 'frightened';
+    }
+  });
+  applySpeedModifiers();
+}
+
+function endPowerMode(){
+  frightTimer = 0;
+  ghosts.forEach(g=>{ if (g.state==='frightened'){ g.state='chase'; unfuseNow(g); } });
+  applySpeedModifiers();
+}
+
+/** Re-derives every entity's speed from its base, so modifiers never compound. */
+/* ---------- momentum ----------
+ * Holding one direction winds the player up to MOMENTUM_MAX; any change of
+ * direction drops it straight back to 1. This is what makes barrelling down a
+ * corridor feel greedy: commit and you accelerate, weave and you stay slow.
+ *
+ * Deliberately NOT driven by the combo counter. Combo already pays out as a
+ * score multiplier and is uncapped, so feeding it into speed too would be a
+ * runaway loop — faster means more pellets means faster still — and it would
+ * reward circling a dense pocket just as much as charging forward, which is
+ * the opposite of the intent.
+ *
+ * The ramp length is tuned against the maps: average unbroken straight run is
+ * ~7.4 tiles, so 5 tiles means full speed arrives near the end of a typical
+ * corridor rather than instantly.
+ */
+const MOMENTUM_RAMP_TILES = 5;
+const MOMENTUM_MAX = 1.22;
+
+function momentumMult(){
+  const t = Math.min(1, player.straightTiles / MOMENTUM_RAMP_TILES);
+  return 1 + t * (MOMENTUM_MAX - 1);
+}
+
+function applySpeedModifiers(){
+  const powered = frightTimer > 0;
+  player.speed = player.baseSpeed * (powered ? FRIGHT_PLAYER_SPEED_MULT : 1) * momentumMult();
+  ghosts.forEach(g=>{
+    g.speed = g.baseSpeed * (powered ? FRIGHT_GHOST_SPEED_MULT : 1) * (g.isFusionHost ? 1.15 : 1);
+  });
+}
+
+/** True only while the player may safely touch this ghost. */
+function isEdible(g){
+  return frightTimer > 0 && g.state !== 'eaten' && g.state !== 'house';
+}
+
+function handleGhostCollisions(){
+  for (const g of ghosts){
+    if (g.state==='house' || g.state==='eaten' || g.state==='fused-hidden') continue;
+    const dist = Math.hypot(g.x-player.x, g.y-player.y);
+    if (dist >= 0.55) continue;
+
+    if (isEdible(g)){
+      ghostEatChain++;
+      const pts = addScore(200*Math.pow(2, Math.min(3,ghostEatChain-1)));
+      const wasHost = g.isFusionHost;
+      unfuseNow(g); // release the partner before the host leaves play
+      g.state='eaten';
+      applySpeedModifiers();
+      toast((wasHost?'超级幽灵! +':'幽灵! +') + pts);
+      updateHud();
+      Audio2.eatGhost();
+
+      // Cleared the whole board inside one power pellet? A fused partner is
+      // already back in play by now (unfuseNow above), so counting 'eaten'
+      // states can't be fooled by a ghost hiding inside a fusion.
+      if (ghosts.every(x => x.state === 'eaten')){
+        sweepsThisRun++;
+        toast('全灭幽灵！+' + awardBonus('全灭幽灵', BONUS.GHOST_SWEEP));
+      }
+    } else if (invuln<=0){
+      loseLife();
+      return;
+    }
+  }
+}
+
+/* ---------- fusion mechanic ---------- */
+function handleFusion(){
+  const fr = ghosts.filter(g=>g.state==='frightened' && !g.fusedWith);
+  for (let i=0;i<fr.length;i++) for (let j=i+1;j<fr.length;j++){
+    const a=fr[i], b=fr[j];
+    if (Math.hypot(a.x-b.x, a.y-b.y) < 0.5){
+      a.fusedWith = b; b.fusedWith = a; a.isFusionHost = true;
+      b.state = 'fused-hidden';
+      frightTimer += 2; // fusing buys the player a little extra hunting time
+      applySpeedModifiers();
+      toast('幽灵融合！超级幽灵出现');
+      Audio2.fusion();
+      return;
+    }
+  }
+}
+
+/**
+ * Splits a fused pair immediately, wherever it is in its lifecycle. Must be
+ * called before a fusion host leaves play (eaten / fright ending), otherwise
+ * its partner is stranded in 'fused-hidden' forever — invisible, untouchable,
+ * and still counted as a live ghost.
+ */
+function unfuseNow(g){
+  if (!g.isFusionHost) return;
+  const partner = g.fusedWith;
+  g.isFusionHost = false;
+  g.fusedWith = null;
+  if (partner){
+    const wasHidden = partner.state === 'fused-hidden';
+    partner.fusedWith = null;
+    // Only a ghost that was genuinely absorbed gets placed and revived. Anything
+    // else has a life of its own by now — an 'eaten' partner is walking home and
+    // must keep doing that. Reviving it would teleport it onto the player and
+    // turn a ghost they already ate back into a killer.
+    if (wasHidden){
+      partner.x = g.x; partner.y = g.y;
+      partner.state = frightTimer > 0 ? 'frightened' : 'chase';
+    }
+  }
+  applySpeedModifiers();
+}
+
+/* ---------- life / level ---------- */
+function loseLife(){
+  lives--;
+  deathsThisLevel++; deathsThisRun++;
+  updateHud();
+  Audio2.death();
+  if (lives<=0){ endGame(false); return; }
+  player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
+  player.warpCd=0;
+  player.straightTiles=0; player.trail.length=0; // respawn at a standstill, no leftover wind-up
+  frightTimer = 0; // dying cancels the power pellet outright
+  ghostEatChain = 0;
+  ghosts.forEach((g,i)=>{
+    g.x=SPAWN.ghosts[i].x; g.y=SPAWN.ghosts[i].y; g.state='exiting';
+    g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.releaseAt = 0;
+  });
+  applySpeedModifiers();
+  invuln = 1.6;
+}
+
+/* ---------- victory fireworks ----------
+ * Runs on its own canvas and its own rAF loop, and stops itself once the last
+ * spark dies, so it can never keep burning frames behind the game. Respects
+ * prefers-reduced-motion: the burst is skipped entirely rather than merely
+ * slowed, since the whole point of it is motion.
+ */
+const fxCanvas = document.getElementById('fxCanvas');
+const fxCtx = fxCanvas.getContext('2d');
+let fxParticles = [], fxRunning = false, fxNextBurst = 0, fxUntil = 0;
+
+const FX_COLORS = ['#ffcf5c','#ff4d6d','#ff8fd0','#5be3ff','#ffa552','#ffffff'];
+const prefersReducedMotion = () =>
+  window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+function fxResize(){
+  const r = fxCanvas.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  fxCanvas.width = Math.round(r.width * dpr);
+  fxCanvas.height = Math.round(r.height * dpr);
+  fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { w: r.width, h: r.height };
+}
+
+function fxBurst(w, h){
+  const cx = w * (0.18 + Math.random()*0.64);
+  const cy = h * (0.12 + Math.random()*0.45);
+  const hue = FX_COLORS[Math.floor(Math.random()*FX_COLORS.length)];
+  const n = 26 + Math.floor(Math.random()*16);
+  for (let i=0;i<n;i++){
+    const a = (Math.PI*2*i)/n + Math.random()*0.2;
+    const sp = 40 + Math.random()*90;
+    fxParticles.push({ x:cx, y:cy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+                       life:1, color:hue, size:1.5+Math.random()*1.8 });
+  }
+}
+
+function startFireworks(){
+  if (prefersReducedMotion()) return;
+  fxCanvas.classList.add('on');
+  const { w, h } = fxResize();
+  fxParticles = [];
+  fxNextBurst = 0;
+  // 12s, up from 6s. Clearing all six levels is a rare event — level 6 was
+  // unwinnable until recently, so almost nobody had ever seen this — and six
+  // seconds of it was over before the player had finished reading their score.
+  fxUntil = performance.now() + 12000;
+  if (fxRunning) return;
+  fxRunning = true;
+
+  let last = performance.now();
+  const step = (now)=>{
+    const dt = Math.min(0.05, (now - last)/1000);
+    last = now;
+    fxCtx.clearRect(0, 0, w, h);
+
+    if (now < fxUntil && now >= fxNextBurst){
+      fxBurst(w, h);
+      fxNextBurst = now + 170 + Math.random()*260;   // denser than the old 260-640
+    }
+
+    for (const p of fxParticles){
+      p.vy += 90*dt;              // gravity
+      p.vx *= 0.985; p.vy *= 0.985;
+      p.x += p.vx*dt; p.y += p.vy*dt;
+      p.life -= dt*0.55;
+    }
+    fxParticles = fxParticles.filter(p => p.life > 0);
+
+    for (const p of fxParticles){
+      fxCtx.globalAlpha = Math.max(0, p.life);
+      fxCtx.fillStyle = p.color;
+      fxCtx.shadowColor = p.color;
+      fxCtx.shadowBlur = 8;
+      fxCtx.beginPath();
+      fxCtx.arc(p.x, p.y, p.size, 0, Math.PI*2);
+      fxCtx.fill();
+    }
+    fxCtx.globalAlpha = 1; fxCtx.shadowBlur = 0;
+
+    if (now >= fxUntil && !fxParticles.length){
+      fxRunning = false;
+      fxCanvas.classList.remove('on');
+      fxCtx.clearRect(0, 0, w, h);
+      return;                      // self-terminating: no idle frames left behind
+    }
+    requestAnimationFrame(step);
+  };
+  requestAnimationFrame(step);
+}
+
+function stopFireworks(){
+  fxUntil = 0;
+  fxParticles = [];
+  fxCanvas.classList.remove('on');
+}
+
+/* ---------- high score board ----------
+ * localStorage throws outright in some private-browsing modes rather than
+ * just returning null, so every access is guarded. A blocked board must never
+ * take the game down with it — it simply stops persisting.
+ */
+const SCORE_KEY = 'doudou.scores.v2';
+const LEGACY_SCORE_KEY = 'doudou.scores.v1';
+const NAME_KEY = 'doudou.name';
+const BOARD_SIZE = 8;
+const NAME_MAX = 8;
+const DEFAULT_NAME = '无名豆豆';
+
+/**
+ * v1 rows were earned before SCORE_MULT existed, so ranking them against new
+ * runs unchanged would permanently bury them. They are carried over multiplied
+ * up and flagged, rather than dropped — wiping someone's board to ship a
+ * scoring change is the rude option.
+ *
+ * The factor is pinned at 2 rather than reading SCORE_MULT: 2 is what the
+ * migration actually applied when it shipped. Following SCORE_MULT down to 1.5
+ * would mean two players' legacy rows were converted at different rates
+ * depending on when they happened to open the game, which is worse than being
+ * slightly generous to everyone equally.
+ */
+const LEGACY_SCALE = 2;
+function migrateLegacy(){
+  try {
+    const raw = localStorage.getItem(LEGACY_SCORE_KEY);
+    if (!raw) return null;
+    localStorage.removeItem(LEGACY_SCORE_KEY);
+    const old = JSON.parse(raw);
+    if (!Array.isArray(old)) return null;
+    const list = old.map((r,i)=>({
+      id: 'legacy-'+i, name: DEFAULT_NAME, score: (r.score||0) * LEGACY_SCALE,
+      level: r.level||1, combo: r.combo||1, won: !!r.won, date: r.date||'', legacy: true,
+    }));
+    localStorage.setItem(SCORE_KEY, JSON.stringify(list));
+    return list;
+  } catch { return null; }
+}
+
+function loadScores(){
+  try {
+    const raw = localStorage.getItem(SCORE_KEY);
+    if (raw === null){
+      const migrated = migrateLegacy();
+      if (migrated) return migrated;
+    }
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  } catch { return []; }
+}
+
+function saveScores(list){
+  try { localStorage.setItem(SCORE_KEY, JSON.stringify(list)); return true; }
+  catch { return false; }
+}
+
+function loadName(){
+  try { return localStorage.getItem(NAME_KEY) || ''; } catch { return ''; }
+}
+function saveName(name){
+  try { localStorage.setItem(NAME_KEY, name); } catch { /* private mode: don't persist */ }
+}
+
+/** Trims to a sane display width and strips anything that could break the row. */
+function cleanName(raw){
+  return String(raw || '').replace(/[<>&"']/g, '').trim().slice(0, NAME_MAX);
+}
+
+/**
+ * Files the run and returns { rank, id }. rank is the 1-based placing, or 0 if
+ * the run missed the board. The id is what lets the end screen rename the row
+ * afterwards — the player types their name once the score is already on screen,
+ * so the row has to exist before the name does.
+ */
+function recordScore(entry){
+  const list = loadScores();
+  const row = {
+    id: 'r'+Date.now()+'-'+Math.random().toString(36).slice(2,7),
+    name: cleanName(entry.name) || DEFAULT_NAME,
+    score: entry.score, level: entry.level, combo: entry.combo, won: !!entry.won,
+    date: new Date().toISOString().slice(0, 10),
+  };
+  list.push(row);
+  list.sort((a,b) => b.score - a.score);
+  const rank = list.indexOf(row) + 1;
+  const kept = list.slice(0, BOARD_SIZE);
+  saveScores(kept);
+  return { rank: rank <= BOARD_SIZE ? rank : 0, id: row.id };
+}
+
+/** Renames an already-filed row. Returns false if it has since fallen off. */
+function renameScore(id, name){
+  const list = loadScores();
+  const row = list.find(r => r.id === id);
+  if (!row) return false;
+  row.name = cleanName(name) || DEFAULT_NAME;
+  return saveScores(list);
+}
+
+function renderScoreboard(elId, highlightId){
+  const el = document.getElementById(elId);
+  if (!el) return;
+  const list = loadScores();
+  if (!list.length){ el.innerHTML = '<div class="board-empty">还没有记录，来跑一局</div>'; return; }
+  el.innerHTML =
+    '<div class="board-title">排行榜</div>' +
+    list.map((r,i)=>
+      `<div class="board-row${i===0?' board-top':''}${r.id===highlightId?' board-mine':''}">` +
+        `<span class="board-rank">${i+1}</span>` +
+        `<span class="board-name">${r.name || DEFAULT_NAME}</span>` +
+        `<span class="board-score">${r.score}</span>` +
+        `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
+      '</div>').join('');
+}
+
+function endGame(won){
+  gameState='over';
+
+  if (won){
+    // The per-level "no damage" bonus is deliberately NOT awarded here: the
+    // level-clear path already grants it before calling endGame, and doing it
+    // again paid the final level twice.
+    if (lives > 0) awardBonus(`剩余生命 ×${lives}`, BONUS.LIFE_LEFT * lives);
+    if (deathsThisRun === 0) awardBonus('全程无伤通关', BONUS.FLAWLESS_RUN);
+  }
+
+  // The row is filed FIRST, under the remembered name, so the board is already
+  // correct if the player never touches the input. Typing a name renames that
+  // same row in place rather than filing a second one.
+  const remembered = loadName();
+  const { rank, id } = recordScore({ score, level, combo: maxComboSeen, won, name: remembered });
+  lastRunId = id;
+
+  if (won) Audio2.victory(); else Audio2.gameOver();
+  document.getElementById('overTitle').textContent = won ? ('通关！全 ' + MAX_LEVEL + ' 关') : '游戏结束';
+  document.getElementById('finalScore').textContent = score;
+  document.getElementById('overSub').innerHTML = buildSummary(won, rank);
+  document.getElementById('overOverlay').classList.remove('hidden');
+
+  const nameRow = document.getElementById('nameRow');
+  const nameInput = document.getElementById('nameInput');
+  nameRow.innerHTML = NAME_ROW_HTML;
+  bindNameRow();
+  nameRow.classList.toggle('hidden', rank === 0);
+  if (rank > 0){
+    const input = document.getElementById('nameInput');
+    input.value = remembered;
+    // Autofocus is skipped on a win: the fireworks are the moment, and popping
+    // a mobile keyboard over them buries the celebration.
+    if (!won) setTimeout(()=>input.focus(), 60);
+  }
+
+  renderScoreboard('overBoard', rank > 0 ? id : null);
+  if (won) startFireworks();
+}
+
+let lastRunId = null;
+const NAME_ROW_HTML =
+  '<input id="nameInput" class="name-input" type="text" maxlength="8" ' +
+  'placeholder="留下名字" autocomplete="off" spellcheck="false">' +
+  '<button class="btn btn-sm" id="nameSaveBtn">记录</button>';
+
+function commitName(){
+  const input = document.getElementById('nameInput');
+  if (!input) return;
+  const name = cleanName(input.value);
+  if (!name) { input.focus(); return; }
+  saveName(name);
+  renameScore(lastRunId, name);
+  renderScoreboard('overBoard', lastRunId);
+  document.getElementById('nameRow').innerHTML =
+    `<div class="name-done">已记录为 ${name}</div>`;
+}
+
+function bindNameRow(){
+  const btn = document.getElementById('nameSaveBtn');
+  const input = document.getElementById('nameInput');
+  if (btn) btn.addEventListener('click', commitName);
+  if (input) input.addEventListener('keydown', e => {
+    // The game reads arrow keys and WASD globally; while the player is typing
+    // their name those are just letters, so the field swallows everything.
+    e.stopPropagation();
+    if (e.key === 'Enter') commitName();
+  });
+}
+
+/** Score breakdown + placing, so the number on screen is explainable. */
+function buildSummary(won, rank){
+  const lines = [];
+  lines.push(won
+    ? `全部 ${MAX_LEVEL} 关通关　最高连击 x${maxComboSeen}`
+    : `坚持到第 ${level} / ${MAX_LEVEL} 关　最高连击 x${maxComboSeen}`);
+  if (sweepsThisRun) lines.push(`全灭幽灵 ${sweepsThisRun} 次`);
+  if (runBonuses.length){
+    const total = runBonuses.reduce((s,b)=>s+b.points, 0);
+    const detail = runBonuses.map(b=>`${b.label} +${b.points}`).join('　');
+    lines.push(`<span style="color:var(--amber)">奖励分 +${total}</span><br>${detail}`);
+  }
+  if (rank > 0) lines.push(`<span style="color:var(--amber)">本次排名第 ${rank} 名，留下你的名字</span>`);
+  else lines.push(`<span class="bonus-hint">没能挤进前 ${BOARD_SIZE} 名，再来一局</span>`);
+  return lines.join('<br>');
+}
+
+let maxComboSeen = 1;
+
+function updateHud(){
+  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('levelVal').textContent = level + '/' + MAX_LEVEL;
+  document.getElementById('livesVal').innerHTML = Array.from({length:Math.max(lives,0)}).map(()=>
+    '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 3 A7 7 0 1 1 3 12 L10 17 L17 12 A7 7 0 0 1 10 3 Z" fill="'+cssVar('--amber')+'"/></svg>'
+  ).join('');
+  document.getElementById('comboLabel').textContent = '连击 x' + combo;
+  // combo is uncapped, so the bar tracks progress toward x20 and pins full beyond
+  document.getElementById('comboFill').style.width = Math.min(100, combo/20*100)+'%';
+  maxComboSeen = Math.max(maxComboSeen, combo);
+}
+
+/* ---------- fruit ---------- */
+function updateFruit(dt){
+  if (!fruit.active){
+    fruit.nextAt -= dt;
+    return;
+  }
+  fruit.timer -= dt;
+  if (fruit.timer<=0){ fruit.active=false; return; }
+  const dist = Math.hypot(fruit.x-player.x, fruit.y-player.y);
+  if (dist < 0.6){
+    fruit.active = false;
+    addScore(300*combo); updateHud();
+    player.phase = FRUIT_PHASE_SECONDS;
+    toast('神秘水果！' + FRUIT_PHASE_SECONDS + ' 秒穿墙');
+    Audio2.fruit();
+  }
+}
+function maybeSpawnFruit(){
+  if (fruit.active) return;
+  if (fruit.nextAt<=0){
+    fruit.active = true; fruit.timer = 10; fruit.x=9; fruit.y=13;
+    fruit.nextAt = 9999;
+  }
+}
+
+/* ---------- input ---------- */
+const keyMap = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
+  w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right' };
+
+/** Stamps the press with the odometer so the turn buffer can age it out. */
+function requestDir(dir){
+  // An unknown name must be ignored, not stored. Assigning DIRS[dir] blindly
+  // puts `undefined` into player.want, and the crash then surfaces several
+  // frames later inside the movement resolver, pointing at code that is fine.
+  // The keyboard can only ever produce the four valid names, but the WeChat
+  // build feeds this from touch handling, where a typo is a plausible source.
+  const d = DIRS[dir];
+  if (!d) return;
+  player.want = d;
+  player.wantAtDist = player.distTravelled;
+}
+
+window.addEventListener('keydown', (e)=>{
+  Audio2.unlock();
+  const dir = keyMap[e.key];
+  if (dir){ requestDir(dir); e.preventDefault(); }
+  if (e.key==='p' || e.key==='P'){ togglePause(); }
+});
+document.querySelectorAll('.dpad [data-dir]').forEach(btn=>{
+  btn.addEventListener('click', ()=>{ Audio2.unlock(); requestDir(btn.dataset.dir); });
+});
+
+/* ---------- 手机滑动 ----------
+ * 分享出去的链接绝大多数是在手机上打开的，而屏幕下方那个方向键在窄屏上只有
+ * 32px —— 能用，但边跑边点太慢，转向老是慢半拍。滑动才是手机上该有的操作。
+ *
+ * 只在真正开打时才接管手势。开始页、暂停页、结算页都盖在同一个 .stage 里，
+ * 不加这道判断的话：点"开始"时手指的一点点位移会被当成转向，更糟的是下面
+ * 那个 preventDefault 会把排行榜的滚动一起挡掉 —— 榜单是能上下滑的，玩家会
+ * 发现自己划不动。
+ *
+ * 阈值用的是 CSS 像素而不是格子数 —— 这里量的是手指的动作，不是游戏世界的
+ * 距离，跟玩家速度无关。24px 在各种尺寸的手机上都足够区分"点"和"划"。
+ */
+const SWIPE_MIN_PX = 24;
+let swipeFrom = null;
+const stage = document.getElementById('mazeCanvas').parentElement;
+
+stage.addEventListener('touchstart', (e)=>{
+  Audio2.unlock();
+  if (gameState !== 'playing') { swipeFrom = null; return; }
+  const t = e.changedTouches[0];
+  swipeFrom = { x: t.clientX, y: t.clientY };
+}, { passive: true });
+
+stage.addEventListener('touchmove', (e)=>{
+  // 手指在画布上划动时阻止页面跟着滚 —— 否则一边玩一边整页上下弹，没法玩。
+  if (swipeFrom) e.preventDefault();
+}, { passive: false });
+
+stage.addEventListener('touchend', (e)=>{
+  if (!swipeFrom) return;
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeFrom.x, dy = t.clientY - swipeFrom.y;
+  swipeFrom = null;
+  if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return;  // 是点击，不是滑动
+  requestDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left')
+                                         : (dy > 0 ? 'down'  : 'up'));
+}, { passive: true });
+document.getElementById('pauseBtn').addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
+document.getElementById('muteBtn').addEventListener('click', ()=>{
+  Audio2.unlock();
+  Audio2.setMuted(!Audio2.isMuted());
+  document.getElementById('muteBtn').textContent = Audio2.isMuted() ? '🔇' : '🔊';
+});
+
+function togglePause(){
+  if (gameState==='playing'){ gameState='paused'; document.getElementById('pauseOverlay').classList.remove('hidden'); }
+  else if (gameState==='paused'){ gameState='playing'; document.getElementById('pauseOverlay').classList.add('hidden'); }
+}
+
+document.getElementById('startBtn').addEventListener('click', ()=>{
+  Audio2.unlock();
+  document.getElementById('startOverlay').classList.add('hidden');
+  gameState='playing';
+});
+document.getElementById('resumeBtn').addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
+document.getElementById('restartBtn').addEventListener('click', ()=>{
+  Audio2.unlock();
+  stopFireworks();
+  document.getElementById('overOverlay').classList.add('hidden');
+  fullNewGame();
+  gameState='playing';
+});
+
+/* ---------- update loop ---------- */
+function update(dt){
+  elapsed += dt;
+  if (invuln>0) invuln -= dt;
+  if (player.phase>0) player.phase -= dt;
+  if (comboTimer>0){ comboTimer -= dt; if (comboTimer<=0){ combo=1; updateHud(); } }
+
+  // one global fright countdown for every ghost — see the power mode block
+  if (frightTimer>0){
+    frightTimer -= dt;
+    if (frightTimer<=0) endPowerMode();
+  }
+  // portal cooldowns tick in simulation time so they freeze correctly on pause
+  if (player.warpCd>0) player.warpCd -= dt;
+  ghosts.forEach(g=>{ if (g.warpCd>0) g.warpCd -= dt; });
+  rescueFromWall();
+
+  // a 180 needs no junction, and a perpendicular turn may start just short of
+  // one — both are resolved before the step so they land on this frame
+  // Snapshot the heading BEFORE any turn handling. applyCornerAssist rewrites
+  // player.dir itself, so capturing after it would make a corner-assisted turn
+  // look like "no turn happened" and let the momentum survive it — which is
+  // most turns, since corner assist is the usual path.
+  const beforeDir = { x: player.dir.x, y: player.dir.y };
+
+  applyInstantReversal(player);
+  applyCornerAssist(player);
+
+  const beforeX = player.x, beforeY = player.y;
+  applySpeedModifiers(); // momentum changes every frame, so re-derive speed here
+  stepEntity(player, dt, choosePlayerDir, (ent)=>{
+    eatPelletAt(Math.round(ent.x), Math.round(ent.y));
+    checkPortal(ent);
+  });
+  // advance the odometer, ignoring portal jumps so a warp doesn't instantly
+  // age out a turn the player just pressed
+  const moved = Math.abs(player.x - beforeX) + Math.abs(player.y - beforeY);
+  if (moved < 1.5) player.distTravelled += moved;
+
+  // momentum: any change of heading (including being stopped by a wall) spends it
+  const turned = player.dir.x !== beforeDir.x || player.dir.y !== beforeDir.y;
+  if (turned || !(player.dir.x || player.dir.y)) player.straightTiles = 0;
+  else if (moved < 1.5) player.straightTiles += moved;
+
+  // motion trail, longer the faster we're going
+  const wind = (momentumMult() - 1) / (MOMENTUM_MAX - 1); // 0..1
+  if (wind > 0.15 && moved < 1.5){
+    player.trail.push({ x: beforeX, y: beforeY });
+    const maxLen = Math.round(2 + wind * 5);
+    while (player.trail.length > maxLen) player.trail.shift();
+  } else if (player.trail.length){
+    player.trail.shift();
+  }
+
+  ghosts.forEach((g,i)=>{
+    if (g.state==='house'){
+      g.wobble += dt*3;
+      g.y = SPAWN.ghosts[i].y + Math.sin(g.wobble)*0.18;
+      if (elapsed >= g.releaseAt) g.state='exiting';
+      return;
+    }
+    if (g.state==='fused-hidden') return;
+    g.kind='ghost';
+    stepEntity(g, dt, chooseGhostDir, checkPortal);
+  });
+
+  handleFusion();
+  handleGhostCollisions();
+  updateFruit(dt);
+  maybeSpawnFruit();
+
+  if (pelletsLeft<=0){
+    // Award before resetLevel(), which clears the per-level counters this reads.
+    const perfect = deathsThisLevel === 0;
+    if (perfect) awardBonus(`第 ${level} 关无伤`, BONUS.PERFECT_LEVEL * level);
+    const earned = levelBonuses.slice();
+
+    if (level >= MAX_LEVEL){ endGame(true); return; }
+    level++;
+    resetLevel(false);
+    lives++; // clearing a level is rewarded with an extra life
+    updateHud();
+    const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+b.points).join('　') : '';
+    toast('第 ' + level + ' / ' + MAX_LEVEL + ' 关！生命 +1' + extra);
+    Audio2.levelUp();
+  }
+}
+
+/* ---------- rendering ---------- */
+function drawMaze(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  const wallColor = cssVar('--wall');
+  ctx.save();
+  ctx.strokeStyle = wallColor;
+  ctx.lineWidth = 3;
+  ctx.shadowColor = wallColor;
+  ctx.shadowBlur = 8;
+  ctx.lineCap = 'round';
+  for (let y=0;y<ROWS;y++){
+    for (let x=0;x<COLS;x++){
+      const ch = grid[y][x];
+      if (ch !== '#') continue;
+      const cxp = x*TILE, cyp = y*TILE;
+      // draw edges only where adjacent to non-wall for a cleaner vector look
+      const n = (yy,xx)=> (xx<0||xx>=COLS||yy<0||yy>=ROWS) ? '#' : grid[yy][xx];
+      ctx.beginPath();
+      if (n(y-1,x)!=='#'){ ctx.moveTo(cxp+2,cyp+2); ctx.lineTo(cxp+TILE-2,cyp+2); }
+      if (n(y+1,x)!=='#'){ ctx.moveTo(cxp+2,cyp+TILE-2); ctx.lineTo(cxp+TILE-2,cyp+TILE-2); }
+      if (n(y,x-1)!=='#'){ ctx.moveTo(cxp+2,cyp+2); ctx.lineTo(cxp+2,cyp+TILE-2); }
+      if (n(y,x+1)!=='#'){ ctx.moveTo(cxp+TILE-2,cyp+2); ctx.lineTo(cxp+TILE-2,cyp+TILE-2); }
+      ctx.stroke();
+    }
+  }
+  ctx.restore();
+
+  // ghost house door
+  ctx.save();
+  ctx.strokeStyle = cssVar('--pink');
+  ctx.lineWidth = 2;
+  [[9,8],[9,12]].forEach(([x,y])=>{
+    ctx.beginPath();
+    ctx.moveTo(x*TILE+3, y*TILE+TILE/2);
+    ctx.lineTo(x*TILE+TILE-3, y*TILE+TILE/2);
+    ctx.stroke();
+  });
+  ctx.restore();
+
+  // pellets / portals
+  for (let y=0;y<ROWS;y++){
+    for (let x=0;x<COLS;x++){
+      const ch = grid[y][x];
+      const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
+      if (ch==='.'){
+        ctx.beginPath();
+        ctx.fillStyle = cssVar('--amber');
+        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=4;
+        ctx.arc(cxp,cyp,2.6,0,Math.PI*2); ctx.fill();
+      } else if (ch==='o'){
+        const pulse = 4.4+Math.sin(elapsed*6)*1.2;
+        ctx.beginPath();
+        ctx.fillStyle = cssVar('--amber');
+        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=12;
+        ctx.arc(cxp,cyp,pulse,0,Math.PI*2); ctx.fill();
+      } else if (ch==='1' || ch==='2'){
+        const col = ch==='1' ? cssVar('--cyan') : cssVar('--pink');
+        ctx.save();
+        ctx.translate(cxp,cyp);
+        ctx.strokeStyle = col; ctx.shadowColor=col; ctx.shadowBlur=9;
+        ctx.lineWidth=1.6;
+        ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.stroke();
+        ctx.rotate(-elapsed*2.4);
+        ctx.setLineDash([3.5,3.5]);
+        ctx.lineWidth=1.4;
+        ctx.beginPath(); ctx.arc(0,0,5.2,0,Math.PI*2); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = col;
+        ctx.beginPath(); ctx.arc(0,0,1.8,0,Math.PI*2); ctx.fill();
+        ctx.restore();
+      }
+    }
+  }
+  ctx.shadowBlur=0;
+}
+
+function drawFruit(){
+  if (!fruit.active) return;
+  const cxp = fruit.x*TILE+TILE/2, cyp = fruit.y*TILE+TILE/2 + Math.sin(elapsed*8)*2;
+  ctx.save();
+  ctx.fillStyle = '#7CFF6B';
+  ctx.shadowColor = '#7CFF6B'; ctx.shadowBlur=14;
+  ctx.beginPath(); ctx.arc(cxp,cyp,7,0,Math.PI*2); ctx.fill();
+  ctx.fillStyle='#3f8f2e';
+  ctx.fillRect(cxp-1.5,cyp-11,3,6);
+  ctx.restore();
+}
+
+function drawPlayer(){
+  const cxp = player.x*TILE+TILE/2, cyp = player.y*TILE+TILE/2;
+  const moving = player.dir.x||player.dir.y;
+
+  // Momentum has to be legible, or a silent speed change just reads as the
+  // controls being inconsistent. The trail lengthens and the glow tightens as
+  // the player winds up, so "I'm charging" is visible before it's felt.
+  const wind = (momentumMult() - 1) / (MOMENTUM_MAX - 1); // 0..1
+  if (wind > 0.15 && player.trail && player.trail.length){
+    ctx.save();
+    const col = player.phase>0 ? cssVar('--cyan') : cssVar('--amber');
+    player.trail.forEach((p, i)=>{
+      const k = (i + 1) / player.trail.length;      // oldest -> newest
+      ctx.globalAlpha = 0.05 + k * 0.22 * wind;
+      ctx.fillStyle = col;
+      ctx.beginPath();
+      ctx.arc(p.x*TILE+TILE/2, p.y*TILE+TILE/2, TILE*0.42*(0.45 + k*0.4), 0, Math.PI*2);
+      ctx.fill();
+    });
+    ctx.restore();
+  }
+
+  // The bite is driven by pellets swallowed, not by a free-running timer:
+  // triggerChomp() restarts chompT, and one chomp is a single open-and-close.
+  // Coasting through empty corridor keeps a slower idle flap so the character
+  // never looks frozen mid-stride.
+  let openness;
+  if (player.chompT !== undefined && player.chompT < 1){
+    player.chompT = Math.min(1, player.chompT + (1/60)/CHOMP_SECONDS);
+    openness = Math.sin(player.chompT * Math.PI);
+  } else {
+    if (moving) player.mouth += 0.11;
+    openness = Math.abs(Math.sin(player.mouth)) * 0.45;
+  }
+  const MOUTH_CLOSED = 0.03, MOUTH_WIDE = 0.55;
+  const mouthAngle = MOUTH_CLOSED + openness * (MOUTH_WIDE - MOUTH_CLOSED);
+  let ang = 0;
+  if (player.dir.x===1) ang=0; else if (player.dir.x===-1) ang=Math.PI;
+  else if (player.dir.y===1) ang=Math.PI/2; else if (player.dir.y===-1) ang=-Math.PI/2;
+  ctx.save();
+  ctx.translate(cxp,cyp); ctx.rotate(ang);
+  const flashing = player.phase>0 && Math.floor(elapsed*10)%2===0;
+  ctx.globalAlpha = flashing ? 0.4 : (invuln>0 ? (Math.floor(elapsed*14)%2===0?0.4:1) : 1);
+  ctx.fillStyle = player.phase>0 ? cssVar('--cyan') : cssVar('--amber');
+  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14 + wind*16; // hotter at full momentum
+  ctx.beginPath();
+  const r = TILE*0.42;
+  ctx.arc(0,0,r, mouthAngle*Math.PI, (2-mouthAngle)*Math.PI);
+  ctx.lineTo(0,0);
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+}
+
+function drawGhost(g){
+  if (g.state==='house' && g===ghosts[0]) {} // no-op, keep for clarity
+  if (g.state==='fused-hidden') return;
+  const cxp = g.x*TILE+TILE/2, cyp = g.y*TILE+TILE/2;
+  let color = cssVar(GHOST_DEFS.find(d=>d.id===g.id).color);
+  let eyesOnly=false;
+  if (g.state==='eaten'){ eyesOnly=true; }
+  if (g.state==='frightened'){
+    const ending = frightTimer<1.8 && Math.floor(elapsed*8)%2===0;
+    color = ending ? '#ffffff' : cssVar('--cyan');
+  }
+  const scale = g.isFusionHost ? 1.5 : 1;
+  ctx.save();
+  ctx.translate(cxp,cyp);
+  ctx.scale(scale,scale);
+  const r = TILE*0.42;
+  if (!eyesOnly){
+    ctx.fillStyle = color;
+    ctx.shadowColor = color; ctx.shadowBlur = g.isFusionHost?18:10;
+    ctx.beginPath();
+    ctx.arc(0,-2,r,Math.PI,0,false);
+    const waveN=4;
+    ctx.lineTo(r, r*0.6);
+    for (let i=0;i<waveN;i++){
+      const x0 = r - (2*r/waveN)*i;
+      const xm = r - (2*r/waveN)*(i+0.5);
+      const x1 = r - (2*r/waveN)*(i+1);
+      ctx.quadraticCurveTo(xm, i%2===0? r*1.05 : r*0.55, x1, r*0.6);
+    }
+    ctx.closePath();
+    ctx.fill();
+    if (g.isFusionHost){
+      ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.5;
+      ctx.beginPath(); ctx.arc(0,-2,r*0.7,0,Math.PI*2); ctx.stroke();
+    }
+  }
+  // eyes
+  const lookX = g.dir.x, lookY=g.dir.y;
+  ctx.shadowBlur=0;
+  [[-r*0.42,0],[r*0.42,0]].forEach(([ex,ey])=>{
+    ctx.fillStyle='#fff';
+    ctx.beginPath(); ctx.ellipse(ex,ey-2,4.2,5.2,0,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle = eyesOnly ? '#4444ff' : '#26205a';
+    ctx.beginPath(); ctx.arc(ex+lookX*1.8, ey-2+lookY*1.8, 2.1,0,Math.PI*2); ctx.fill();
+  });
+  ctx.restore();
+}
+
+function render(){
+  drawMaze();
+  drawFruit();
+  ghosts.forEach(drawGhost);
+  drawPlayer();
+}
+
+/* ---------- main loop ---------- */
+let lastT = performance.now();
+function loop(t){
+  const dt = Math.min(0.033, (t-lastT)/1000);
+  lastT = t;
+  if (gameState==='playing') update(dt);
+  render();
+  requestAnimationFrame(loop);
+}
+
+fullNewGame();
+renderScoreboard('startBoard');
+requestAnimationFrame(loop);
+
+
+
+})();
+</script>
