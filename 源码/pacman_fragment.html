@@ -119,11 +119,18 @@ body{
   display:flex;
   flex-direction:column;
   align-items:center;
+  /* safe center：内容装得下就居中，装不下就退回顶部对齐。
+     普通的 center 在内容超高时会把顶部推到滚动区域之外，永远划不到。 */
   justify-content:center;
+  justify-content:safe center;
   text-align:center;
   gap:14px;
   padding:20px;
   backdrop-filter:blur(1px);
+  /* 手机上开始页的内容（说明 + 奖励分 + 排行榜 + 按钮 + 署名）比棋盘还高，
+     不给滚动就会互相压住 —— 之前"还没有记录"那行正好被"开始"按钮盖掉。 */
+  overflow-y:auto;
+  overscroll-behavior:contain;
 }
 .overlay.hidden{display:none;}
 .overlay h2{
@@ -339,8 +346,17 @@ body{
 .board-top .board-score{color:var(--amber);}
 .board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
 @media (max-width:420px){
-  .dpad{grid-template-columns:repeat(3,32px);grid-template-rows:repeat(3,32px);}
+  .dpad{grid-template-columns:repeat(3,44px);grid-template-rows:repeat(3,44px);}
   .help-text{display:none;}
+  /* controls-row 是 space-between，手机上 help-text 一隐藏就只剩方向键，
+     被推到最左边。这里改成居中。 */
+  .controls-row{justify-content:center;}
+  /* 把弹层压紧，让开始页在一屏内装得下 */
+  .overlay{gap:9px;padding:14px 12px;}
+  .overlay p{font-size:12px;line-height:1.55;}
+  .bonus-hint{font-size:10px !important;line-height:1.5;}
+  .board{max-height:112px;font-size:10px;}
+  .credits{margin-top:8px;font-size:9px;}
 }
 </style>
 
