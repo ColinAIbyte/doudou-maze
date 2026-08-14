@@ -542,6 +542,13 @@ body.in-game .marquee{
 }
 
 @media (max-width:420px){
+  /* 手机上寸土寸金：body 两侧 12px + 棋盘自身 10px，一共吃掉 44px，
+     在 375 的屏幕上就是 12% 的宽度。棋盘是这个游戏唯一重要的东西，
+     这些边距该让位。 */
+  body{padding:10px 5px;}
+  .cabinet{gap:8px;}
+  .stage{padding:6px;}
+  .marquee{padding:0 0 2px;}
   /* HUD 现在只剩静音一个按钮，宽松了不少，仍略收一点 */
   .hud{padding:9px 11px;gap:8px;}
   .icon-btn{width:30px;height:30px;}
