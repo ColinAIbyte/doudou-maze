@@ -490,6 +490,20 @@ body{
 }
 .btn.btn-sm{padding:8px 16px;font-size:12px;box-shadow:0 3px 0 #c99a2e;}
 .btn.btn-sm:active{transform:translateY(2px);box-shadow:0 1px 0 #c99a2e;}
+/* 收到的挑战。放在开始页排行榜上方 —— 它是"这局要干嘛"的理由，
+   得在玩家按「开始」之前看到。 */
+.challenge{
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:.06em;
+  color:var(--text-dim);
+  background:rgba(90,224,255,.10);
+  border:1px solid rgba(90,224,255,.35);
+  border-radius:8px;
+  padding:6px 12px;
+}
+.challenge b{color:var(--cyan);}
+.challenge .ch-score{color:var(--amber);font-weight:700;margin:0 4px;}
 .over-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
 .btn-share{padding:11px 18px;font-size:13px;}
 .name-done{
@@ -672,6 +686,7 @@ body.in-game .marquee{
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
       <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
       <p class="bonus-hint">完整玩法与幽灵习性　点标题下方的 <b style="color:var(--amber)">?</b></p>
+      <div class="challenge hidden" id="challengeBox"></div>
       <div class="board" id="startBoard"></div>
       <button class="btn" id="startBtn">开始</button>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
@@ -1180,7 +1195,40 @@ const Audio2 = (()=>{
       tone(freq, t, dur, {type:'triangle', gain});
     },
     power(){ const t=now(); tone(220, t, 0.32, {type:'sawtooth', gain:0.14, slideTo:440, slideDur:0.32}); },
-    eatGhost(){ const t=now(); [660,880,1100,1320].forEach((f,i)=>tone(f, t+i*0.045, 0.09, {type:'square', gain:0.15})); },
+    /**
+     * 吃幽灵。声音随第几只越来越隆重。
+     *
+     * 原来是固定的四个上行音，和吃豆子那声"哇卡"是同一个量级 —— 可现在一只
+     * 幽灵值一万分，抵得上几百颗豆子，反馈却听不出区别，玩家不会觉得自己刚
+     * 干了件大事。声音是这里唯一能表达"分量"的手段（画面上就是幽灵消失）。
+     *
+     * n 越大：音阶越长、起点越高、底下那记闷响越重。第四只往后加一层八度，
+     * 听感上直接换一个档次。
+     */
+    eatGhost(n){
+      const t = now();
+      const k = Math.max(1, n || 1);
+      // 五声音阶，避免半音带来的紧张感 —— 这是奖励，不是警报
+      const scale = [523, 587, 659, 784, 880, 1047, 1175, 1319, 1568];
+      const notes = Math.min(4 + k, 8);        // 音符数随只数增加
+      const start = Math.min(k - 1, 4);        // 起点也往上挪
+      for (let i = 0; i < notes; i++){
+        const f = scale[Math.min(start + i, scale.length - 1)];
+        tone(f, t + i*0.038, 0.1, { type:'triangle', gain:0.15 });
+        // 第四只起叠一层高八度，厚度立刻不一样
+        if (k >= 4) tone(f*2, t + i*0.038, 0.08, { type:'sine', gain:0.07 });
+      }
+      // 底下一记闷响，越靠后越沉，给"吃到大的"一个重量
+      tone(150 - k*8, t, 0.18 + k*0.02, { type:'sine', gain:0.10 + k*0.02, slideTo:70, slideDur:0.2 });
+    },
+    /** 一次能量豆内全灭 —— 一段短促的上行号角，和单只区分开 */
+    sweep(){
+      const t = now();
+      [523, 659, 784, 1047, 1319].forEach((f,i)=>{
+        tone(f, t + i*0.07, 0.26, { type:'triangle', gain:0.16 });
+        tone(f/2, t + i*0.07, 0.26, { type:'sine', gain:0.08 });
+      });
+    },
     fusion(){ const t=now(); tone(160,t,0.5,{type:'sawtooth',gain:0.13,slideTo:60,slideDur:0.5}); tone(320,t+0.05,0.45,{type:'sawtooth',gain:0.1,slideTo:120,slideDur:0.45}); },
     warp(){ const t=now(); tone(300,t,0.22,{type:'sine',gain:0.14,slideTo:1200,slideDur:0.22}); },
     fruit(){ const t=now(); tone(700,t,0.09,{type:'triangle',gain:0.16}); tone(1050,t+0.09,0.14,{type:'triangle',gain:0.16}); },
@@ -1758,13 +1806,14 @@ function handleGhostCollisions(){
       applySpeedModifiers();
       toast((wasHost?'超级幽灵! +':'幽灵! +') + pts);
       updateHud();
-      Audio2.eatGhost();
+      Audio2.eatGhost(ghostEatChain);
 
       // Cleared the whole board inside one power pellet? A fused partner is
       // already back in play by now (unfuseNow above), so counting 'eaten'
       // states can't be fooled by a ghost hiding inside a fusion.
       if (ghosts.every(x => x.state === 'eaten')){
         sweepsThisRun++;
+        Audio2.sweep();
         toast('全灭幽灵！+' + awardBonus('全灭幽灵', BONUS.GHOST_SWEEP));
       }
     } else if (invuln<=0){
@@ -1847,7 +1896,7 @@ function loseLife(){
  */
 const fxCanvas = document.getElementById('fxCanvas');
 const fxCtx = fxCanvas.getContext('2d');
-let fxParticles = [], fxRunning = false, fxNextBurst = 0, fxUntil = 0;
+let fxParticles = [], fxRunning = false, fxNextBurst = 0, fxUntil = 0, fxBigLeft = 0;
 
 const FX_COLORS = ['#ffcf5c','#ff4d6d','#ff8fd0','#5be3ff','#ffa552','#ffffff'];
 const prefersReducedMotion = () =>
@@ -1862,16 +1911,35 @@ function fxResize(){
   return { w: r.width, h: r.height };
 }
 
-function fxBurst(w, h){
-  const cx = w * (0.18 + Math.random()*0.64);
-  const cy = h * (0.12 + Math.random()*0.45);
+/**
+ * 一朵烟花。
+ *
+ * big=true 是"大礼花"：粒子多一倍、飞得更远、还带一圈同心的内环，看上去
+ * 像真的炸开而不是撒了一把点。通关是六关全通才有的稀有事件，一辈子可能就
+ * 见几次，值得铺张 —— 之前那版太克制，像个小小的确认动画。
+ */
+function fxBurst(w, h, big){
+  const cx = w * (0.14 + Math.random()*0.72);
+  const cy = h * (0.10 + Math.random()*0.46);
   const hue = FX_COLORS[Math.floor(Math.random()*FX_COLORS.length)];
-  const n = 26 + Math.floor(Math.random()*16);
+  const n = big ? 62 + Math.floor(Math.random()*24) : 30 + Math.floor(Math.random()*18);
+  const power = big ? 1.7 : 1;
   for (let i=0;i<n;i++){
     const a = (Math.PI*2*i)/n + Math.random()*0.2;
-    const sp = 40 + Math.random()*90;
+    const sp = (46 + Math.random()*105) * power;
     fxParticles.push({ x:cx, y:cy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
-                       life:1, color:hue, size:1.5+Math.random()*1.8 });
+                       life:1, color:hue, size:(1.6+Math.random()*2.0)*(big?1.35:1) });
+  }
+  if (big){
+    // 内环用另一种颜色，炸开时有层次，而不是一团同色的雾
+    const inner = FX_COLORS[Math.floor(Math.random()*FX_COLORS.length)];
+    const m = 22;
+    for (let i=0;i<m;i++){
+      const a = (Math.PI*2*i)/m;
+      const sp = 30 + Math.random()*26;
+      fxParticles.push({ x:cx, y:cy, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp,
+                         life:1.25, color:inner, size:2.4+Math.random()*1.6 });
+    }
   }
 }
 
@@ -1884,7 +1952,8 @@ function startFireworks(){
   // 12s, up from 6s. Clearing all six levels is a rare event — level 6 was
   // unwinnable until recently, so almost nobody had ever seen this — and six
   // seconds of it was over before the player had finished reading their score.
-  fxUntil = performance.now() + 12000;
+  fxUntil = performance.now() + 18000;
+  fxBigLeft = 5;      // 开场连放五发大的，气势要一上来就有
   if (fxRunning) return;
   fxRunning = true;
 
@@ -1895,8 +1964,12 @@ function startFireworks(){
     fxCtx.clearRect(0, 0, w, h);
 
     if (now < fxUntil && now >= fxNextBurst){
-      fxBurst(w, h);
-      fxNextBurst = now + 170 + Math.random()*260;   // denser than the old 260-640
+      // 开场连放五发大的，之后三成概率再来一发；气势要一上来就有
+      const big = fxBigLeft > 0 || Math.random() < 0.3;
+      if (fxBigLeft > 0) fxBigLeft--;
+      fxBurst(w, h, big);
+      // 大礼花之间留久一点，让它炸得开；小的密集补位
+      fxNextBurst = now + (big ? 300 + Math.random()*160 : 130 + Math.random()*190);
     }
 
     for (const p of fxParticles){
@@ -2137,6 +2210,14 @@ function buildSummary(won, rank){
   }
   if (rank > 0) lines.push(`<span style="color:var(--amber)">本次排名第 ${rank} 名，留下你的名字</span>`);
   else lines.push(`<span class="bonus-hint">没能挤进前 ${BOARD_SIZE} 名，再来一局</span>`);
+  /* 收到挑战时，结算页第一件事就是回答"我超了没" —— 这是对方发链接给你的
+     全部意义，藏在一堆明细里就白发了。 */
+  if (challenge){
+    const diff = score - challenge.score;
+    lines.unshift(diff >= 0
+      ? `<span style="color:var(--cyan)">超过 ${challenge.name} ${diff} 分！</span>`
+      : `<span style="color:var(--danger)">离 ${challenge.name} 还差 ${-diff} 分</span>`);
+  }
   return lines.join('<br>');
 }
 
@@ -2350,12 +2431,54 @@ document.getElementById('helpBtn').addEventListener('click', ()=>{ Audio2.unlock
  * 优先用系统分享面板（手机上一步到位，能直接发微信）；桌面浏览器没有的话
  * 退回剪贴板；再不行就把文字选中，让用户自己复制 —— 每退一步都还能用。
  */
+/**
+ * 挑战链接：把「谁、多少分」编进 URL。
+ *
+ * 真正的跨用户排行榜需要一台服务器，那是另一个量级的事（还要考虑作弊、隐私、
+ * 运维）。但玩家真正想要的其实不是一张全球榜单，而是**跟认识的人比**——
+ * 那个不需要后端：把成绩放进链接，对方打开就看到「XXX 向你挑战 43 万分」，
+ * 打完直接告诉他有没有超过。一来一回，竞争闭环就成立了。
+ *
+ * 分数是明文的，改一改就能伪造 —— 无所谓，这是朋友之间的玩笑，不是天梯。
+ * 真要防作弊，那正是需要服务器的时候。
+ */
+function challengeURL(){
+  const s = document.getElementById('finalScore').textContent;
+  let who = '';
+  try { who = localStorage.getItem(NAME_KEY) || ''; } catch (e) {}
+  const u = new URL(location.href);
+  u.searchParams.set('c', s);
+  if (who) u.searchParams.set('n', who);
+  return u.toString();
+}
+
 function shareText(){
   const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
   const s = document.getElementById('finalScore').textContent;
-  const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！`
+  const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！敢不敢来超？`
                    : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
-  return head + '\n' + location.href;
+  return head + '\n' + challengeURL();
+}
+
+/* 收到挑战：开始页顶部显示「谁 · 多少分」，通关/结算时告诉玩家超没超过。 */
+let challenge = null;
+(function readChallenge(){
+  try {
+    const q = new URL(location.href).searchParams;
+    const sc = Number(q.get('c'));
+    if (Number.isFinite(sc) && sc > 0){
+      challenge = { score: sc, name: cleanName(q.get('n') || '') || '一位朋友' };
+    }
+  } catch (e) { /* 链接畸形就当没有挑战 */ }
+})();
+
+function renderChallengeBanner(){
+  if (!challenge) return;
+  const box = document.getElementById('challengeBox');
+  if (!box) return;
+  box.classList.remove('hidden');
+  box.innerHTML = `<b>${challenge.name}</b> 向你挑战`
+    + `<span class="ch-score">${challenge.score}</span>分`;
 }
 
 document.getElementById('shareBtn').addEventListener('click', async ()=>{
@@ -2749,6 +2872,7 @@ function loop(t){
 
 fullNewGame();
 renderScoreboard('startBoard');
+renderChallengeBanner();
 requestAnimationFrame(loop);
 
 
