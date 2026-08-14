@@ -1612,8 +1612,19 @@ function applySpeedModifiers(){
 }
 
 /** True only while the player may safely touch this ghost. */
+/**
+ * 能量豆生效期间，除了"已被吃掉、正飘回老巢的那双眼睛"，其余幽灵一律可吃。
+ *
+ * 原来这里还排除了 'house'，导致老巢里和刚出门那段时间的幽灵状态含糊。
+ * 排不排其实无所谓 —— handleGhostCollisions 本来就整个跳过 house 状态的
+ * 幽灵，玩家也走不进老巢 —— 但含糊会传染到画面上：drawGhost 曾经按
+ * state==='frightened' 上色，而判定按这个函数，两套依据必然对不齐。
+ * 于是出现"看着是红的、其实能吃"的幽灵。
+ *
+ * 现在这是唯一的依据：能不能吃、画成什么颜色，都问它。
+ */
 function isEdible(g){
-  return frightTimer > 0 && g.state !== 'eaten' && g.state !== 'house';
+  return frightTimer > 0 && g.state !== 'eaten';
 }
 
 function handleGhostCollisions(){
@@ -2455,9 +2466,14 @@ function drawGhost(g){
   const cxp = g.x*TILE+TILE/2, cyp = g.y*TILE+TILE/2;
   let color = cssVar(GHOST_DEFS.find(d=>d.id===g.id).color);
   let eyesOnly=false;
-  if (g.state==='eaten'){ eyesOnly=true; }
-  if (g.state==='frightened'){
-    const ending = frightTimer<1.8 && Math.floor(elapsed*8)%2===0;
+  if (g.state==='eaten'){
+    eyesOnly=true;                      // 只剩眼睛飘回老巢，不参与变色
+  } else if (isEdible(g)){
+    /* 颜色跟着 isEdible 走，而不是跟着 state。
+       按 state==='frightened' 上色时，刚从老巢出来（state 还是 'exiting'）
+       的幽灵明明已经可以吃了，却画成原来的颜色 —— 玩家看到一只红幽灵冲出来
+       会本能躲开，白白错过。画面必须和判定同源。 */
+    const ending = frightTimer < 1.8 && Math.floor(elapsed*8)%2===0;
     color = ending ? '#ffffff' : cssVar('--cyan');
   }
   const scale = g.isFusionHost ? 1.5 : 1;
