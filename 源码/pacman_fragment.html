@@ -215,7 +215,12 @@ body{
    文字会透上来糊成一片。说明这一层做成不透明。 */
 #helpOverlay{background:#0a0614;}
 
-/* 玩法说明面板。内容一定超过一屏，所以自己滚动，而不是把弹层撑爆。 */
+/* 玩法说明面板。内容一定超过一屏，所以自己滚动，而不是把弹层撑爆。
+   flex:1 + min-height:0 是关键：不加的话它只按内容的自然高度参与布局，
+   在 justify-content:center 的弹层里被挤成一小条（实测只剩 192px，
+   而内容有 899px，玩家要滚七八次才能看完）。加上之后它吃满标题与按钮
+   之间的全部剩余空间。min-height:0 不能省 —— flex 项默认不肯缩到内容
+   以下，少了它 overflow 根本不会生效。 */
 .help-doc{
   width:100%;
   max-width:340px;
@@ -225,7 +230,12 @@ body{
   display:flex;
   flex-direction:column;
   gap:13px;
+  flex:1;
+  min-height:0;
 }
+/* 说明这一层从顶部排起，不居中 —— 内容满屏时居中没有意义，
+   反而会让标题被推出可视区。 */
+#helpOverlay{justify-content:flex-start;}
 .help-sec h3{
   margin:0 0 5px;
   font-family:var(--font-display);
