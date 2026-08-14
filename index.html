@@ -276,10 +276,24 @@ body{
   gap:13px;
   flex:1;
   min-height:0;
+  max-height:none;
 }
-/* 说明这一层从顶部排起，不居中 —— 内容满屏时居中没有意义，
-   反而会让标题被推出可视区。 */
-#helpOverlay{justify-content:flex-start;}
+#helpOverlay .help-doc{max-width:420px;}
+/* 说明这一层铺满整个屏幕，不跟着棋盘走。
+   其余弹层盖在棋盘上是对的（它们是游戏状态的一部分），但说明是一份文档，
+   被关在棋盘那个盒子里就只剩三百来像素高 —— 实测可视区 192px 而内容 899px，
+   要滚将近五屏。棋盘的高度是由 19:21 的宽高比推出来的，跟文档该有多长毫无
+   关系，没有理由让它决定这里。
+   从顶部排起而不是居中：内容超出时居中会把标题推到可视区外面。 */
+#helpOverlay{
+  position:fixed;
+  inset:0;
+  border-radius:0;
+  justify-content:flex-start;
+  padding:calc(env(safe-area-inset-top) + 18px) 16px
+          calc(env(safe-area-inset-bottom) + 16px);
+  z-index:50;
+}
 .help-sec h3{
   margin:0 0 5px;
   font-family:var(--font-display);
