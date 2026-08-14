@@ -132,7 +132,17 @@ body{
 .icon-btn.on{color:var(--amber);border-color:var(--amber);}
 .combo-wrap{display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px;max-width:120px;}
 .combo-bar{height:6px;border-radius:4px;background:#1c1436;overflow:hidden;border:1px solid var(--panel-border);}
-.combo-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--tang),var(--danger));transition:width .12s ease;box-shadow:0 0 8px var(--tang);}
+/* 不加 transition：这是倒计时条，每帧都在缩，补间只会让它看起来比实际慢半拍，
+   而"还剩多久"正是它唯一的意义。 */
+.combo-fill{
+  height:100%;width:0%;
+  background:linear-gradient(90deg,var(--cyan),var(--tang));
+  box-shadow:0 0 8px var(--tang);
+}
+.combo-fill.urgent{
+  background:linear-gradient(90deg,var(--danger),var(--danger));
+  box-shadow:0 0 10px var(--danger);
+}
 .stage{
   /* none 而不是 manipulation：棋盘上不该有任何浏览器手势——不缩放、不双击
      放大、也不跟着手指滚。滑动转向是自己在 JS 里读 touch 事件算的，
@@ -438,6 +448,8 @@ body{
 }
 .btn.btn-sm{padding:8px 16px;font-size:12px;box-shadow:0 3px 0 #c99a2e;}
 .btn.btn-sm:active{transform:translateY(2px);box-shadow:0 1px 0 #c99a2e;}
+.over-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
+.btn-share{padding:11px 18px;font-size:13px;}
 .name-done{
   font-family:var(--font-display);
   font-size:11px;
@@ -502,6 +514,21 @@ body{
    左右键直接铺到两边（1fr），中间留给上下键。正方形按钮在手机上并不好按：
    拇指在屏幕上是横向扫的，左右转向也最频繁，所以左右键最需要的是横向命中
    宽度；上下键不必那么宽，但太薄一样容易点空，所以给它加高。 */
+/* 开打之后把标题收起来。它在开始页是招牌，进了游戏就只是占地方 ——
+   手机上那一行加副标题接近 70px，正好是棋盘最缺的。用 body 上的类切换而不是
+   直接 display:none，是为了留一段过渡，突然消失会让整个页面往上跳一下。 */
+.marquee{
+  transition:max-height .28s ease, opacity .2s ease, margin .28s ease;
+  overflow:hidden;
+  max-height:120px;
+}
+body.in-game .marquee{
+  max-height:0;
+  opacity:0;
+  margin:0;
+  padding:0;
+}
+
 @media (orientation: portrait){
   .cabinet{
     /* 左右键不再用 1fr 铺满两侧，改成有上限的定宽后整体居中。之前顶到边
@@ -692,7 +719,10 @@ body{
         <button class="btn btn-sm" id="nameSaveBtn">记录</button>
       </div>
       <div class="board" id="overBoard"></div>
-      <button class="btn" id="restartBtn">再来一局</button>
+      <div class="over-actions">
+        <button class="btn" id="restartBtn">再来一局</button>
+        <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
+      </div>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
     </div>
   </div>
@@ -972,14 +1002,20 @@ let runBonuses = [];     // everything across the run, shown on the end screen
  */
 const SCORE_MULT = 1.5;
 
+/** 吃幽灵的悬赏步长：同一颗能量豆内第 n 只 = n × 这个数。不乘 SCORE_MULT。 */
+const GHOST_BOUNTY_STEP = 10000;
+
 /**
  * Adds points at the current multiplier and returns what was actually banked.
  * Rounded because 1.5x turns odd base values into halves — a pellet eaten at an
  * odd combo would post "15" then "37.5", and a decimal point in an arcade score
  * looks like a bug even when the arithmetic is right.
  */
-function addScore(base){
-  const points = Math.round(base * SCORE_MULT);
+function addScore(base, raw){
+  // raw=true 表示这个数字就是最终分，不再乘倍率。吃幽灵的悬赏是按"整数万"
+  // 设计的（1 万、2 万、3 万…），乘完 1.5 就成了 1.5 万，招牌数字一歪就不
+  // 好记了。除此之外的一切仍然走倍率，入口还是这一个。
+  const points = raw ? Math.round(base) : Math.round(base * SCORE_MULT);
   score += points;
   return points;
 }
@@ -1468,12 +1504,37 @@ function bestDirTo(ent, target, excludeReverse){
 }
 
 /* ---------- combo / scoring ---------- */
+/** 连击窗口：吃到一颗之后有这么久去够下一颗，超时归零。 */
+const COMBO_WINDOW = 1.15;
+
 function addPelletScore(base){
   addScore(base * combo);
   combo = combo + 1; // uncapped — keep the chain alive and the multiplier keeps climbing
-  comboTimer = 1.15;
+  comboTimer = COMBO_WINDOW;
   updateHud();
 }
+/* ---------- 新手提示 ----------
+ * 「?」说明是可选的，绝大多数人不会点。真正有效的是在**正好需要的那一刻**
+ * 给一句话：开局时说怎么走，第一次死时说能量豆可以反打。
+ *
+ * 每条只出现一次，记在 localStorage 里 —— 每局都弹就成了噪音，老玩家会烦。
+ * 无痕模式下读写都会抛，包一层 try 就当没提示过，不影响游戏。
+ */
+const HINT_KEY = 'doudou.hints.v1';
+function hintSeen(id){
+  try { return (localStorage.getItem(HINT_KEY) || '').split(',').indexOf(id) >= 0; }
+  catch (e) { return false; }
+}
+function hintOnce(id, msg, delay){
+  if (hintSeen(id)) return;
+  try {
+    const seen = (localStorage.getItem(HINT_KEY) || '').split(',').filter(Boolean);
+    seen.push(id);
+    localStorage.setItem(HINT_KEY, seen.join(','));
+  } catch (e) { /* 存不下就存不下，提示照常显示一次 */ }
+  if (delay) setTimeout(()=>toast(msg), delay); else toast(msg);
+}
+
 function toast(msg){
   const el = document.getElementById('toast');
   el.textContent = msg;
@@ -1635,7 +1696,13 @@ function handleGhostCollisions(){
 
     if (isEdible(g)){
       ghostEatChain++;
-      const pts = addScore(200*Math.pow(2, Math.min(3,ghostEatChain-1)));
+      /* 悬赏：同一颗能量豆内，第 n 只值 n 万分。
+         原来是 200×2^n（封顶第 4 只），换算下来最多两千出头 —— 和一路吃豆子
+         的收益比起来，主动去追幽灵完全不划算，玩家自然选择躲。现在一只就抵
+         得上几百颗豆子，"敢不敢转身"才成为真正的决策。
+         按线性递增而不是翻倍：翻倍到第 7 只会是 64 万，一次全灭就锁死排行榜，
+         后面再玩多久都没意义。 */
+      const pts = addScore(ghostEatChain * GHOST_BOUNTY_STEP, true);
       const wasHost = g.isFusionHost;
       unfuseNow(g); // release the partner before the host leaves play
       g.state='eaten';
@@ -1707,6 +1774,8 @@ function loseLife(){
   deathsThisLevel++; deathsThisRun++;
   updateHud();
   Audio2.death();
+  // 第一次死掉的那一刻，正是最想知道"还能怎么办"的时候
+  hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
   player.warpCd=0;
@@ -2024,6 +2093,23 @@ function buildSummary(won, rank){
 
 let maxComboSeen = 1;
 
+/**
+ * 连击条显示的是**还剩多久断**，不是连击等级。
+ *
+ * 原来画的是 combo/20：玩家看着它涨，却完全不知道那 1.15 秒的窗口何时耗尽，
+ * 连击总是"突然断的"。连击是本作最大的分数来源（能连到 x100 以上），让它变得
+ * 可预期，玩家才会主动去够下一颗豆，而不是事后才发现断了。
+ *
+ * 必须每帧调用 —— updateHud 只在得分时触发，而这根条是在没得分的时候才需要
+ * 动。这也是它单独拆出来的唯一原因。
+ */
+function updateComboBar(){
+  const left = combo > 1 ? Math.max(0, comboTimer) / COMBO_WINDOW : 0;
+  const fill = document.getElementById('comboFill');
+  fill.style.width = (left * 100) + '%';
+  fill.classList.toggle('urgent', left > 0 && left < 0.35);   // 快断了变红
+}
+
 function updateHud(){
   document.getElementById('scoreVal').textContent = score;
   document.getElementById('levelVal').textContent = level + '/' + MAX_LEVEL;
@@ -2032,7 +2118,7 @@ function updateHud(){
   ).join('');
   document.getElementById('comboLabel').textContent = '连击 x' + combo;
   // combo is uncapped, so the bar tracks progress toward x20 and pins full beyond
-  document.getElementById('comboFill').style.width = Math.min(100, combo/20*100)+'%';
+  updateComboBar();
   maxComboSeen = Math.max(maxComboSeen, combo);
 }
 
@@ -2206,7 +2292,44 @@ function closeHelp(){
   helpPausedByUs = false;
 }
 document.getElementById('helpBtn').addEventListener('click', ()=>{ Audio2.unlock(); openHelp(); });
+
+/* ---------- 分享成绩 ----------
+ * 排行榜只存在各人自己的浏览器里，互相看不见 —— 做真正的跨用户榜单要有后端，
+ * 那是另一件事。但"把成绩发出去"这件事本身不需要后端：一句带分数的话就够了，
+ * 而且比一个光秃秃的链接有说服力得多。
+ *
+ * 优先用系统分享面板（手机上一步到位，能直接发微信）；桌面浏览器没有的话
+ * 退回剪贴板；再不行就把文字选中，让用户自己复制 —— 每退一步都还能用。
+ */
+function shareText(){
+  const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
+  const s = document.getElementById('finalScore').textContent;
+  const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！`
+                   : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
+  return head + '\n' + location.href;
+}
+
+document.getElementById('shareBtn').addEventListener('click', async ()=>{
+  const btn = document.getElementById('shareBtn');
+  const text = shareText();
+  const done = (msg)=>{ btn.textContent = msg; setTimeout(()=>btn.textContent='分享成绩', 1800); };
+  try {
+    if (navigator.share){ await navigator.share({ text }); return; }
+    if (navigator.clipboard){ await navigator.clipboard.writeText(text); done('已复制'); return; }
+    throw new Error('no share api');
+  } catch (e) {
+    // 用户自己取消分享也会走到这里，那种情况什么都不该提示
+    if (e && e.name === 'AbortError') return;
+    done('请手动复制');
+  }
+});
 document.getElementById('helpCloseBtn').addEventListener('click', closeHelp);
+
+/** 开打时收起标题，回到任何弹层时再露出来。 */
+function syncChrome(){
+  const playing = gameState === 'playing';
+  document.body.classList.toggle('in-game', playing);
+}
 
 function togglePause(){
   // 说明开着的时候 gameState 已经是 paused，此时按 P 会把游戏恢复成 playing
@@ -2218,6 +2341,8 @@ function togglePause(){
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
   Audio2.unlock();
+  // 稍等一下再弹，让玩家先看见棋盘，别一进来就被字盖住
+  hintOnce('move', '滑动屏幕 或 按方向键移动', 700);
   document.getElementById('startOverlay').classList.add('hidden');
   gameState='playing';
 });
@@ -2375,12 +2500,27 @@ function drawMaze(){
         ctx.arc(cxp,cyp,pulse,0,Math.PI*2); ctx.fill();
       } else if (ch==='1' || ch==='2'){
         const col = ch==='1' ? cssVar('--cyan') : cssVar('--pink');
+        /* 冷却中的传送门画暗、且不再旋转。
+           踩上去之后有 1 秒冷却，这期间再踩没反应 —— 之前门看起来一切正常，
+           玩家只会以为卡住了或者门坏了。让"暂时不能用"这件事看得见。 */
+        const cooling = player.warpCd > 0;
         ctx.save();
         ctx.translate(cxp,cyp);
-        ctx.strokeStyle = col; ctx.shadowColor=col; ctx.shadowBlur=9;
+        if (cooling) ctx.globalAlpha = 0.32;
+        ctx.strokeStyle = col; ctx.shadowColor=col; ctx.shadowBlur = cooling ? 0 : 9;
         ctx.lineWidth=1.6;
         ctx.beginPath(); ctx.arc(0,0,8,0,Math.PI*2); ctx.stroke();
-        ctx.rotate(-elapsed*2.4);
+        // 外圈画一段随冷却缩短的弧，等于一个小进度条
+        if (cooling){
+          ctx.globalAlpha = 0.75;
+          ctx.lineWidth = 2.2;
+          ctx.beginPath();
+          ctx.arc(0, 0, 10.5, -Math.PI/2,
+                  -Math.PI/2 + Math.PI*2*(player.warpCd / PORTAL_COOLDOWN_SECONDS));
+          ctx.stroke();
+          ctx.globalAlpha = 0.32;
+        }
+        ctx.rotate(cooling ? 0 : -elapsed*2.4);
         ctx.setLineDash([3.5,3.5]);
         ctx.lineWidth=1.4;
         ctx.beginPath(); ctx.arc(0,0,5.2,0,Math.PI*2); ctx.stroke();
@@ -2518,6 +2658,34 @@ function render(){
   drawFruit();
   ghosts.forEach(drawGhost);
   drawPlayer();
+  drawFrightBar();
+  updateComboBar();   // 倒计时条要每帧动，而 updateHud 只在得分时触发
+  syncChrome();
+}
+
+/**
+ * 能量豆剩余时间。
+ *
+ * 在这之前，唯一的提示是最后 1.8 秒幽灵闪白 —— 而受惊时长第一关 9 秒、第六关
+ * 只剩 5 秒，玩家根本无从判断"还够不够追那只"。悬赏改成一只一万分之后，这个
+ * 判断直接决定要不要转身，不能再靠赌。
+ *
+ * 画在棋盘顶端而不是 HUD 里：追幽灵的时候视线在棋盘上，扫一眼 HUD 的代价
+ * 恰恰是最紧张的那半秒。
+ */
+function drawFrightBar(){
+  if (frightTimer <= 0) return;
+  const total = frightSeconds();
+  const left = Math.max(0, Math.min(1, frightTimer / total));
+  const h = 5, pad = TILE * 0.6;
+  const w = (COLS*TILE - pad*2) * left;
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  // 最后 1.5 秒转红，和幽灵开始闪白同步，两个信号互相印证
+  ctx.fillStyle = frightTimer < 1.5 ? cssVar('--danger') : cssVar('--cyan');
+  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8;
+  ctx.fillRect(pad, 3, w, h);
+  ctx.restore();
 }
 
 /* ---------- main loop ---------- */
