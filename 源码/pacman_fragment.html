@@ -193,13 +193,21 @@ body{
   text-align:center;
   gap:14px;
   padding:20px;
-  backdrop-filter:blur(1px);
+  /* 原来这里有 backdrop-filter:blur(1px)，去掉了。两个原因：
+     1px 的模糊本来就看不出来，却会让这一层变成**层叠上下文**，把子元素死死
+     锁在里面——礼花画布（z-index:60）于是要么整个被弹层压住，要么整个盖在
+     文字上，没有中间态。去掉之后层次才排得开：
+        暗底（弹层自身，z-index:auto）→ 礼花（60）→ 文字和按钮（70）
+     顺带还省一块手机上并不便宜的 GPU 合成。 */
   /* 手机上开始页的内容（说明 + 奖励分 + 排行榜 + 按钮 + 署名）比棋盘还高，
      不给滚动就会互相压住 —— 之前"还没有记录"那行正好被"开始"按钮盖掉。 */
   overflow-y:auto;
   overscroll-behavior:contain;
 }
 .overlay.hidden{display:none;}
+/* 弹层里的内容排在礼花（z-index:60）之上：礼花在文字后面炸，字始终是清楚的。
+   炸开那一下最亮，正好会糊住"本次排名第 N 名"这种最该看清的一行。 */
+.overlay > *{position:relative;z-index:70;}
 .overlay h2{
   font-family:var(--font-display);
   letter-spacing:.1em;
@@ -268,7 +276,9 @@ body{
   justify-content:flex-start;
   padding:calc(env(safe-area-inset-top) + 18px) 16px
           calc(env(safe-area-inset-bottom) + 16px);
-  z-index:50;
+  /* 要压在礼花（60）之上。HUD 上的「?」在结算页也是能点的，而通关礼花要放
+     18 秒——这中间点开说明，礼花就会炸在说明文字上。说明必须是最顶层。 */
+  z-index:80;
 }
 .help-sec h3{
   margin:0 0 5px;
@@ -393,6 +403,13 @@ body{
   border-radius:8px;
   pointer-events:none;
   display:none;
+  /* 礼花必须盖在结算弹层**上面**。这块画布原本排在 overOverlay 前面、两者又都
+     没有 z-index，于是弹层压在它上头，而弹层底色是 rgba(6,3,16,.86)——等于给
+     礼花蒙了一层 86% 不透明的黑布，放了跟没放一样。
+     上面已经有 pointer-events:none，盖上去也不会挡住「再来一局」。
+     说明弹层另外提到了 z-index:80，压在礼花之上——结算页上「?」还能点，
+     礼花又要放 18 秒，不让它盖住说明文字。 */
+  z-index:60;
 }
 .fx.on{display:block;}
 
@@ -674,7 +691,7 @@ body.in-game .marquee{
           <dl class="kv">
             <dt>豆子</dt><dd><b>15</b> 分 × 连击</dd>
             <dt>能量豆</dt><dd><b>75</b> 分 × 连击</dd>
-            <dt>幽灵</dt><dd><b>300 → 600 → 1200 → 2400</b><br><span class="dim">同一次能量豆内连吃，越吃越多</span></dd>
+            <dt>幽灵</dt><dd><b>1万 → 2万 → 3万 → 4万…</b><br><span class="dim">同一次能量豆内第几只就是几万，上不封顶；这一项不乘连击</span></dd>
             <dt>神秘水果</dt><dd><b>450</b> 分 × 连击，另送 10 秒穿墙</dd>
           </dl>
         </div>
@@ -700,7 +717,7 @@ body.in-game .marquee{
           <dl class="kv">
             <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
               <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
-            <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，一口吃掉分数翻倍</dd>
+            <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
             <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 1 秒</dd>
             <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
           </dl>
@@ -1760,7 +1777,7 @@ function handleGhostCollisions(){
       unfuseNow(g); // release the partner before the host leaves play
       g.state='eaten';
       applySpeedModifiers();
-      toast((wasHost?'超级幽灵! +':'幽灵! +') + pts);
+      toast((wasHost?'超级幽灵! +':'幽灵! +') + fmtNum(pts));
       updateHud();
       Audio2.eatGhost(ghostEatChain);
 
@@ -1770,7 +1787,7 @@ function handleGhostCollisions(){
       if (ghosts.every(x => x.state === 'eaten')){
         sweepsThisRun++;
         Audio2.sweep();
-        toast('全灭幽灵！+' + awardBonus('全灭幽灵', BONUS.GHOST_SWEEP));
+        toast('全灭幽灵！+' + fmtNum(awardBonus('全灭幽灵', BONUS.GHOST_SWEEP)));
       }
     } else if (invuln<=0){
       loseLife();
@@ -2076,9 +2093,25 @@ function renderScoreboard(elId, highlightId){
       `<div class="board-row${i===0?' board-top':''}${r.id===highlightId?' board-mine':''}">` +
         `<span class="board-rank">${i+1}</span>` +
         `<span class="board-name">${r.name || DEFAULT_NAME}</span>` +
-        `<span class="board-score">${r.score}</span>` +
+        `<span class="board-score">${fmtNum(r.score)}</span>` +
         `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
       '</div>').join('');
+
+  /* 榜单最多只露五行左右（再高就把按钮挤出屏幕了），可名次是第几名不由我们说了算。
+     结算页写着"本次排名第 5 名"，而那一行正好在可视区外边——最该看到的一行看不见，
+     这是整个结算页最要紧的一眼。所以渲染完把自己那行滚到中间。
+     不用 scrollIntoView()：它会顺带滚祖先和整个页面，而这个页面是锁死不滚的。
+
+     只在真浏览器里做：微信那两个版本的 el 是垫片造的假节点，没有 querySelector
+     也没有 getBoundingClientRect，它们的榜单是各自用 canvas / WXML 画的。
+     这里少一个判断，endGame 就会抛异常——而 endGame 抛异常的表现，正是玩家
+     那次报的"死一条命后直接黑屏"。 */
+  if (typeof el.querySelector !== 'function') return;
+  const mine = el.querySelector('.board-mine');
+  if (mine && typeof mine.getBoundingClientRect === 'function'){
+    const r = mine.getBoundingClientRect(), c = el.getBoundingClientRect();
+    el.scrollTop += (r.top - c.top) - (c.height - r.height) / 2;
+  }
 }
 
 function endGame(won){
@@ -2101,7 +2134,8 @@ function endGame(won){
 
   if (won) Audio2.victory(); else Audio2.gameOver();
   document.getElementById('overTitle').textContent = won ? ('通关！全 ' + MAX_LEVEL + ' 关') : '游戏结束';
-  document.getElementById('finalScore').textContent = score;
+  lastFinalScore = score;
+  document.getElementById('finalScore').textContent = fmtNum(score);
   document.getElementById('overSub').innerHTML = buildSummary(won, rank);
   document.getElementById('overOverlay').classList.remove('hidden');
 
@@ -2161,8 +2195,8 @@ function buildSummary(won, rank){
   if (sweepsThisRun) lines.push(`全灭幽灵 ${sweepsThisRun} 次`);
   if (runBonuses.length){
     const total = runBonuses.reduce((s,b)=>s+b.points, 0);
-    const detail = runBonuses.map(b=>`${b.label} +${b.points}`).join('　');
-    lines.push(`<span style="color:var(--amber)">奖励分 +${total}</span><br>${detail}`);
+    const detail = runBonuses.map(b=>`${b.label} +${fmtNum(b.points)}`).join('　');
+    lines.push(`<span style="color:var(--amber)">奖励分 +${fmtNum(total)}</span><br>${detail}`);
   }
   if (rank > 0) lines.push(`<span style="color:var(--amber)">本次排名第 ${rank} 名，留下你的名字</span>`);
   else lines.push(`<span class="bonus-hint">没能挤进前 ${BOARD_SIZE} 名，再来一局</span>`);
@@ -2170,9 +2204,11 @@ function buildSummary(won, rank){
      全部意义，藏在一堆明细里就白发了。 */
   if (challenge){
     const diff = score - challenge.score;
-    lines.unshift(diff >= 0
-      ? `<span style="color:var(--cyan)">超过 ${challenge.name} ${diff} 分！</span>`
-      : `<span style="color:var(--danger)">离 ${challenge.name} 还差 ${-diff} 分</span>`);
+    // 平局单独说一句：写成"超过 0 分"读着像出了 bug
+    const line = diff > 0 ? `<span style="color:var(--cyan)">超过${challenge.name} ${fmtNum(diff)} 分，赢了！</span>`
+               : diff === 0 ? `<span style="color:var(--amber)">和${challenge.name}打平，一分不差</span>`
+               : `<span style="color:var(--danger)">离${challenge.name}还差 ${fmtNum(-diff)} 分</span>`;
+    lines.unshift(line);
   }
   return lines.join('<br>');
 }
@@ -2196,8 +2232,20 @@ function updateComboBar(){
   fill.classList.toggle('urgent', left > 0 && left < 0.35);   // 快断了变红
 }
 
+/* 幽灵悬赏把分数推到了六七位数，"1283000" 这种一长串瞟一眼是读不出来的。
+   自己加千分位，不用 toLocaleString('en-US')：那个要靠 Intl，微信小游戏在
+   iOS 上跑的是 JavaScriptCore，精简构建里 Intl 可能没有、或者直接忽略 locale
+   参数。手写的话四个端（网页 / 小游戏 / 小程序 / iOS）出来的字符一模一样。
+   注意：小程序的榜单读的是存档原始数字，那边 pages/game/game.js 里另有一份
+   同规则的 fmtNum，改这里记得一并改。 */
+function fmtNum(n){
+  const v = Math.round(Number(n) || 0);
+  const sign = v < 0 ? '-' : '';
+  return sign + String(Math.abs(v)).replace(/\B(?=(\d{3})+$)/g, ',');
+}
+
 function updateHud(){
-  document.getElementById('scoreVal').textContent = score;
+  document.getElementById('scoreVal').textContent = fmtNum(score);
   document.getElementById('levelVal').textContent = level + '/' + MAX_LEVEL;
   document.getElementById('livesVal').innerHTML = Array.from({length:Math.max(lives,0)}).map(()=>
     '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 3 A7 7 0 1 1 3 12 L10 17 L17 12 A7 7 0 0 1 10 3 Z" fill="'+cssVar('--amber')+'"/></svg>'
@@ -2398,8 +2446,12 @@ document.getElementById('helpBtn').addEventListener('click', ()=>{ Audio2.unlock
  * 分数是明文的，改一改就能伪造 —— 无所谓，这是朋友之间的玩笑，不是天梯。
  * 真要防作弊，那正是需要服务器的时候。
  */
+/* 挑战分走 lastFinalScore 这个数字，不去读结算页上的文本：那串文本带千分位，
+   Number("431,070") 是 NaN，链接会静悄悄地失效。 */
+let lastFinalScore = 0;
+
 function challengeURL(){
-  const s = document.getElementById('finalScore').textContent;
+  const s = lastFinalScore;
   let who = '';
   try { who = localStorage.getItem(NAME_KEY) || ''; } catch (e) {}
   const u = new URL(location.href);
@@ -2410,7 +2462,7 @@ function challengeURL(){
 
 function shareText(){
   const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
-  const s = document.getElementById('finalScore').textContent;
+  const s = fmtNum(lastFinalScore);
   const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！敢不敢来超？`
                    : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
   return head + '\n' + challengeURL();
@@ -2434,7 +2486,7 @@ function renderChallengeBanner(){
   if (!box) return;
   box.classList.remove('hidden');
   box.innerHTML = `<b>${challenge.name}</b> 向你挑战`
-    + `<span class="ch-score">${challenge.score}</span>分`;
+    + `<span class="ch-score">${fmtNum(challenge.score)}</span>分`;
 }
 
 document.getElementById('shareBtn').addEventListener('click', async ()=>{
@@ -2565,7 +2617,7 @@ function update(dt){
     resetLevel(false);
     lives++; // clearing a level is rewarded with an extra life
     updateHud();
-    const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+b.points).join('　') : '';
+    const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+fmtNum(b.points)).join('　') : '';
     toast('第 ' + level + ' / ' + MAX_LEVEL + ' 关！生命 +1' + extra);
     Audio2.levelUp();
   }

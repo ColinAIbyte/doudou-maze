@@ -8,6 +8,7 @@
 // and the test build can never drift from it because it is regenerated from it.
 import { fileURLToPath } from 'node:url';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { wrap } from './web_shell.mjs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
 const game  = readFileSync(here('../pacman_fragment.html'), 'utf8');
@@ -29,7 +30,11 @@ const cut = idx + marker.length;
 // but appending it here keeps the test build a single self-contained file.
 const bot = readFileSync(here('autoplay.js'), 'utf8');
 
-const out = game.slice(0, cut) + '\n\n/* ==== 测试专用，由 make_testbuild.mjs 注入 ==== */\n'
+const injected = game.slice(0, cut) + '\n\n/* ==== 测试专用，由 make_testbuild.mjs 注入 ==== */\n'
           + hooks + '\n' + bot + game.slice(cut);
+
+// 必须跟正式版包同一层外壳。少了 <meta viewport>，测试版在手机宽度下会按
+// 980px 桌面宽排版——拿它去核对排版，量到的每个坐标都是错的。
+const out = wrap(injected, '（测试版）');
 writeFileSync(here('测试版.html'), out);
 console.log(`已生成 工具/测试版.html（${(out.length/1024).toFixed(0)} KB），发布文件未改动。`);
