@@ -242,6 +242,31 @@ body{
   max-width:none;
 }
 .help-sec b{color:var(--text);font-weight:600;}
+/* 「词条 | 说明」两列。玩家是来查东西的，不是来读文章的 ——
+   词条右对齐成一条竖线，眼睛顺着往下扫就能找到要看的那条。 */
+.kv{
+  margin:0;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:12px;
+  row-gap:7px;
+  align-items:baseline;
+}
+.kv dt{
+  text-align:right;
+  white-space:nowrap;
+  color:var(--text);
+  font-weight:600;
+  font-size:12px;
+}
+.kv dd{
+  margin:0;
+  font-size:12px;
+  line-height:1.6;
+  color:var(--text-dim);
+}
+.kv dd b{color:var(--amber);font-weight:700;}
+.kv .dim{color:var(--text-dim);opacity:.7;font-size:11px;}
 .ghost-list{margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:6px;}
 .ghost-list li{
   display:flex;align-items:center;gap:8px;
@@ -567,11 +592,33 @@ body{
          收进这里，想看再点。 -->
     <div class="overlay hidden" id="helpOverlay">
       <h2>玩法说明</h2>
+      <!-- 内容与 微信小游戏版/js/ui.js 里那份 HELP 保持一致。两处是分开写的
+           （一边 HTML、一边 canvas 逐行画），改一处务必改另一处 —— 说明对不上
+           比没有说明更糟，玩家会照着做然后发现不是那么回事。 -->
       <div class="help-doc">
         <div class="help-sec">
           <h3>操作</h3>
-          <p>电脑：方向键 或 WASD 移动，<b>P</b> 暂停<br>
-             手机：手指在迷宫上<b>滑动</b>转向，也可以点下方的方向键</p>
+          <dl class="kv">
+            <dt>电脑</dt><dd>方向键 或 WASD 移动，<b>P</b> 暂停</dd>
+            <dt>手机</dt><dd>手指在迷宫上<b>滑动</b>转向，也可以点下方的方向键</dd>
+          </dl>
+        </div>
+        <div class="help-sec">
+          <h3>吃什么 · 多少分</h3>
+          <dl class="kv">
+            <dt>豆子</dt><dd><b>15</b> 分 × 连击</dd>
+            <dt>能量豆</dt><dd><b>75</b> 分 × 连击</dd>
+            <dt>幽灵</dt><dd><b>300 → 600 → 1200 → 2400</b><br><span class="dim">同一次能量豆内连吃，越吃越多</span></dd>
+            <dt>神秘水果</dt><dd><b>450</b> 分 × 连击，另送 10 秒穿墙</dd>
+          </dl>
+        </div>
+        <div class="help-sec">
+          <h3>连击</h3>
+          <dl class="kv">
+            <dt>怎么涨</dt><dd>每吃一颗涨一级，<b>上不封顶</b></dd>
+            <dt>怎么断</dt><dd>停下或超过约 1 秒没吃到就归零</dd>
+            <dt>值多少</dt><dd>所有吃到的东西都乘这个倍率</dd>
+          </dl>
         </div>
         <div class="help-sec">
           <h3>四种幽灵</h3>
@@ -584,16 +631,28 @@ body{
         </div>
         <div class="help-sec">
           <h3>机关</h3>
-          <p><b>能量豆</b>（大颗）　吃掉后幽灵变蓝可反杀，自己还会加速。<br>
-             <b>幽灵融合</b>　两只受惊幽灵相撞会合成「超级幽灵」，一口吃掉分数翻倍。<br>
-             <b>传送门</b>　地图四角成对出现，<b>颜色相同即相连</b>，踩上去瞬移到对面。<br>
-             <b>神秘水果</b>　赐予 10 秒穿墙能力。<br>
-             <b>冲刺</b>　一直走直线会越跑越快，一转弯就归零。</p>
+          <dl class="kv">
+            <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
+              <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
+            <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，一口吃掉分数翻倍</dd>
+            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 1 秒</dd>
+            <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
+          </dl>
         </div>
         <div class="help-sec">
-          <h3>计分</h3>
-          <p>连吃不断会叠加倍率，上不封顶，停一下就断。<br>
-             奖励分：整关无伤 · 一次能量豆内全灭幽灵 · 通关剩余生命 · 全程无伤。</p>
+          <h3>奖励分</h3>
+          <dl class="kv">
+            <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
+            <dt>全灭幽灵</dt><dd><b>3000</b>　一次能量豆内吃光全场</dd>
+            <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
+            <dt>全程无伤</dt><dd><b>15000</b></dd>
+          </dl>
+        </div>
+        <div class="help-sec">
+          <h3>意见反馈</h3>
+          <dl class="kv">
+            <dt>邮箱</dt><dd><b>2685897@qq.com</b><br><span class="dim">有想法欢迎来信</span></dd>
+          </dl>
         </div>
       </div>
       <button class="btn" id="helpCloseBtn">知道了</button>
