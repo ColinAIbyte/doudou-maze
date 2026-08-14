@@ -34,30 +34,40 @@ body{
   padding:24px 12px;
   overflow-x:hidden;
 }
-/* 默认（电脑横屏）：十字方向键在棋盘下方，按钮小巧。
-   行间距统一 8px，标题/HUD/棋盘之间靠各自的 margin 撑开 —— 栅格只有一个
-   row-gap，而"HUD 到棋盘"和"上键到左右键"想要的间距差得很远。 */
+/* 竖排：标题 / HUD / 棋盘 / 方向键，各占一整行。
+   方向键自己是一个独立的栅格（.pad-grid），不参与这里的列宽 —— 这两者一旦
+   耦合，方向键有多宽就决定了棋盘有多宽。 */
 .cabinet{
   width:min(560px, 100%);
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  grid-template-areas:
-    "marquee marquee  marquee"
-    "hud     hud      hud"
-    "stage   stage    stage"
-    ".       padup    padtoggle"
-    "padleft padpause padright"
-    ".       paddown  .";
-  justify-items:center;
-  gap:8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:10px;
 }
-.marquee{grid-area:marquee;}
-.hud{grid-area:hud;}
-.stage{grid-area:stage;}
 .marquee, .hud, .stage{width:100%;}
-.hud{margin-bottom:6px;}
-.stage{margin-bottom:10px;}
-.cabinet > .pad{width:36px;height:36px;}
+
+.pad-area{
+  width:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.pad-grid{
+  display:grid;
+  grid-template-columns:repeat(3,36px);
+  grid-template-rows:repeat(3,36px);
+  gap:6px;
+}
+.pad-grid .pad.up   {grid-column:2;grid-row:1;}
+.pad-grid .pad.left {grid-column:1;grid-row:2;}
+.pad-grid .pad.pause{grid-column:2;grid-row:2;}
+.pad-grid .pad.right{grid-column:3;grid-row:2;}
+.pad-grid .pad.down {grid-column:2;grid-row:3;}
+.pad-grid .pad-toggle{grid-column:3;grid-row:1;justify-self:end;align-self:center;}
+/* 藏起来的只有方向键和暂停键，开关留着 */
+.cabinet.pad-hidden .pad{display:none;}
+.cabinet.pad-hidden .pad-grid{grid-template-columns:none;grid-template-rows:none;display:flex;justify-content:center;}
+
 .marquee{
   text-align:center;
   padding:2px 0 4px;
@@ -311,10 +321,8 @@ body{
   flex-shrink:0;
   box-shadow:0 0 7px currentColor;
 }
-/* 方向键 —— 四个键和棋盘同属 .cabinet 这一个栅格，靠 grid-template-areas
-   换排布：竖屏排成十字放在棋盘下方，横屏拆成左右两列夹住棋盘。
-   同一批 DOM 元素换位置，不是两套按钮互相显隐，所以不会有重复的事件绑定，
-   也不会出现"改了一处另一处忘了改"。 */
+/* 方向键与开关的外观。位置由 .pad-grid 的行列号决定（见文件开头），
+   这里只管长相。 */
 .pad{
   background:var(--panel);
   border:1px solid var(--panel-border);
@@ -330,21 +338,14 @@ body{
   justify-content:center;
 }
 .pad:active{background:var(--wall-core);}
-.pad.up   {grid-area:padup;}
-.pad.left {grid-area:padleft;}
-.pad.right{grid-area:padright;}
-.pad.down {grid-area:paddown;}
-.pad.pause{grid-area:padpause;background:transparent;color:var(--text-dim);}
+.pad.pause{background:transparent;color:var(--text-dim);}
 .pad.pause svg{
   width:44%;height:44%;
   fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;
 }
-/* 方向键开关。它自己不是方向键，所以隐藏时留在原地——不然按一下连开关
-   一起藏了，就再也开不回来。 */
+
+/* 开关不是方向键，隐藏时留在原地 —— 否则一按连它自己都藏了，再也开不回来。 */
 .pad-toggle{
-  grid-area:padtoggle;
-  justify-self:end;
-  align-self:center;
   background:transparent;
   border:1px solid var(--panel-border);
   border-radius:9px;
@@ -362,9 +363,6 @@ body{
 }
 .pad-toggle:active{background:var(--wall-core);color:var(--text);}
 .pad-toggle.off{color:var(--panel-border);}
-
-/* 藏起来的只有四个方向键和暂停键；开关本身留着 */
-.cabinet.pad-hidden > .pad{display:none;}
 .toast{
   position:absolute;
   left:50%;top:14%;
@@ -529,24 +527,19 @@ body.in-game .marquee{
   padding:0;
 }
 
+/* ---------- 竖屏 ----------
+   左右键做宽、上下键做厚：拇指在屏幕上是横向扫的，左右转向也最频繁，所以
+   左右键最需要的是横向命中宽度；上下键不必那么宽，但太薄一样容易点空。
+   尺寸用 min(固定值, vw)：写死像素在 320 的小屏上会顶到边，只用 vw 又会在
+   大屏手机上长成一片。 */
 @media (orientation: portrait){
-  .cabinet{
-    /* 左右键不再用 1fr 铺满两侧，改成有上限的定宽后整体居中。之前顶到边
-       的版本按着确实爽，但拇指贴着屏幕边缘划容易蹭到系统手势（iOS 的侧滑
-       返回就在那条边上），而且视觉上压过了棋盘。 */
+  .pad-grid{
     grid-template-columns:min(98px,26vw) min(86px,23vw) min(98px,26vw);
-    justify-content:center;
+    grid-template-rows:min(58px,15vw) min(62px,16vw) min(58px,15vw);
     gap:9px;
   }
-  .cabinet > .pad{
-    width:100%;
-    height:min(62px,16vw);
-    font-size:21px;
-    border-radius:12px;
-  }
-  .pad.up, .pad.down{height:min(58px,15vw);}
+  .pad-grid .pad{width:100%;height:100%;font-size:21px;border-radius:12px;}
 }
-
 
 @media (max-width:420px){
   /* HUD 现在只剩静音一个按钮，宽松了不少，仍略收一点 */
@@ -727,25 +720,30 @@ body.in-game .marquee{
     </div>
   </div>
 
-  <!-- 方向键和棋盘同属 .cabinet 这一个栅格，靠 grid-area 定位排成十字。
-       暂停键占据十字正中那格 —— 那里本来就是空的，而拇指停在方向键上时
-       它是最顺手的位置。
-       方向键开关坐在上方向键右边那个角上（同样本来是空的）。它必须排除在
-       "隐藏"之外，否则一按连自己都藏了，再也开不回来。 -->
-  <button class="pad-toggle" id="padBtn" title="隐藏方向键" aria-label="显示或隐藏方向键">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/>
-    </svg>
-  </button>
-  <button class="pad up"    data-dir="up"    aria-label="上">▲</button>
-  <button class="pad left"  data-dir="left"  aria-label="左">◀</button>
-  <button class="pad pause" id="pauseBtn" title="暂停" aria-label="暂停">
-    <svg viewBox="0 0 24 24" aria-hidden="true">
-      <path d="M9 6.5v11M15 6.5v11"/>
-    </svg>
-  </button>
-  <button class="pad right" data-dir="right" aria-label="右">▶</button>
-  <button class="pad down"  data-dir="down"  aria-label="下">▼</button>
+  <!-- 方向键有自己的栅格，不和棋盘共用。
+       曾经为了做横屏布局把它们并进 .cabinet 的栅格，横屏后来撤掉了，这个耦合
+       却留着 —— 结果整个界面的宽度被方向键的列宽卡住：375 的屏幕上棋盘只有
+       277 宽，白白浪费四分之一。各管各的，棋盘才能铺满。
+       暂停键占十字正中那格（本来就空着，也是拇指最顺手的位置）；开关坐在上键
+       右边那个角，并且排除在"隐藏"之外 —— 否则一按连它自己都没了，开不回来。 -->
+  <div class="pad-area">
+    <div class="pad-grid">
+      <button class="pad up"    data-dir="up"    aria-label="上">▲</button>
+      <button class="pad left"  data-dir="left"  aria-label="左">◀</button>
+      <button class="pad pause" id="pauseBtn" title="暂停" aria-label="暂停">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6.5v11M15 6.5v11"/>
+        </svg>
+      </button>
+      <button class="pad right" data-dir="right" aria-label="右">▶</button>
+      <button class="pad down"  data-dir="down"  aria-label="下">▼</button>
+      <button class="pad-toggle" id="padBtn" title="隐藏方向键" aria-label="显示或隐藏方向键">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/>
+        </svg>
+      </button>
+    </div>
+  </div>
 </div>
 
 <script>
