@@ -487,6 +487,9 @@ body{
   font-family:var(--font-display);
   margin:2px 0;
 }
+/* 行容器在布局上"消失"，它的两个 span 直接成为网格项 —— 见 buildSummary 里
+   的说明：这层 div 是给微信版的纯文本换行用的，网页版不需要它参与布局。 */
+.sum-row{display:contents;}
 .sum-k{text-align:right;font-size:11px;color:var(--text-dim);letter-spacing:.1em;}
 .sum-v{text-align:left;font-size:12px;color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;}
 .new-best{
@@ -1825,12 +1828,23 @@ function hintSeen(id){
 }
 function hintOnce(id, msg, delay){
   if (hintSeen(id)) return;
-  try {
-    const seen = (localStorage.getItem(HINT_KEY) || '').split(',').filter(Boolean);
-    seen.push(id);
-    localStorage.setItem(HINT_KEY, seen.join(','));
-  } catch (e) { /* 存不下就存不下，提示照常显示一次 */ }
-  if (delay) setTimeout(()=>toast(msg), delay); else toast(msg);
+  /* 「用掉」必须和「真的显示了」绑在一起。
+     原来是先记进 localStorage 再 setTimeout 弹 —— 如果这段延迟里玩家死了或
+     重开了，toast 会弹在结算弹层后面（它在棋盘里，被弹层盖住），玩家什么都
+     没看到，可这条提示已经**终身用掉了**，再也不会出现。教学提示总共就那么
+     几条，白丢一条就是永久少教一件事。
+     所以：延迟到点时先确认还在游戏中，确认了才记账、才显示。 */
+  const fire = ()=>{
+    if (hintSeen(id)) return;              // 这期间可能已由别的路径显示过
+    if (gameState !== 'playing') return;   // 弹层盖着，弹了也看不见，留着下次
+    try {
+      const seen = (localStorage.getItem(HINT_KEY) || '').split(',').filter(Boolean);
+      seen.push(id);
+      localStorage.setItem(HINT_KEY, seen.join(','));
+    } catch (e) { /* 存不下就存不下，提示照常显示一次 */ }
+    toast(msg);
+  };
+  if (delay) setTimeout(fire, delay); else fire();
 }
 
 function toast(msg){
@@ -2496,8 +2510,15 @@ function buildSummary(won, rank, prevBest, isNewBest){
   ];
   if (sweepsThisRun) stats.push(['全灭幽灵', `${sweepsThisRun} 次`]);
   if (prevBest > 0)  stats.push(['最高纪录', fmtNum(prevBest)]);
+  /* 每一行**必须**自己包一个 div，不能把 span 直接摊在网格里。
+     微信那两个版本读的是 stripTags 之后的纯文本，而 stripTags 只把 <br> 和
+     </div> 换成换行，<span> 是直接删掉的 —— 摊着写出来就是
+     "到达关卡第 3 关 · 虫洞交错最高连击x1幽灵击杀0 只" 这样一长串糊在一起。
+     display:contents 让这层 div 在网页版布局上等于不存在，两列网格照常，
+     但 HTML 里它是真实存在的，纯文本那边就有换行了。
+     k 和 v 之间那个空格同理，不然纯文本里两者会贴死。 */
   lines.push('<div class="sum-grid">' +
-    stats.map(([k,v])=>`<span class="sum-k">${k}</span><span class="sum-v">${v}</span>`).join('') +
+    stats.map(([k,v])=>`<div class="sum-row"><span class="sum-k">${k}</span> <span class="sum-v">${v}</span></div>`).join('') +
     '</div>');
 
   if (runBonuses.length){
