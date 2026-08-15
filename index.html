@@ -1574,6 +1574,20 @@ function ghostTarget(g){
 
 function chooseGhostDir(g){
   if (g.state==='house'){ return null; }
+
+  /* 人在老巢里，状态却已经不是 house/eaten/exiting 了 —— 先出门，别的以后再说。
+     会走到这一步是因为状态可以在它还没走出老巢时被改掉：刚放出来（exiting）
+     的那一刻玩家吃到能量豆，startPowerMode 就把它改成了 frightened；恐惧结束
+     再变 chase。而"往门口走"这条逻辑只写在 exiting 分支里，于是这只幽灵在
+     巢里打转出不来——追不到人，也吃不着，就杵在那一小块地方。
+     这里只改**目标**不改状态：状态一改，颜色和能不能吃就跟着变，而 startPowerMode
+     下一帧又会把它改回去，两边来回打架。允许掉头（不排除反向），老巢是个
+     封闭小盒子，不许掉头反而容易顶在墙角。 */
+  if (g.state!=='eaten' && g.state!=='exiting' &&
+      tileAt(Math.round(g.x), Math.round(g.y))==='g'){
+    return bestDirTo({...g,kind:'ghost'}, HOUSE_DOOR, false);
+  }
+
   if (g.state==='exiting'){
     if (Math.round(g.x)===HOUSE_DOOR.x && Math.round(g.y)===HOUSE_DOOR.y){
       // rejoin as edible if the power pellet is still running — the global
@@ -1639,8 +1653,23 @@ function chooseGhostDir(g){
  */
 let eyeField = null;
 
-/** 眼睛回到老巢后，在里面待几秒再出来。见下面 'eaten' 分支里的说明。 */
-const GHOST_RESPAWN_DELAY = 2.2;
+/**
+ * 眼睛回到老巢后，在里面待几秒再出来（见下面 'eaten' 分支的说明）。
+ *
+ * 这是**难度的主阀门**，不是随手填的手感参数。眼睛能正常回家之后，幽灵多快
+ * 重新上场几乎决定了整局的松紧。工具/playtest.mjs 各 30 局实测：
+ *
+ *   0.0s   7%   吃完它立刻满血杀回来，等于不敢转身，能量豆废掉
+ *   1.0s  60%
+ *   1.5s  73%   ← 取这个
+ *   2.2s  84%   喘息太长，一颗能量豆又成了半场清空
+ *
+ * 定 1.5 的依据不是这条完整通关率（每过一关送一条命，越往后缓冲越厚，这个数
+ * 噪声很大，同一档反复跑能在 70~95% 之间晃），而是**分关通关率**：1.5s 下是
+ * 100/100/90/93/80/97，跟这些改动之前的老数据（第五关最难 76%，其余 92-100%）
+ * 几乎重合 —— 也就是修完 bug 之后，难度回到了玩家原本熟悉的那条曲线上。
+ */
+const GHOST_RESPAWN_DELAY = 1.5;
 
 /* 眼睛的终点是老巢**里面**，不是门外那一格。
    门外那格 (9,7) 是幽灵出门的落脚点；眼睛停在那儿的话还得再瞬移三格进屋，
@@ -2746,11 +2775,28 @@ function update(dt){
       g.wobble += dt*3;
       // homeY 是它自己走进来停下的位置；开局时没有这个值，就用出生点
       g.y = (g.homeY ?? SPAWN.ghosts[i].y) + Math.sin(g.wobble)*0.18;
-      if (elapsed >= g.releaseAt) g.state='exiting';
+      if (elapsed >= g.releaseAt){
+        /* 出巢前必须先回到格子正中。
+           上一行的上下浮动会把 y 停在 ±0.18 的任意位置，而 stepEntity 只在
+           **格子正中**才会去问下一步走哪儿（不在正中又没有方向，它直接 break）。
+           带着 10.13 这种坐标转成 'exiting'，这只幽灵就永远定在那儿不动了：
+           后面能量豆一来它变可吃、被吃掉变成眼睛，还是不动——就是玩家看到的
+           "幽灵卡在一块地方"。老巢这个状态以前是死代码，从没跑过，所以这个坑
+           一直没露出来。 */
+        g.x = Math.round(g.x); g.y = Math.round(g.y);
+        g.state='exiting';
+      }
       return;
     }
     if (g.state==='fused-hidden') return;
     g.kind='ghost';
+    /* 兜底：没有方向、又不在格子正中的幽灵是**动不了**的——stepEntity 只在正中
+       重新选方向，其余时候没方向就直接 break，于是永远僵在那里。
+       上面出巢那处已经堵掉了已知的来源，这里再兜一道：这种"幽灵定住不动"的
+       故障玩家一眼就能看见，而代价不过是每帧两个比较。 */
+    if (!g.dir.x && !g.dir.y && !(nearCenter(g.x) && nearCenter(g.y))){
+      g.x = Math.round(g.x); g.y = Math.round(g.y);
+    }
     stepEntity(g, dt, chooseGhostDir, checkPortal);
   });
 
