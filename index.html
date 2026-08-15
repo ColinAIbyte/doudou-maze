@@ -66,6 +66,19 @@ body {
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
+
+/* 「hidden」是全局的，不许各写各的。
+ *
+ * 之前每个组件自己写一条（.overlay.hidden / .name-row.hidden / .best-line.hidden），
+ * 于是 challengeBox 顶着 class="challenge hidden" 却**从来没被藏住过** ——
+ * 它有背景色、边框和内边距，开始页上一直挂着一个空的青色小胶囊，谁也没注意。
+ * 这个坑的形状是：新加一个元素、顺手写上 hidden，然后忘了配规则，而且**看起来
+ * 一点也不像 bug**，只像"这儿本来就有个东西"。
+ *
+ * 用 !important 是有意的：display:none 必须压过组件自己的 display，
+ * 而组件规则和 .hidden 特指度相同，谁在后面谁赢——那就成了书写顺序说了算。
+ * "藏起来"这件事不该取决于两条规则谁写在前面。 */
+.hidden{display:none !important;}
 body{
   min-height:100vh;
   background:
@@ -116,26 +129,79 @@ body{
   text-align:center;
   padding:2px 0 4px;
 }
+/* 标题按**霓虹灯管**来做，不是"琥珀色的字加一圈光晕"。
+   真的灯管中心是几乎发白的（玻璃管里的气体最亮处过曝），颜色是靠外面那层
+   辉光扩散出来的。所以这里字身给接近白的暖色，四层 shadow 由紧到松、由亮到
+   暗铺出去 —— 只有这样才像"亮着"，而不像"涂成黄色"。
+   四层的间距是 2/9/20/42：太密看不出层次，太疏会散成一团雾。 */
 .marquee h1{
   font-family:var(--font-display);
-  font-size:clamp(20px,5.5vw,30px);
-  letter-spacing:.14em;
+  font-size:clamp(21px,5.8vw,32px);
+  letter-spacing:.18em;
+  /* 字距一撑，视觉重心会偏左（最后一个字后面多出一份空隙），补回去 */
+  text-indent:.18em;
   margin:0;
   font-weight:700;
-  color:var(--amber);
-  text-shadow:0 0 6px var(--amber-glow), 0 0 22px rgba(255,207,92,.25);
+  color:#fff4d2;
+  text-shadow:
+    0 0 2px  #ffe9a8,
+    0 0 9px  var(--amber),
+    0 0 20px rgba(255,207,92,.70),
+    0 0 42px rgba(255,166,40,.40);
+}
+/* 灯管下面那道反光。宽度跟着标题走，两头淡出，像光打在面板上。 */
+.marquee h1::after{
+  content:'';
+  display:block;
+  width:min(220px, 62%);
+  height:1px;
+  margin:9px auto 0;
+  background:linear-gradient(90deg,
+    transparent, rgba(255,207,92,.10) 18%, rgba(255,207,92,.55) 50%,
+    rgba(255,207,92,.10) 82%, transparent);
 }
 .marquee p{
-  margin:6px 0 0;
-  font-size:12px;
-  letter-spacing:.08em;
+  margin:7px 0 0;
+  font-size:11.5px;
+  letter-spacing:.16em;
   color:var(--text-dim);
 }
-/* 「?」跟在副标题后面。用 inline-flex + vertical-align 让它跟文字基线对齐，
-   否则按钮会把这一行的行高顶起来，标题和 HUD 之间凭空多出一道缝。 */
-.tagline{display:flex;align-items:center;justify-content:center;gap:10px;}
-.tagline-btn{width:26px;height:26px;border-radius:7px;}
-.tagline-btn svg{width:15px;height:15px;}
+.tagline{display:flex;align-items:center;justify-content:center;gap:11px;}
+.tag-words{display:inline-flex;align-items:center;gap:9px;}
+/* 分隔符用真的豆子，不用「·」。这三个词说的就是这游戏在干嘛，
+   中间摆两颗会发光的豆子，一眼就知道这是个吃豆的游戏。 */
+.tag-words i{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--amber);
+  box-shadow:0 0 6px var(--amber-glow);
+  opacity:.85;
+}
+/* 「玩法」按钮。原来这里是个光秃秃的问号图标 —— 图标要靠猜，而这个位置
+   一年到头只有第一次玩的人会看，猜错的代价就是永远不知道有说明。
+   两个字不用猜。图标留着，它负责"这是个可点的东西"，字负责"点了是什么"。 */
+.help-pill{
+  display:inline-flex;align-items:center;gap:5px;
+  background:transparent;
+  border:1px solid var(--panel-border);
+  border-radius:999px;
+  padding:3px 10px 3px 8px;
+  color:var(--text-dim);
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:.1em;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .15s ease, border-color .15s ease;
+}
+.help-pill svg{
+  width:13px;height:13px;
+  fill:none;stroke:currentColor;stroke-width:2;
+  stroke-linecap:round;stroke-linejoin:round;
+}
+.help-pill svg .solid{fill:currentColor;stroke:none;}
+.help-pill:hover, .help-pill:focus-visible{color:var(--amber);border-color:var(--amber);}
+.help-pill:active{background:var(--wall-core);color:var(--text);}
 .hud{
   display:flex;
   align-items:center;
@@ -663,8 +729,10 @@ body.in-game .marquee{
   .hud{padding:9px 11px;gap:8px;}
   .icon-btn{width:30px;height:30px;}
   .icon-btn svg{width:17px;height:17px;}
-  .tagline-btn{width:25px;height:25px;}
-  .tagline-btn svg{width:14px;height:14px;}
+  .help-pill{font-size:10px;padding:3px 9px 3px 7px;gap:4px;}
+  .help-pill svg{width:12px;height:12px;}
+  .tagline{gap:9px;}
+  .tag-words{gap:8px;}
   .combo-wrap{max-width:92px;min-width:48px;}
   /* 把弹层压紧，让开始页在一屏内装得下 */
   .overlay{gap:9px;padding:14px 12px;}
@@ -683,13 +751,14 @@ body.in-game .marquee{
     <!-- 「?」跟在副标题后面。原来它和另外两个按钮全塞在 HUD 里，那一行还要
          放分数、连击、关卡、生命，挤得数值都快贴到一起了。副标题这行本来就
          空着半行。 -->
-    <p class="tagline">连吃 · 闪避 · 穿越
-      <button class="icon-btn tagline-btn" id="helpBtn" title="玩法说明" aria-label="玩法说明">
+    <p class="tagline">
+      <span class="tag-words">连吃<i></i>闪避<i></i>穿越</span>
+      <button class="help-pill" id="helpBtn" title="玩法说明" aria-label="玩法说明">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
           <path d="M9.2 9.3a2.9 2.9 0 1 1 3.6 3.4c-.6.2-.9.7-.9 1.3v.6"/>
           <circle cx="12" cy="17.6" r="1.15" class="solid"/>
-        </svg>
+        </svg>玩法
       </button>
     </p>
   </div>
