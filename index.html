@@ -1052,6 +1052,55 @@ const MAX_LEVEL = 6;
    第 6 关七只幽灵且恐惧只剩 5 秒。这样名字就是提示，不是装饰。 */
 const LEVEL_NAMES = ['初入迷宫', '猎手苏醒', '虫洞交错', '四面围猎', '极速追击', '终极迷宫'];
 function levelName(lvl){ return LEVEL_NAMES[(Math.max(1,lvl)-1) % LEVEL_NAMES.length]; }
+
+/* ---------- 开关前的关卡卡片 ----------
+ *
+ * 每关开打前定住一下，报出"第 N 关 · 名字"。为的是让六关各自留下记忆点——
+ * 玩家事后该记得"第三关那个满地传送门"，而不是"第三关比第二关难一点"。
+ *
+ * 画在**棋盘画布**上，不做成 DOM 弹层：网页 / 小游戏 / 小程序 / iOS 四个端
+ * 共用同一个 render()，画在画布上四端自动都有；做成弹层则要在小游戏的 canvas
+ * UI 和小程序的 WXML 里各接一遍（BEST 那次就是这么接的，接了三处）。
+ *
+ * 这段时间里整局是**冻住**的：loop 跳过 update，所以 elapsed 不走、幽灵不动、
+ * 恐惧和复活的计时也不走。街机的 READY! 就是这个作用——给玩家一个"看清楚
+ * 这是哪一关"的空拍，而不是一睁眼幽灵已经压到脸上。
+ */
+const LEVEL_INTRO_SECONDS = 1.8;
+let introTimer = 0;
+
+function startLevelIntro(){ introTimer = LEVEL_INTRO_SECONDS; }
+
+function drawLevelIntro(){
+  if (introTimer <= 0) return;
+  const W = COLS*TILE, H = ROWS*TILE;
+  // 进场淡入、退场淡出，中间实打实停一会儿
+  const k = introTimer / LEVEL_INTRO_SECONDS;          // 1 -> 0
+  const fade = Math.min(1, Math.min(k, 1-k) / 0.22);
+
+  ctx.save();
+  ctx.globalAlpha = 0.82 * fade;
+  ctx.fillStyle = 'rgba(6,3,16,1)';
+  ctx.fillRect(0, H/2 - TILE*2.4, W, TILE*4.8);
+  // 上下两道细光边，把这块和棋盘分开
+  ctx.globalAlpha = 0.5 * fade;
+  ctx.fillStyle = cssVar('--wall');
+  ctx.fillRect(0, H/2 - TILE*2.4, W, 1);
+  ctx.fillRect(0, H/2 + TILE*2.4 - 1, W, 1);
+
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = 0.95 * fade;
+  ctx.fillStyle = cssVar('--text-dim');
+  ctx.font = `600 ${Math.round(TILE*0.62)}px ${cssVar('--font-display') || 'monospace'}`;
+  ctx.fillText(`LEVEL ${level}`, W/2, H/2 - TILE*0.55);
+
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = cssVar('--amber');
+  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 16 * fade;
+  ctx.font = `700 ${Math.round(TILE*1.15)}px ${cssVar('--font-display') || 'monospace'}`;
+  ctx.fillText(levelName(level), W/2, H/2 + TILE*1.05);
+  ctx.restore();
+}
 const COLS = MAZE_LEVEL_1[0].length; // 19
 const ROWS = MAZE_LEVEL_1.length;    // 21
 const TILE = 26;
@@ -1371,6 +1420,7 @@ function resetLevel(fullReset){
   comboTimer = 0; combo = 1;
   frightTimer = 0; ghostEatChain = 0;
   deathsThisLevel = 0; levelBonuses = [];
+  introTimer = 0;   // 复位关卡时清掉卡片，免得它挂在上一关的画面上
   if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; runBonuses = []; maxComboSeen = 1; }
   invuln = 2.4;
   elapsed = 0;
@@ -1878,6 +1928,9 @@ function drawSwipeHint(){
   if (!swipeHint) return;
   // 弹层盖着的时候不算数，跟文字提示同一个规矩：没真的显示就不能算用掉
   if (gameState !== 'playing') return;
+  /* 关卡卡片期间也不画：那段时间 elapsed 是冻住的，手势会定格成一个不动的
+     点，看起来像卡住了。等卡片过去再从头划。 */
+  if (introTimer > 0) return;
   if (!swipeHint.until){
     swipeHint.until = elapsed + SWIPE_HINT_SECONDS;
     markHintSeen('move');
@@ -2965,6 +3018,7 @@ function togglePause(){
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
   Audio2.unlock();
+  startLevelIntro();   // 第一关也要报名字，六关才是一个完整的序列
   // 以前这里弹一行"滑动屏幕 或 按方向键移动"。换成画在主角身上的滑动手势，
   // 不认字也看得懂，而且玩家一动就消失。见 drawSwipeHint。
   startSwipeHint();
@@ -2977,6 +3031,8 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   stopFireworks();
   document.getElementById('overOverlay').classList.add('hidden');
   fullNewGame();
+  // 必须在 fullNewGame 之后：它内部会 resetLevel，而 resetLevel 会把卡片清零
+  startLevelIntro();
   gameState='playing';
 });
 
@@ -3085,8 +3141,11 @@ function update(dt){
     resetLevel(false);
     lives++; // clearing a level is rewarded with an extra life
     updateHud();
+    startLevelIntro();
+    /* 卡片报"是哪一关"，toast 报"拿到了什么"，两者不重复。
+       关名已经在卡片上大字写着了，toast 里就不再念一遍。 */
     const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+fmtNum(b.points)).join('　') : '';
-    toast('第 ' + level + ' 关 · ' + levelName(level) + '　生命 +1' + extra);
+    toast('生命 +1' + extra);
     Audio2.levelUp();
   }
 }
@@ -3309,6 +3368,7 @@ function render(){
   drawFrightBar();
   drawPhaseBar();
   drawSwipeHint();
+  drawLevelIntro();
   updateComboBar();   // 倒计时条要每帧动，而 updateHud 只在得分时触发
   syncChrome();
 }
@@ -3362,7 +3422,12 @@ let lastT = performance.now();
 function loop(t){
   const dt = Math.min(0.033, (t-lastT)/1000);
   lastT = t;
-  if (gameState==='playing') update(dt);
+  if (gameState==='playing'){
+    // 关卡卡片期间整局冻住：不跑 update，elapsed 就不走，幽灵、恐惧倒计时、
+    // 复活计时全部停在原地。玩家有个空拍看清这是哪一关。
+    if (introTimer > 0) introTimer -= dt;
+    else update(dt);
+  }
   render();
   requestAnimationFrame(loop);
 }
