@@ -1826,6 +1826,110 @@ function hintSeen(id){
   try { return (localStorage.getItem(HINT_KEY) || '').split(',').indexOf(id) >= 0; }
   catch (e) { return false; }
 }
+/* ---------- 开局的滑动手势 ----------
+ *
+ * 这一条以前是弹一行字："滑动屏幕 或 按方向键移动"。换成动画有两个理由：
+ *
+ * 一是**读字有门槛**。这游戏主要给小朋友玩，一年级的孩子读一行字要好几秒，
+ * 而这几秒里幽灵已经出来了。手势是看一眼就懂的，不认字也懂。
+ *
+ * 二是**教的东西和做的动作必须长得一样**。文字说"滑动"，玩家还要在脑子里把
+ * 这两个字翻译成手上的动作；一根手指在屏幕上划过去，中间那道翻译就省了。
+ *
+ * 画在主角身上而不是屏幕中央：手势要和"谁会动"绑定，否则玩家不知道滑的是啥。
+ * 玩家一旦真的动了就立刻消失 —— 他已经会了，再教就是打扰。这也是整套提示的
+ * 共同原则：证明会了就闭嘴。
+ */
+/* 走近能量豆时先讲一句，而不是等他死了才讲。
+ *
+ * 原来这条只挂在"第一次死掉"上——那一刻确实最想知道还能怎么办，但那已经是
+ * 失败之后了。走到跟前提醒，玩家有机会**自己试出来**："哦，原来这颗大的能
+ * 吃它们"，这比死一次再被告知强得多。
+ *
+ * 死亡那处的调用**留着不动**：万一有人一路避开所有能量豆先死了，那条还能兜住。
+ * hintOnce 本身按 id 去重，谁先到算谁的，两处并存不会讲两遍。
+ */
+const POWER_HINT_TILES = 3.2;    // 走进这个距离就算"看见了"
+
+function checkPowerPelletNearby(){
+  if (hintSeen('power')) return;
+  const px = Math.round(player.x), py = Math.round(player.y);
+  const r = Math.ceil(POWER_HINT_TILES);
+  for (let y = py-r; y <= py+r; y++){
+    for (let x = px-r; x <= px+r; x++){
+      if (tileAt(x, y) !== 'o') continue;
+      if (Math.hypot(x-player.x, y-player.y) <= POWER_HINT_TILES){
+        hintOnce('power', '大颗的能量豆：吃掉它，就能反过来吃幽灵', 0);
+        return;
+      }
+    }
+  }
+}
+
+const SWIPE_HINT_SECONDS = 3.2;
+let swipeHint = null;     // { until } —— until 为 0 表示还没开始计时
+
+function startSwipeHint(){
+  if (hintSeen('move')) return;
+  swipeHint = { until: 0 };
+}
+
+function drawSwipeHint(){
+  if (!swipeHint) return;
+  // 弹层盖着的时候不算数，跟文字提示同一个规矩：没真的显示就不能算用掉
+  if (gameState !== 'playing') return;
+  if (!swipeHint.until){
+    swipeHint.until = elapsed + SWIPE_HINT_SECONDS;
+    markHintSeen('move');
+  }
+  // 玩家一动就收起来
+  if (player.dir.x || player.dir.y){ swipeHint = null; return; }
+  const left = swipeHint.until - elapsed;
+  if (left <= 0){ swipeHint = null; return; }
+
+  const cx = player.x*TILE + TILE/2, cy = player.y*TILE + TILE/2;
+  const cycle = 1.15;                       // 一次划动的时长
+  const k = (elapsed % cycle) / cycle;      // 0..1
+  const ease = k < 0.75 ? (k/0.75) : 1;     // 后四分之一停住，让人看清终点
+  const reach = TILE * 2.6;
+  const fade = Math.min(1, left / 0.6) * (k < 0.75 ? 1 : 1 - (k-0.75)/0.25);
+
+  ctx.save();
+  ctx.globalAlpha = 0.85 * fade;
+  /* 拖影和指尖的透明度是量出来的，不是estimate的：第一版拖影最高只有 0.16、
+     指尖 0.27 格，截图里量下来主角右侧那块青色像素只占 0.3% —— 等于没画。
+     "轻"是指不要盖住棋盘、不要抢戏，不是指看不见。 */
+  for (let i = 6; i >= 1; i--){
+    const t = Math.max(0, ease - i*0.055);
+    ctx.globalAlpha = (0.08 + (6-i)*0.05) * fade;
+    ctx.fillStyle = cssVar('--cyan');
+    ctx.beginPath();
+    ctx.arc(cx + reach*t, cy, TILE*0.24, 0, Math.PI*2);
+    ctx.fill();
+  }
+  // 指尖：外圈一道淡光晕，中间实心，最里一点白 —— 三层才像"一根手指按着"
+  const fx = cx + reach*ease;
+  ctx.globalAlpha = 0.22 * fade;
+  ctx.fillStyle = cssVar('--cyan');
+  ctx.beginPath(); ctx.arc(fx, cy, TILE*0.52, 0, Math.PI*2); ctx.fill();
+  ctx.globalAlpha = 0.95 * fade;
+  ctx.shadowColor = cssVar('--cyan'); ctx.shadowBlur = 14;
+  ctx.beginPath(); ctx.arc(fx, cy, TILE*0.32, 0, Math.PI*2); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = fade;
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(fx, cy, TILE*0.15, 0, Math.PI*2); ctx.fill();
+  ctx.restore();
+}
+
+function markHintSeen(id){
+  try {
+    const seen = (localStorage.getItem(HINT_KEY) || '').split(',').filter(Boolean);
+    if (seen.indexOf(id) < 0) seen.push(id);
+    localStorage.setItem(HINT_KEY, seen.join(','));
+  } catch (e) { /* 无痕模式：记不住就每次都提示一遍，不影响玩 */ }
+}
+
 function hintOnce(id, msg, delay){
   if (hintSeen(id)) return;
   /* 「用掉」必须和「真的显示了」绑在一起。
@@ -1837,11 +1941,7 @@ function hintOnce(id, msg, delay){
   const fire = ()=>{
     if (hintSeen(id)) return;              // 这期间可能已由别的路径显示过
     if (gameState !== 'playing') return;   // 弹层盖着，弹了也看不见，留着下次
-    try {
-      const seen = (localStorage.getItem(HINT_KEY) || '').split(',').filter(Boolean);
-      seen.push(id);
-      localStorage.setItem(HINT_KEY, seen.join(','));
-    } catch (e) { /* 存不下就存不下，提示照常显示一次 */ }
+    markHintSeen(id);
     toast(msg);
   };
   if (delay) setTimeout(fire, delay); else fire();
@@ -2865,8 +2965,9 @@ function togglePause(){
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
   Audio2.unlock();
-  // 稍等一下再弹，让玩家先看见棋盘，别一进来就被字盖住
-  hintOnce('move', '滑动屏幕 或 按方向键移动', 700);
+  // 以前这里弹一行"滑动屏幕 或 按方向键移动"。换成画在主角身上的滑动手势，
+  // 不认字也看得懂，而且玩家一动就消失。见 drawSwipeHint。
+  startSwipeHint();
   document.getElementById('startOverlay').classList.add('hidden');
   gameState='playing';
 });
@@ -2884,6 +2985,7 @@ function update(dt){
   elapsed += dt;
   if (invuln>0) invuln -= dt;
   if (player.phase>0) player.phase -= dt;
+  checkPowerPelletNearby();
   if (comboTimer>0){ comboTimer -= dt; if (comboTimer<=0){ combo=1; updateHud(); } }
 
   // one global fright countdown for every ghost — see the power mode block
@@ -3206,6 +3308,7 @@ function render(){
   drawPlayer();
   drawFrightBar();
   drawPhaseBar();
+  drawSwipeHint();
   updateComboBar();   // 倒计时条要每帧动，而 updateHud 只在得分时触发
   syncChrome();
 }
