@@ -1273,6 +1273,7 @@ function resetLevel(fullReset){
     if (ch==='.' || ch==='o') pelletsLeft++;
   }
   pelletsTotal = pelletsLeft; // fixed at level load, so eating progress reads 0 -> 1
+  buildEyeField();            // 迷宫定下来了，把眼睛的回家地图重算一遍
   const playerSpeed = 5.408 + (level-1)*0.2912;
   player = {
     x: SPAWN.player.x, y: SPAWN.player.y, dir:{x:0,y:0}, want:{x:0,y:0},
@@ -1295,6 +1296,8 @@ function resetLevel(fullReset){
     state: 'exiting',
     releaseAt: 0,
     eatenFlashUntil:0, warpCd:0,
+    eatenThisFright:false,   // 这一轮能量豆里已经被吃过一次，见 isEdible
+    homeY:null,               // 走回老巢后停下的位置，见 'eaten' 分支
     fusedWith:null, isFusionHost:false,
     routeIdx:0, wobble:Math.random()*Math.PI*2,
   }));
@@ -1574,19 +1577,31 @@ function chooseGhostDir(g){
   if (g.state==='exiting'){
     if (Math.round(g.x)===HOUSE_DOOR.x && Math.round(g.y)===HOUSE_DOOR.y){
       // rejoin as edible if the power pellet is still running — the global
-      // timer is authoritative, never the ghost's own (now removed) field
-      g.state = frightTimer > 0 ? 'frightened' : 'chase';
+      // timer is authoritative, never the ghost's own (now removed) field。
+      // 但这轮已经被吃过的那只不算：它复活后是正常状态，重新有威胁（见 isEdible）
+      g.state = (frightTimer > 0 && !g.eatenThisFright) ? 'frightened' : 'chase';
       applySpeedModifiers();
     }
     const target = HOUSE_DOOR;
     return bestDirTo({...g,kind:'ghost'}, target, true);
   }
   if (g.state==='eaten'){
-    const target = HOUSE_EXIT_TILE;
-    if (Math.round(g.x)===target.x && Math.round(g.y)===target.y){
-      g.state='exiting';
+    const target = EYE_HOME;
+    // 进了老巢的格子就算到家，不必死磕正中间那一格
+    if (tileAt(Math.round(g.x), Math.round(g.y)) === 'g'){
+      /* 到家先在老巢里待一会儿再出来，不是立刻满血杀回场上。
+         这是修好眼睛回家之后唯一需要补的平衡：以前吃掉的幽灵大概率再也不回来，
+         等于一颗能量豆永久清场；现在它们真回来了，如果还是秒复活，吃完一轮
+         幽灵反而比不吃更危险——那就没人敢转身了，悬赏也就白设。
+         停这几秒换来的是"吃完有一段喘息、但知道它们正在回来"，紧张感留着，
+         压迫感不至于压死人。老巢里的幽灵不参与碰撞，这段时间是真安全。 */
+      g.state = 'house';
+      g.homeY = g.y;      // 就地待着，不弹回出生点——那又是一次瞬移
+      g.releaseAt = elapsed + GHOST_RESPAWN_DELAY;
+      return null;
     }
-    return bestDirTo({...g,kind:'ghost'}, target, true);
+    // 走回家地图；万一没建好，退回原来的贪心走法（会卡，但总比不动强）
+    return eyeDir(g) || bestDirTo({...g,kind:'ghost'}, target, true);
   }
   if (g.state==='frightened'){
     const opts = openDirs({...g,kind:'ghost'}, true);
@@ -1603,6 +1618,73 @@ function chooseGhostDir(g){
   }
   const target = ghostTarget(g);
   return bestDirTo({...g,kind:'ghost'}, target, true);
+}
+
+/* ---------- 眼睛回巢：一张最短路地图 ----------
+ *
+ * 被吃掉的幽灵只剩眼睛往老巢跑。原来它跟其他幽灵走的是同一套 bestDirTo——
+ * 挑一个"直线距离离目标最近"的方向，而且不许掉头。这两条凑一块儿是会走死的：
+ * 直线距离不认识墙，所以它会一头扎进凹进去的死角；进去之后不许掉头，就在
+ * 两格之间来回弹，永远回不了家。实测第二关有 77% 的格子会这样。
+ *
+ * 后果不是卡顿而是**难度悄悄塌了**：吃掉的幽灵再也不回来，吃一颗能量豆等于
+ * 永久清场。玩家看到的就是"两只眼睛卡在那儿不动"。
+ *
+ * 换成从老巢做一次 BFS，得到每个格子回家要走几步。眼睛每步挑邻居里步数最小的
+ * 那个，等于顺着坡往下走：一定越走越近，一定到得了家，也不可能来回弹。
+ * 迷宫是 19x21 且每关只算一次，开销可以忽略。
+ *
+ * 这里**允许掉头**——恰恰是"不许掉头"造出了死角。眼睛掉头在观感上也没问题，
+ * 它本来就是在往回走。
+ */
+let eyeField = null;
+
+/** 眼睛回到老巢后，在里面待几秒再出来。见下面 'eaten' 分支里的说明。 */
+const GHOST_RESPAWN_DELAY = 2.2;
+
+/* 眼睛的终点是老巢**里面**，不是门外那一格。
+   门外那格 (9,7) 是幽灵出门的落脚点；眼睛停在那儿的话还得再瞬移三格进屋，
+   屏幕上就是"啪"地闪一下。直接拿老巢中心当终点，它自己穿过门走进去。
+   六关的老巢格局完全一致（(9,8) 是门 D，(9,9)(9,10) 是巢 g），已逐关验过。 */
+const EYE_HOME = {x:9, y:10};
+
+function buildEyeField(){
+  const f = Array.from({length:ROWS}, () => new Array(COLS).fill(Infinity));
+  const t = EYE_HOME;
+  if (!inBounds(t.x, t.y)) { eyeField = null; return; }
+  f[t.y][t.x] = 0;
+  const q = [t];
+  for (let i = 0; i < q.length; i++){
+    const cur = q[i], d = f[cur.y][cur.x];
+    for (const key in DIRS){
+      const dd = DIRS[key];
+      let nx = cur.x + dd.x, ny = cur.y + dd.y;
+      // 跟 tileAt 一样让左右两侧接起来，否则隧道那一行算出来的距离是错的
+      if (nx < 0) nx = COLS-1; else if (nx >= COLS) nx = 0;
+      if (ny < 0 || ny >= ROWS) continue;
+      if (f[ny][nx] !== Infinity) continue;
+      if (!walkableFor(grid[ny][nx], 'ghost')) continue;
+      f[ny][nx] = d + 1;
+      q.push({x:nx, y:ny});
+    }
+  }
+  eyeField = f;
+}
+
+/** 顺着回家地图往下走一格。地图没建好或四周都到不了家时返回 null，由调用方兜底。 */
+function eyeDir(g){
+  if (!eyeField) return null;
+  const cx = Math.round(g.x), cy = Math.round(g.y);
+  let best = null, bestD = Infinity;
+  for (const key in DIRS){
+    const d = DIRS[key];
+    let nx = cx + d.x, ny = cy + d.y;
+    if (nx < 0) nx = COLS-1; else if (nx >= COLS) nx = 0;
+    if (ny < 0 || ny >= ROWS) continue;
+    const v = eyeField[ny][nx];
+    if (v < bestD){ bestD = v; best = d; }
+  }
+  return bestD === Infinity ? null : best;
 }
 
 function bestDirTo(ent, target, excludeReverse){
@@ -1744,13 +1826,18 @@ function startPowerMode(){
       if (g.state!=='frightened') g.dir = opposite(g.dir);
       g.state = 'frightened';
     }
+    // 新的一颗能量豆 = 新的一轮，"这轮已经吃过谁"一笔勾销，全场重新可吃
+    g.eatenThisFright = false;
   });
   applySpeedModifiers();
 }
 
 function endPowerMode(){
   frightTimer = 0;
-  ghosts.forEach(g=>{ if (g.state==='frightened'){ g.state='chase'; unfuseNow(g); } });
+  ghosts.forEach(g=>{
+    if (g.state==='frightened'){ g.state='chase'; unfuseNow(g); }
+    g.eatenThisFright = false;
+  });
   applySpeedModifiers();
 }
 
@@ -1798,8 +1885,20 @@ function applySpeedModifiers(){
  *
  * 现在这是唯一的依据：能不能吃、画成什么颜色，都问它。
  */
+/* 能不能吃，只认这一个函数——颜色和判定都从这儿出，绝不能各判各的。
+ *
+ * eatenThisFright：这一轮已经被吃过的幽灵，从老巢出来后就**不再可吃**了，
+ * 街机原版也是这个规则。少了它，复活的幽灵会重新变成可吃状态，同一颗能量豆
+ * 里能把一只幽灵反复吃，悬赏还是一路往上加：第一关实测一轮吃到 11 只（场上
+ * 总共才 4 只），第六关一颗豆能刷出两百多万分，排行榜直接废掉。
+ * 顺带它也让"全灭"重新有确定含义——吃满场上只数，不多不少。
+ *
+ * 复活的幽灵因此画的是本来的颜色，不是恐惧色。这跟"吃了大豆所有幽灵变一种
+ * 颜色"不冲突：没被吃过的（包括这期间刚出老巢的）照样是恐惧色，而复活那只
+ * 确实已经不能吃了，给它涂成可吃的颜色才是害人——照着颜色去撞，白丢一条命。
+ */
 function isEdible(g){
-  return frightTimer > 0 && g.state !== 'eaten';
+  return frightTimer > 0 && !g.eatenThisFright && g.state !== 'eaten';
 }
 
 function handleGhostCollisions(){
@@ -1820,15 +1919,20 @@ function handleGhostCollisions(){
       const wasHost = g.isFusionHost;
       unfuseNow(g); // release the partner before the host leaves play
       g.state='eaten';
+      g.eatenThisFright = true;   // 这轮不能再吃第二次，见 isEdible
       applySpeedModifiers();
       toast((wasHost?'超级幽灵! +':'幽灵! +') + fmtNum(pts));
       updateHud();
       Audio2.eatGhost(ghostEatChain);
 
-      // Cleared the whole board inside one power pellet? A fused partner is
-      // already back in play by now (unfuseNow above), so counting 'eaten'
-      // states can't be fooled by a ghost hiding inside a fusion.
-      if (ghosts.every(x => x.state === 'eaten')){
+      /* 一颗能量豆之内把场上幽灵全吃了？看的是**这一轮吃掉的只数**，不是
+         "现在是不是每只都还躺着"。
+         以前那种写法（ghosts.every(state==='eaten')）能成立，靠的其实是眼睛
+         回不了家这个 bug —— 吃掉的永远躺着，自然每只都是 'eaten'。眼睛能正常
+         回家之后，先吃的那只往往在你吃到最后一只之前就复活了，条件永远不成立，
+         全灭奖励会无声无息地再也拿不到。
+         数只数则不受回家快慢影响：吃满 ghosts.length 只就是全灭。 */
+      if (ghostEatChain >= ghosts.length){
         sweepsThisRun++;
         Audio2.sweep();
         toast('全灭幽灵！+' + fmtNum(awardBonus('全灭幽灵', BONUS.GHOST_SWEEP)));
@@ -1900,6 +2004,10 @@ function loseLife(){
   ghosts.forEach((g,i)=>{
     g.x=SPAWN.ghosts[i].x; g.y=SPAWN.ghosts[i].y; g.state='exiting';
     g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.releaseAt = 0;
+    // 上面 frightTimer 已经清零，这两个是配套的每局状态，一起归位：
+    // homeY 留着会让下次进巢停在上一条命的位置，eatenThisFright 留着会让
+    // 新一轮能量豆里有幽灵莫名其妙吃不了。
+    g.homeY = null; g.eatenThisFright = false;
   });
   applySpeedModifiers();
   invuln = 1.6;
@@ -2636,7 +2744,8 @@ function update(dt){
   ghosts.forEach((g,i)=>{
     if (g.state==='house'){
       g.wobble += dt*3;
-      g.y = SPAWN.ghosts[i].y + Math.sin(g.wobble)*0.18;
+      // homeY 是它自己走进来停下的位置；开局时没有这个值，就用出生点
+      g.y = (g.homeY ?? SPAWN.ghosts[i].y) + Math.sin(g.wobble)*0.18;
       if (elapsed >= g.releaseAt) g.state='exiting';
       return;
     }
