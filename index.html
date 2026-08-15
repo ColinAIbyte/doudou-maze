@@ -544,6 +544,28 @@ body{
   text-shadow:0 0 14px var(--amber-glow);
 }
 
+.best-combo{
+  font-size:10.5px;letter-spacing:.12em;color:var(--text-dim);
+  align-self:center;
+}
+
+/* 通关评级。字母做得很大很亮 —— 它是通关那一屏唯一需要一眼看到的东西，
+   分数明细可以慢慢读，这个字母是"我打得怎么样"的答案。
+   S 用金色、A 青色、B 紫色、C 灰 —— 颜色本身就是梯度，不用再解释。 */
+.grade{
+  display:flex;align-items:center;justify-content:center;gap:10px;
+  font-family:var(--font-display);
+  margin:2px 0;
+}
+.grade-k{font-size:10px;letter-spacing:.24em;color:var(--text-dim);}
+.grade-v{
+  font-size:40px;font-weight:700;line-height:1;
+}
+.grade-S .grade-v{color:var(--amber);   text-shadow:0 0 10px var(--amber-glow),0 0 30px rgba(255,207,92,.5);}
+.grade-A .grade-v{color:var(--cyan);    text-shadow:0 0 10px rgba(91,227,255,.55);}
+.grade-B .grade-v{color:var(--wall);    text-shadow:0 0 10px rgba(138,107,255,.5);}
+.grade-C .grade-v{color:var(--text-dim);}
+
 /* 结算页的战绩表：项目右对齐成一条线，数值左对齐，眼睛一扫到底。 */
 .sum-grid{
   display:grid;
@@ -1248,6 +1270,9 @@ const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 2000, LIFE_LEFT: 1500, FLAWLES
  */
 const GHOST_SPEED_BY_LEVEL = [2.35, 2.61, 2.90, 3.22, 3.40, 3.78];
 let deathsThisLevel = 0, deathsThisRun = 0, sweepsThisRun = 0, ghostsEatenThisRun = 0;
+/* 无伤通过的关数。不能拿 MAX_LEVEL - deathsThisRun 去反推——一关里可能死好几次，
+   那样算出来会偏低甚至变成负数。只能在过关那一刻按 deathsThisLevel 数。 */
+let perfectLevelsThisRun = 0;
 let levelBonuses = [];   // earned within the current level, shown on level clear
 let runBonuses = [];     // everything across the run, shown on the end screen
 
@@ -1490,7 +1515,7 @@ function resetLevel(fullReset){
   frightTimer = 0; ghostEatChain = 0;
   deathsThisLevel = 0; levelBonuses = [];
   introTimer = 0;   // 复位关卡时清掉卡片，免得它挂在上一关的画面上
-  if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; runBonuses = []; maxComboSeen = 1; }
+  if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; perfectLevelsThisRun = 0; runBonuses = []; maxComboSeen = 1; }
   invuln = 2.4;
   elapsed = 0;
 }
@@ -1918,9 +1943,29 @@ function bestDirTo(ent, target, excludeReverse){
   return best;
 }
 
-/* ---------- combo / scoring ---------- */
-/** 连击窗口：吃到一颗之后有这么久去够下一颗，超时归零。 */
-const COMBO_WINDOW = 1.15;
+/* ---------- combo / scoring ----------
+ *
+ * 连击窗口：吃到一颗之后有这么久去够下一颗，超时归零。
+ *
+ * 原来是 1.15 秒平摊倒计时，问题出在**地图后期**：豆子越来越稀，玩家为了够
+ * 剩下几颗必然要穿过已经吃空的走廊，连击断在这儿不是因为菜，是因为地图就长
+ * 那样。这种"冤枉断连"会让人觉得规则在耍赖。
+ *
+ * 但单纯把窗口调大到 1.5 秒又会把"别停下"这层紧张感一起冲掉——站着不动也能
+ * 保住连击，那连击就不再奖励什么了。
+ *
+ * 所以改成两档衰减：**在跑就慢扣，停下就快扣**。
+ *   跑动中：1.6 秒的余量，够穿过一段空走廊
+ *   停下来：3 倍速扣，约 0.53 秒就断
+ * 规则本身还是"别停、往前冲"，只是不再因为地图空了而惩罚玩家。
+ */
+const COMBO_WINDOW = 1.6;
+/** 停下不动时的额外衰减倍率。见上面的说明。 */
+const COMBO_IDLE_DECAY = 3.0;
+
+/** 剩几颗豆子开始呼吸闪烁 / 几颗开始明显跳动。见豆子的绘制。 */
+const LAST_PELLET_HINT = 10;
+const LAST_PELLET_LOUD = 5;
 
 function addPelletScore(base){
   addScore(base * combo);
@@ -2594,6 +2639,15 @@ function bestScore(){
   return list.length ? (list[0].score || 0) : 0;
 }
 
+/**
+ * 历史最高连击。同样从榜单派生——每条记录里本来就存着那一局的 combo。
+ * **只加这一个**，不做最佳时间、最佳击杀、每关纪录：并列的纪录多了会互相稀释，
+ * 小孩不需要一张 Excel。分数管"打得多好"，连击管"打得多顺"，两个够了。
+ */
+function bestCombo(){
+  return loadScores().reduce((m, r)=> Math.max(m, r.combo || 0), 0);
+}
+
 /** 开始页顶部那行 BEST。没有记录时整行不出现，免得挂一个 0 在那儿。 */
 function renderBest(){
   const el = document.getElementById('bestLine');
@@ -2601,10 +2655,12 @@ function renderBest(){
   const b = bestScore();
   if (!b){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  /* 两个 span 中间那个空格是**故意留的**：微信两个版本读的是 stripTags 之后的
+  /* 各段之间那些空格是**故意留的**：微信两个版本读的是 stripTags 之后的
      纯文本，没有空格就会连成 "BEST128,650"。网页版这边是 flex + gap 布局，
-     多一个空白文本节点没有任何影响。 */
-  el.innerHTML = `<span class="best-k">BEST</span> <span class="best-v">${fmtNum(b)}</span>`;
+     多几个空白文本节点没有任何影响。 */
+  const c = bestCombo();
+  el.innerHTML = `<span class="best-k">BEST</span> <span class="best-v">${fmtNum(b)}</span>`
+    + (c > 1 ? ` <span class="best-combo">最高连击 x${c}</span>` : '');
 }
 
 function renderScoreboard(elId, highlightId){
@@ -2719,17 +2775,56 @@ function bindNameRow(){
 }
 
 /** Score breakdown + placing, so the number on screen is explainable. */
+/**
+ * 通关评级 S / A / B / C。
+ *
+ * 为什么要有：六关打完只给一个分数，玩家不知道这算好还是不好——十万分是高
+ * 是低，第一次通关的人心里没有尺子。一个字母就是尺子。而且它天然制造二周目：
+ * 拿到 B 的小孩下一句一定是"怎么才能拿 S"。
+ *
+ * 评的是**打法**不是分数。分数已经由排行榜和 BEST 负责了，再按分数评一次
+ * 等于同一件事说两遍；而且分数受运气影响很大（水果刷不刷得出来）。这里四项
+ * 都是玩家自己控制得了的：少死、敢吃幽灵、连得住、全灭过几次。
+ *
+ * 门槛按"一个认真打完六关的人大概能做到什么"来定，不是拍脑袋：
+ * 满分 100，S 要 85 分以上——必须几乎不死 + 主动追幽灵，光苟着通关是拿不到的。
+ */
+function gradeRun(){
+  let pts = 0;
+  // 少死（40 分）：全程无伤满分，每死一次扣 8 分
+  pts += Math.max(0, 40 - deathsThisRun * 8);
+  // 敢打（25 分）：吃满 18 只幽灵给满分，约等于每关吃三只
+  pts += Math.min(25, ghostsEatenThisRun / 18 * 25);
+  // 连得住（20 分）：最高连击 30 给满分
+  pts += Math.min(20, maxComboSeen / 30 * 20);
+  // 全灭（15 分）：三次给满分
+  pts += Math.min(15, sweepsThisRun / 3 * 15);
+  /* 分档：S 85 / A 65 / B 45。
+     A 线原本定在 68，实测"死一次 + 吃 12 只 + 连击 20 + 全灭 1 次"算出来 67，
+     差一分掉到 B —— 那是一局打得挺好的游戏，卡在这种地方只会让人觉得系统
+     在刁难。评级的边界宁可松半档，也不要让明显不错的一局吃亏。 */
+  return pts >= 85 ? 'S' : pts >= 65 ? 'A' : pts >= 45 ? 'B' : 'C';
+}
+
 function buildSummary(won, rank, prevBest, isNewBest){
   const lines = [];
 
   /* 战绩排成「项目 · 数值」两列，而不是挤成一行句子。
      玩家在结算页真正想知道的是"我这局到底打得怎么样"，一行流水账要逐字读；
      排成表格能一眼扫完，也让"幽灵击杀"这种新数字有地方放。 */
+  // 通关才评级：半路死掉评个 C 只是补一刀，没有任何用处
+  if (won){
+    const gd = gradeRun();
+    lines.push(`<div class="grade grade-${gd}"><span class="grade-k">评级</span>`
+             + `<span class="grade-v">${gd}</span></div>`);
+  }
+
   const stats = [
     ['到达关卡', won ? `全 ${MAX_LEVEL} 关通关` : `第 ${level} 关 · ${levelName(level)}`],
     ['最高连击', `x${maxComboSeen}`],
     ['幽灵击杀', `${ghostsEatenThisRun} 只`],
   ];
+  if (won) stats.push(['无伤关卡', `${perfectLevelsThisRun} / ${MAX_LEVEL}`]);
   if (sweepsThisRun) stats.push(['全灭幽灵', `${sweepsThisRun} 次`]);
   if (prevBest > 0)  stats.push(['最高纪录', fmtNum(prevBest)]);
   /* 每一行**必须**自己包一个 div，不能把 span 直接摊在网格里。
@@ -3111,7 +3206,12 @@ function update(dt){
   if (invuln>0) invuln -= dt;
   if (player.phase>0) player.phase -= dt;
   checkPowerPelletNearby();
-  if (comboTimer>0){ comboTimer -= dt; if (comboTimer<=0){ combo=1; updateHud(); } }
+  if (comboTimer>0){
+    // 在跑就慢扣，停下就快扣 —— 见 COMBO_WINDOW 上面那段说明
+    const moving = !!(player.dir.x || player.dir.y);
+    comboTimer -= dt * (moving ? 1 : COMBO_IDLE_DECAY);
+    if (comboTimer<=0){ combo=1; updateHud(); }
+  }
 
   // one global fright countdown for every ghost — see the power mode block
   if (frightTimer>0){
@@ -3202,7 +3302,7 @@ function update(dt){
   if (pelletsLeft<=0){
     // Award before resetLevel(), which clears the per-level counters this reads.
     const perfect = deathsThisLevel === 0;
-    if (perfect) awardBonus(`第 ${level} 关无伤`, BONUS.PERFECT_LEVEL * level);
+    if (perfect){ perfectLevelsThisRun++; awardBonus(`第 ${level} 关无伤`, BONUS.PERFECT_LEVEL * level); }
     const earned = levelBonuses.slice();
 
     if (level >= MAX_LEVEL){ endGame(true); return; }
@@ -3264,10 +3364,22 @@ function drawMaze(){
       const ch = grid[y][x];
       const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
       if (ch==='.'){
+        /* 剩最后几颗时让豆子自己"喘气"。
+           这是吃豆类通病：前 90% 一路吃得很爽，剩最后一两颗突然变成满地图找，
+           节奏一下垮掉。目的不是降低难度 —— 豆子在哪儿本来就不是难点，
+           **找它的那段时间纯粹是无聊**，把无聊删掉而已。
+           两档：10 颗以内轻微呼吸，5 颗以内明显跳动，越少越显眼。 */
+        let r = 2.6, glow = 4;
+        if (pelletsLeft <= LAST_PELLET_HINT){
+          const urgency = pelletsLeft <= LAST_PELLET_LOUD ? 1 : 0.45;
+          const beat = (Math.sin(elapsed * (5 + urgency*3)) + 1) / 2;   // 0..1
+          r    = 2.6 + beat * (1.8 * urgency + 0.7);
+          glow = 4   + beat * (16 * urgency + 4);
+        }
         ctx.beginPath();
         ctx.fillStyle = cssVar('--amber');
-        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=4;
-        ctx.arc(cxp,cyp,2.6,0,Math.PI*2); ctx.fill();
+        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=glow;
+        ctx.arc(cxp,cyp,r,0,Math.PI*2); ctx.fill();
       } else if (ch==='o'){
         const pulse = 4.4+Math.sin(elapsed*6)*1.2;
         ctx.beginPath();
