@@ -702,16 +702,30 @@ body.in-game .marquee{
            弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
       <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
-      <p class="bonus-hint">完整玩法与幽灵习性　点标题下方的 <b style="color:var(--amber)">?</b></p>
       <div class="challenge hidden" id="challengeBox"></div>
       <div class="board" id="startBoard"></div>
-      <button class="btn" id="startBtn">开始</button>
+      <!-- 「玩法说明」跟「开始」并排，而不是让玩家去找标题旁边那个「?」。
+           原来这儿写的是"完整玩法　点标题下方的 ?"——那要求玩家先读一行字、
+           再把视线挪回标题去找一个 25px 的图标、还得猜到它是规则。三道弯，
+           实际几乎没人会走完。按钮就摆在他眼睛已经落着的地方（开始键旁边），
+           而且写着字，不是一个光秃秃的问号。
+           并排而不是上下叠：开始页在小屏上本来就快装不下了，横着排不占高度。 -->
+      <div class="over-actions">
+        <button class="btn" id="startBtn">开始</button>
+        <button class="btn ghost btn-share" id="startHelpBtn">玩法说明</button>
+      </div>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
     </div>
 
+    <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
+         跟着一起没了 —— 也就是说玩到一半想不起规则的人，全程无处可查，而这
+         正是最想查的时刻。暂停是他唯一会主动打开的界面，说明就该放在这儿。 -->
     <div class="overlay hidden" id="pauseOverlay">
       <h2>暂停</h2>
-      <button class="btn" id="resumeBtn">继续</button>
+      <div class="over-actions">
+        <button class="btn" id="resumeBtn">继续</button>
+        <button class="btn ghost btn-share" id="pauseHelpBtn">玩法说明</button>
+      </div>
     </div>
 
     <!-- 玩法说明。原来幽灵图例和操作提示是常驻在棋盘下方的，占掉整整两行，
@@ -1459,7 +1473,12 @@ function checkPortal(ent){
     if (grid[y][x]===ch && !(x===cx&&y===cy)){
       ent.x = x; ent.y = y;
       ent.warpCd = PORTAL_COOLDOWN_SECONDS;
-      if (ent===player) Audio2.warp();
+      if (ent===player){
+        Audio2.warp();
+        // 第一次用到才讲。写在说明里没人看，而这一刻他刚被传走，正想知道
+        // 发生了什么 —— 同一句话在这个时候的效果，比放在文档里高得多。
+        hintOnce('portal', '传送门：四角成对，颜色相同的两个互通', 500);
+      }
       return;
     }
   }
@@ -2606,7 +2625,13 @@ function closeHelp(){
   if (helpPausedByUs && gameState === 'paused') gameState = 'playing';
   helpPausedByUs = false;
 }
-document.getElementById('helpBtn').addEventListener('click', ()=>{ Audio2.unlock(); openHelp(); });
+/* 三个入口都通到同一处说明：标题旁的「?」、开始页的按钮、暂停页的按钮。
+   从暂停页点进来时 gameState 已经是 paused，openHelp 里的 helpPausedByUs
+   会是 false，所以关掉说明不会把游戏偷偷恢复 —— 玩家还停在暂停页上。 */
+['helpBtn', 'startHelpBtn', 'pauseHelpBtn'].forEach(id=>{
+  const b = document.getElementById(id);
+  if (b) b.addEventListener('click', ()=>{ Audio2.unlock(); openHelp(); });
+});
 
 /* ---------- 分享成绩 ----------
  * 排行榜只存在各人自己的浏览器里，互相看不见 —— 做真正的跨用户榜单要有后端，
@@ -2762,6 +2787,10 @@ function update(dt){
 
   // motion trail, longer the faster we're going
   const wind = (momentumMult() - 1) / (MOMENTUM_MAX - 1); // 0..1
+  /* 冲刺是全场最隐形的一条规则：速度确实在涨，但玩家只看到自己身后多了道尾巴，
+     没人会把它和"直着走别拐弯"联系起来。等他第一次真的冲到满速，再告诉他这是
+     怎么来的 —— 那时候屏幕上正好有他自己造出来的证据。 */
+  if (wind >= 0.999) hintOnce('dash', '冲刺：直线连走不拐弯会越跑越快', 0);
   if (wind > 0.15 && moved < 1.5){
     player.trail.push({ x: beforeX, y: beforeY });
     const maxLen = Math.round(2 + wind * 5);
