@@ -1755,6 +1755,11 @@ function addPelletScore(base){
   addScore(base * combo);
   combo = combo + 1; // uncapped — keep the chain alive and the multiplier keeps climbing
   comboTimer = COMBO_WINDOW;
+  /* 连击是这游戏最核心的计分机制，可界面上只有一根没标注的条 —— 玩家看得见
+     它在动，不知道它值钱。等第一次真的连起来（x5）再说，比开局塞一行字有用：
+     这时候他刚做出这个行为，一句话就能把"我刚才干了什么"和"为什么加分多"
+     对上号。 */
+  if (combo === 5) hintOnce('combo', '连击 x5！不停嘴，所有得分都乘这个倍率', 0);
   updateHud();
 }
 /* ---------- 新手提示 ----------
@@ -1970,6 +1975,10 @@ function handleGhostCollisions(){
       g.eatenThisFright = true;   // 这轮不能再吃第二次，见 isEdible
       applySpeedModifiers();
       toast((wasHost?'超级幽灵! +':'幽灵! +') + fmtNum(pts));
+      /* 悬赏是阶梯式的，可玩家第一次只看到"+10,000"这一个数，没法知道它会往上
+         涨 —— 而"要不要冒险再追一只"正是这套设计想让他做的决定。晚 1.4 秒发，
+         让上面那条加分先显示完，别把两条消息挤成一条。 */
+      hintOnce('bounty', '同一颗能量豆里：第 2 只 2 万，第 3 只 3 万，越吃越值钱', 1400);
       updateHud();
       Audio2.eatGhost(ghostEatChain);
 
