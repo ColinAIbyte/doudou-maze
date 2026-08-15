@@ -463,6 +463,38 @@ body{
   letter-spacing:.03em;
 }
 
+/* 开始页的最高分。字号刻意压过标题以外的一切 —— 它是这一屏的主角。 */
+.best-line{
+  display:flex;align-items:baseline;justify-content:center;gap:9px;
+  font-family:var(--font-display);
+}
+.best-line.hidden{display:none;}
+.best-k{
+  font-size:10px;letter-spacing:.24em;color:var(--text-dim);
+}
+.best-v{
+  font-size:26px;font-weight:700;color:var(--amber);
+  font-variant-numeric:tabular-nums;
+  text-shadow:0 0 14px var(--amber-glow);
+}
+
+/* 结算页的战绩表：项目右对齐成一条线，数值左对齐，眼睛一扫到底。 */
+.sum-grid{
+  display:grid;
+  grid-template-columns:auto auto;
+  column-gap:14px;row-gap:5px;
+  justify-content:center;
+  font-family:var(--font-display);
+  margin:2px 0;
+}
+.sum-k{text-align:right;font-size:11px;color:var(--text-dim);letter-spacing:.1em;}
+.sum-v{text-align:left;font-size:12px;color:var(--text);font-weight:700;font-variant-numeric:tabular-nums;}
+.new-best{
+  color:var(--amber);font-weight:700;
+  font-family:var(--font-display);letter-spacing:.04em;
+  text-shadow:0 0 12px var(--amber-glow);
+}
+
 /* 署名。刻意压得很轻：它出现在开始页和结算页，两处都是玩家真正想看的东西
    （排行榜、本局得分）旁边，抢眼了就成了干扰。 */
 .credits{
@@ -701,6 +733,10 @@ body.in-game .marquee{
       <!-- 开始页只留一句。原来这里是六行说明，加上榜单和署名之后总高超出
            弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
+      <!-- 最高分放在最上面、字最大。这游戏的计分系统很深（连击、悬赏阶梯、
+           四种奖励分），但玩家如果没有一个"要超过的数"，这套东西有一半是白
+           设计的。BEST 就是那个数，它得在按「开始」之前就看见。 -->
+      <div class="best-line hidden" id="bestLine"></div>
       <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
       <div class="challenge hidden" id="challengeBox"></div>
       <div class="board" id="startBoard"></div>
@@ -1006,6 +1042,13 @@ const MAZE_TEMPLATES = [
 ];
 /** Total levels in a run; clearing this many ends the game in victory. */
 const MAX_LEVEL = 6;
+
+/* 每关一个短名字。
+   六关本来只有"比上一关难一点"的区别，玩家记不住任何一关。名字挑的是**这一关
+   真正新增的那件事**，不是形容词：第 2 关多一只追击者、第 3 关满图传送门、
+   第 6 关七只幽灵且恐惧只剩 5 秒。这样名字就是提示，不是装饰。 */
+const LEVEL_NAMES = ['初入迷宫', '猎手苏醒', '虫洞交错', '四面围猎', '极速追击', '终极迷宫'];
+function levelName(lvl){ return LEVEL_NAMES[(Math.max(1,lvl)-1) % LEVEL_NAMES.length]; }
 const COLS = MAZE_LEVEL_1[0].length; // 19
 const ROWS = MAZE_LEVEL_1.length;    // 21
 const TILE = 26;
@@ -1083,7 +1126,7 @@ const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 2000, LIFE_LEFT: 1500, FLAWLES
  * catches a fleeing player in an open corridor and the run stops being winnable.
  */
 const GHOST_SPEED_BY_LEVEL = [2.35, 2.61, 2.90, 3.22, 3.40, 3.78];
-let deathsThisLevel = 0, deathsThisRun = 0, sweepsThisRun = 0;
+let deathsThisLevel = 0, deathsThisRun = 0, sweepsThisRun = 0, ghostsEatenThisRun = 0;
 let levelBonuses = [];   // earned within the current level, shown on level clear
 let runBonuses = [];     // everything across the run, shown on the end screen
 
@@ -1267,6 +1310,12 @@ const Audio2 = (()=>{
     levelUp(){ const t=now(); [440,554,660,880].forEach((f,i)=>tone(f, t+i*0.09, 0.14, {type:'square', gain:0.14})); },
     gameOver(){ const t=now(); [392,349,294,220,164].forEach((f,i)=>tone(f, t+i*0.16, 0.2, {type:'sawtooth', gain:0.15})); },
     victory(){ const t=now(); [523,659,784,1047,784,1047,1319].forEach((f,i)=>tone(f, t+i*0.13, 0.22, {type:'triangle', gain:0.15})); },
+    /* 破纪录的声音要和"游戏结束"截然相反：后者是下行的丧气音阶，前者一路往上。
+       死了但破了纪录是个矛盾的时刻，声音必须替玩家定性——这是好事。 */
+    newBest(){ const t=now(); [659,784,988,1319].forEach((f,i)=>{
+      tone(f, t+i*0.11, 0.26, {type:'triangle', gain:0.17});
+      tone(f/2, t+i*0.11, 0.26, {type:'sine', gain:0.08});
+    }); },
   };
 })();
 
@@ -1319,7 +1368,7 @@ function resetLevel(fullReset){
   comboTimer = 0; combo = 1;
   frightTimer = 0; ghostEatChain = 0;
   deathsThisLevel = 0; levelBonuses = [];
-  if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; runBonuses = []; maxComboSeen = 1; }
+  if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; runBonuses = []; maxComboSeen = 1; }
   invuln = 2.4;
   elapsed = 0;
 }
@@ -1973,6 +2022,7 @@ function handleGhostCollisions(){
       unfuseNow(g); // release the partner before the host leaves play
       g.state='eaten';
       g.eatenThisFright = true;   // 这轮不能再吃第二次，见 isEdible
+      ghostsEatenThisRun++;       // 结算页要报这一局吃了几只
       applySpeedModifiers();
       toast((wasHost?'超级幽灵! +':'幽灵! +') + fmtNum(pts));
       /* 悬赏是阶梯式的，可玩家第一次只看到"+10,000"这一个数，没法知道它会往上
@@ -2125,7 +2175,8 @@ function fxBurst(w, h, big){
   }
 }
 
-function startFireworks(){
+/** @param ms 放多久。通关是大事（默认 18 秒），破纪录小庆祝一下就够（6 秒）。 */
+function startFireworks(ms){
   if (prefersReducedMotion()) return;
   fxCanvas.classList.add('on');
   const { w, h } = fxResize();
@@ -2134,8 +2185,9 @@ function startFireworks(){
   // 12s, up from 6s. Clearing all six levels is a rare event — level 6 was
   // unwinnable until recently, so almost nobody had ever seen this — and six
   // seconds of it was over before the player had finished reading their score.
-  fxUntil = performance.now() + 18000;
-  fxBigLeft = 5;      // 开场连放五发大的，气势要一上来就有
+  const dur = ms || 18000;
+  fxUntil = performance.now() + dur;
+  fxBigLeft = dur >= 12000 ? 5 : 2;   // 开场连放几发大的，气势要一上来就有
   if (fxRunning) return;
   fxRunning = true;
 
@@ -2291,6 +2343,34 @@ function renameScore(id, name){
   return saveScores(list);
 }
 
+/**
+ * 个人最高分。**从榜单第一名派生，不另存一份。**
+ *
+ * 单独存一个 bestScore 看着更省事，但那就有了两个真相：玩家清掉榜单、
+ * 或者以后改了迁移/裁剪逻辑，两个数就会对不上——而"最高分"这种数字一旦
+ * 和榜单打架，玩家立刻会觉得这游戏在乱记分。榜单本来就是排好序的，
+ * 第一名就是最高分。
+ *
+ * 返回 0 表示还没有任何记录（第一次玩），调用方据此决定要不要显示。
+ */
+function bestScore(){
+  const list = loadScores();
+  return list.length ? (list[0].score || 0) : 0;
+}
+
+/** 开始页顶部那行 BEST。没有记录时整行不出现，免得挂一个 0 在那儿。 */
+function renderBest(){
+  const el = document.getElementById('bestLine');
+  if (!el) return;
+  const b = bestScore();
+  if (!b){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  /* 两个 span 中间那个空格是**故意留的**：微信两个版本读的是 stripTags 之后的
+     纯文本，没有空格就会连成 "BEST128,650"。网页版这边是 flex + gap 布局，
+     多一个空白文本节点没有任何影响。 */
+  el.innerHTML = `<span class="best-k">BEST</span> <span class="best-v">${fmtNum(b)}</span>`;
+}
+
 function renderScoreboard(elId, highlightId){
   const el = document.getElementById(elId);
   if (!el) return;
@@ -2334,6 +2414,11 @@ function endGame(won){
     if (deathsThisRun === 0) awardBonus('全程无伤通关', BONUS.FLAWLESS_RUN);
   }
 
+  /* 旧纪录必须在把本局写进榜单**之前**读，否则读到的就是本局自己，
+     "破纪录了没有"永远是 false，"差多少分"永远是 0。 */
+  const prevBest = bestScore();
+  const isNewBest = score > prevBest;
+
   // The row is filed FIRST, under the remembered name, so the board is already
   // correct if the player never touches the input. Typing a name renames that
   // same row in place rather than filing a second one.
@@ -2341,12 +2426,14 @@ function endGame(won){
   const { rank, id } = recordScore({ score, level, combo: maxComboSeen, won, name: remembered });
   lastRunId = id;
 
-  if (won) Audio2.victory(); else Audio2.gameOver();
+  if (won) Audio2.victory(); else if (isNewBest) Audio2.newBest(); else Audio2.gameOver();
   document.getElementById('overTitle').textContent = won ? ('通关！全 ' + MAX_LEVEL + ' 关') : '游戏结束';
   lastFinalScore = score;
   document.getElementById('finalScore').textContent = fmtNum(score);
-  document.getElementById('overSub').innerHTML = buildSummary(won, rank);
+  document.getElementById('overSub').innerHTML = buildSummary(won, rank, prevBest, isNewBest);
   document.getElementById('overOverlay').classList.remove('hidden');
+  // 破纪录也放礼花：这是除了通关之外，唯一值得停下来庆祝一下的时刻
+  if (isNewBest && !won && prevBest > 0) startFireworks(6000);
 
   const nameRow = document.getElementById('nameRow');
   const nameInput = document.getElementById('nameInput');
@@ -2396,19 +2483,40 @@ function bindNameRow(){
 }
 
 /** Score breakdown + placing, so the number on screen is explainable. */
-function buildSummary(won, rank){
+function buildSummary(won, rank, prevBest, isNewBest){
   const lines = [];
-  lines.push(won
-    ? `全部 ${MAX_LEVEL} 关通关　最高连击 x${maxComboSeen}`
-    : `坚持到第 ${level} / ${MAX_LEVEL} 关　最高连击 x${maxComboSeen}`);
-  if (sweepsThisRun) lines.push(`全灭幽灵 ${sweepsThisRun} 次`);
+
+  /* 战绩排成「项目 · 数值」两列，而不是挤成一行句子。
+     玩家在结算页真正想知道的是"我这局到底打得怎么样"，一行流水账要逐字读；
+     排成表格能一眼扫完，也让"幽灵击杀"这种新数字有地方放。 */
+  const stats = [
+    ['到达关卡', won ? `全 ${MAX_LEVEL} 关通关` : `第 ${level} 关 · ${levelName(level)}`],
+    ['最高连击', `x${maxComboSeen}`],
+    ['幽灵击杀', `${ghostsEatenThisRun} 只`],
+  ];
+  if (sweepsThisRun) stats.push(['全灭幽灵', `${sweepsThisRun} 次`]);
+  if (prevBest > 0)  stats.push(['最高纪录', fmtNum(prevBest)]);
+  lines.push('<div class="sum-grid">' +
+    stats.map(([k,v])=>`<span class="sum-k">${k}</span><span class="sum-v">${v}</span>`).join('') +
+    '</div>');
+
   if (runBonuses.length){
     const total = runBonuses.reduce((s,b)=>s+b.points, 0);
     const detail = runBonuses.map(b=>`${b.label} +${fmtNum(b.points)}`).join('　');
     lines.push(`<span style="color:var(--amber)">奖励分 +${fmtNum(total)}</span><br>${detail}`);
   }
-  if (rank > 0) lines.push(`<span style="color:var(--amber)">本次排名第 ${rank} 名，留下你的名字</span>`);
-  else lines.push(`<span class="bonus-hint">没能挤进前 ${BOARD_SIZE} 名，再来一局</span>`);
+  /* 结算页最后必须留下一个**再来一局的理由**。
+     "没能进前 8 名，再来一局"是句空话——它没告诉玩家差多少、也没给目标。
+     换成跟自己纪录的距离：破了就大声说，没破就报差额。差额是个具体的、
+     看得见够得着的数，比名次更能让人手指头再点一次「再来一局」。 */
+  if (isNewBest && prevBest > 0){
+    lines.push(`<span class="new-best">🎉 新纪录！比上次高 ${fmtNum(score - prevBest)} 分</span>`);
+  } else if (isNewBest){
+    lines.push(`<span class="new-best">🎉 第一条纪录，就是它了</span>`);
+  } else {
+    lines.push(`<span style="color:var(--amber)">差 ${fmtNum(prevBest - score)} 分打破自己的纪录</span>`);
+  }
+  if (rank > 0) lines.push(`<span class="bonus-hint">本次排名第 ${rank} 名，留下你的名字</span>`);
   /* 收到挑战时，结算页第一件事就是回答"我超了没" —— 这是对方发链接给你的
      全部意义，藏在一堆明细里就白发了。 */
   if (challenge){
@@ -2855,7 +2963,7 @@ function update(dt){
     lives++; // clearing a level is rewarded with an extra life
     updateHud();
     const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+fmtNum(b.points)).join('　') : '';
-    toast('第 ' + level + ' / ' + MAX_LEVEL + ' 关！生命 +1' + extra);
+    toast('第 ' + level + ' 关 · ' + levelName(level) + '　生命 +1' + extra);
     Audio2.levelUp();
   }
 }
@@ -3076,6 +3184,7 @@ function render(){
   ghosts.forEach(drawGhost);
   drawPlayer();
   drawFrightBar();
+  drawPhaseBar();
   updateComboBar();   // 倒计时条要每帧动，而 updateHud 只在得分时触发
   syncChrome();
 }
@@ -3105,6 +3214,25 @@ function drawFrightBar(){
   ctx.restore();
 }
 
+/* 穿墙的倒计时。
+   能量豆有条，穿墙却什么都没有——而穿墙恰恰是最需要计时的一个：它彻底改写了
+   "墙不能过"这条规则，玩家会一头扎进墙里绕远路，效果一到期人就卡死在墙中间
+   （靠 rescueFromWall 救出来，但那一下很懵）。给它一条自己的条，画在恐惧条
+   下面一点，颜色用主角穿墙时的青色，两者同时生效也不会混。 */
+function drawPhaseBar(){
+  if (player.phase <= 0) return;
+  const left = Math.max(0, Math.min(1, player.phase / FRUIT_PHASE_SECONDS));
+  const h = 4, pad = TILE * 0.6;
+  const w = (COLS*TILE - pad*2) * left;
+  const y = frightTimer > 0 ? 11 : 3;   // 两条都在时不要叠在一起
+  ctx.save();
+  ctx.globalAlpha = 0.9;
+  ctx.fillStyle = player.phase < 2 ? cssVar('--danger') : cssVar('--mega');
+  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 8;
+  ctx.fillRect(pad, y, w, h);
+  ctx.restore();
+}
+
 /* ---------- main loop ---------- */
 let lastT = performance.now();
 function loop(t){
@@ -3117,6 +3245,7 @@ function loop(t){
 
 fullNewGame();
 renderScoreboard('startBoard');
+renderBest();
 renderChallengeBanner();
 requestAnimationFrame(loop);
 
