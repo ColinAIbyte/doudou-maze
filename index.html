@@ -95,7 +95,10 @@ body{
    方向键自己是一个独立的栅格（.pad-grid），不参与这里的列宽 —— 这两者一旦
    耦合，方向键有多宽就决定了棋盘有多宽。 */
 .cabinet{
-  width:min(560px, 100%);
+  /* 上限从 560 放宽到 720：桌面上把方向键去掉之后，棋盘该把腾出来的空间用上。
+     真正决定大小的是下面 #mazeCanvas 的 max-width —— 它按**可用高度**算，
+     所以窗口再宽也不会长到超出一屏。 */
+  width:min(720px, 100%);
   display:flex;
   flex-direction:column;
   align-items:center;
@@ -281,6 +284,14 @@ body{
   height:auto;
   border-radius:8px;
   background:var(--void-deep);
+  /* 棋盘是 19:21 的竖长方形，光给宽度它就会往下长，长过一屏就得滚页面 ——
+     而这是个不该滚动的游戏。所以再按**可用高度**压一道：
+     用 dvh 而不是 vh，手机浏览器地址栏收放时 vh 不会变，会算多出一截。
+     245px = 标题 91 + HUD 56 + stage 内边距 20 + body 内边距 48 + 栅格间距 20，
+     再留 10px 余量。这是量出来的，不是估的 —— 第一版拍脑袋写 220，结果棋盘
+     比可用空间高出 17px，被 body 的 overflow:hidden 悄悄裁掉了上下各一点。 */
+  max-width: calc((100dvh - 245px) * 19 / 21);
+  margin:0 auto;
 }
 .scanlines{
   position:absolute;inset:10px;
@@ -777,6 +788,22 @@ body.in-game .marquee{
   .pad-grid .pad{width:100%;height:100%;font-size:21px;border-radius:12px;}
 }
 
+/* ---------- 桌面：去掉方向键 ----------
+   有键盘的设备上方向键是纯浪费：既没人点，又占掉近 200px 的高度，而那正是
+   棋盘最缺的。用 pointer:fine 判断（主指针是鼠标/触控板），触屏设备不受影响 ——
+   手机上滑动虽然是主操作，方向键仍是很多人习惯的备选，不该一起砍掉。
+
+   暂停键原本嵌在方向键正中，跟着一起藏起来就没了，所以桌面版在 HUD 里另放
+   一个。反过来在手机上藏掉 HUD 那个，免得同时出现两个暂停。 */
+/* 默认藏起来，媒体查询里再打开。顺序不能反 —— 两条特指度一样，
+   后写的赢；把 display:none 放在媒体查询后面的话，桌面上那条永远不生效，
+   暂停键就彻底消失了。（.hidden 那次踩的是同一个坑。） */
+#hudPauseBtn{display:none;}
+@media (hover: hover) and (pointer: fine){
+  .pad-area{display:none;}
+  #hudPauseBtn{display:flex;}
+}
+
 @media (max-width:420px){
   /* 手机上寸土寸金：body 两侧 12px + 棋盘自身 10px，一共吃掉 44px，
      在 375 的屏幕上就是 12% 的宽度。棋盘是这个游戏唯一重要的东西，
@@ -844,6 +871,13 @@ body.in-game .marquee{
          这一行还要放分数、连击、关卡、生命，再塞三个按钮就满了。
          图标用内联 SVG 而不是 emoji：🔊 在不同手机上字形差别很大，安卓上偏细
          偏灰，和旁边的线条图标凑不到一起，尺寸也不受控。 -->
+    <!-- 桌面专用的暂停键。方向键在桌面被隐藏了，而暂停原本就嵌在方向键正中，
+         不在这儿补一个，桌面玩家就只剩 P 键 —— 而没人知道有 P 键。 -->
+    <button class="icon-btn" id="hudPauseBtn" title="暂停" aria-label="暂停">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M9 6.5v11M15 6.5v11"/>
+      </svg>
+    </button>
     <button class="icon-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" class="solid"/>
@@ -3428,6 +3462,11 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
     document.getElementById('overOverlay').classList.add('hidden');
     startPractice(practiceOfferLevel);
   });
+})();
+
+(function(){
+  const hp = document.getElementById('hudPauseBtn');
+  if (hp) hp.addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
 })();
 
 document.getElementById('helpCloseBtn').addEventListener('click', closeHelp);
