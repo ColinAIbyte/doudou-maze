@@ -1002,7 +1002,7 @@ body.in-game .marquee{
             <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
               <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
             <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
-            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>1 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次</span></dd>
+            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>2 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次</span></dd>
             <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
           </dl>
         </div>
@@ -1820,9 +1820,10 @@ function rescueFromWall(){
 }
 
 /* ---------- portal warp ---------- */
-// A full second after landing before the exit portal can fire again, so the
-// player has time to read the new surroundings and pick a direction instead of
-// being bounced straight back.
+// 落地之后这么久，同色的门才会再次生效 —— 玩家有时间看清新环境、选个方向，
+// 而不是被立刻弹回去。
+// 1.0 秒起步，玩家试用后改成 2.0：一秒钟在被追的时候太短，人刚落地还没看清
+// 局面就又能穿了，结果反而在两个角之间来回横跳，越跳越乱。
 //
 // 冷却是**按颜色分开算**的：走了红门，蓝门照样能立刻用。
 //
@@ -1833,7 +1834,7 @@ function rescueFromWall(){
 //
 // 分开之后还多出一条真正的路线：红门跳过去、紧接着踩蓝门再跳一次。
 // 被幽灵堵在角上时，这是一条能救命的连跳 —— 本来就该允许。
-const PORTAL_COOLDOWN_SECONDS = 1.0;
+const PORTAL_COOLDOWN_SECONDS = 2.0;
 
 /**
  * 落地之后重新安顿好朝向、待转向和冲刺蓄力。
