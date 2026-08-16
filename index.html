@@ -341,6 +341,12 @@ body{
   cursor:pointer;
   box-shadow:0 4px 0 #c99a2e, 0 8px 16px rgba(255,207,92,.25);
   transition:transform .08s ease;
+  /* 手机上不加这句，点下去到真的响应之间会有约 300ms 的空档 —— 浏览器要先
+     等一会儿，确认你不是想双击放大。方向键、图标按钮、「玩法」胶囊早就各自
+     写了这一句，所以它们点着跟手；偏偏最主要的这几个按钮（开始 / 知道了 /
+     再来一局 / 继续 / 分享）漏了，于是最常点的地方反而最迟钝。 */
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
 }
 .btn:active{transform:translateY(3px);box-shadow:0 1px 0 #c99a2e;}
 .btn.ghost{
@@ -887,7 +893,7 @@ body.in-game .marquee{
           <h3>连击</h3>
           <dl class="kv">
             <dt>怎么涨</dt><dd>每吃一颗涨一级，<b>上不封顶</b></dd>
-            <dt>怎么断</dt><dd>停下或超过约 1 秒没吃到就归零</dd>
+            <dt>怎么断</dt><dd>一边跑一边吃，约 <b>1.6 秒</b>没吃到才断<br><span class="dim">停下不动断得快得多，约 0.5 秒</span></dd>
             <dt>值多少</dt><dd>所有吃到的东西都乘这个倍率</dd>
           </dl>
         </div>
