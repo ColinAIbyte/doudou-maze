@@ -1124,7 +1124,7 @@ body.in-game .marquee{
               <summary>完整计分与参数</summary>
               <dl class="kv">
                 <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
-                <dt>全灭幽灵</dt><dd><b>3000</b>　一次能量豆内吃光全场</dd>
+                <dt>全灭幽灵</dt><dd><b>10万</b>　一次能量豆内吃光全场</dd>
                 <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
                 <dt>全程无伤</dt><dd><b>15000</b></dd>
                 <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
@@ -1460,7 +1460,9 @@ let ghosts, player, fruit, toastTimer, invuln, warpCooldownEntities;
  * Every award is logged so the player is told WHAT they earned and why — an
  * unexplained score jump just reads as noise.
  */
-const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 2000, LIFE_LEFT: 1500, FLAWLESS_RUN: 10000 };
+/* GHOST_SWEEP 是**最终分**，不乘 SCORE_MULT（见 awardBonus 的 raw）。
+   其余三项仍是基础分，要乘 1.5。 */
+const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 100000, LIFE_LEFT: 1500, FLAWLESS_RUN: 10000 };
 
 /**
  * Ghost speed per level, written out rather than generated.
@@ -1531,8 +1533,11 @@ function addScore(base, raw){
   return points;
 }
 
-function awardBonus(label, base){
-  const points = addScore(base);
+/** @param raw 传 true 表示这个数字就是最终分，不再乘 SCORE_MULT。
+ *  全灭用它 —— 招牌数字要是整的（10 万），乘完 1.5 变成 15 万就不好记了，
+ *  跟幽灵悬赏那套「整万」是同一个理由。 */
+function awardBonus(label, base, raw){
+  const points = addScore(base, raw);
   levelBonuses.push({ label, points });
   runBonuses.push({ label, points });
   updateHud();
@@ -2822,7 +2827,7 @@ function handleGhostCollisions(){
       if (ghostEatChain >= ghosts.length){
         sweepsThisRun++;
         Audio2.sweep();
-        toast('全灭幽灵！+' + fmtNum(awardBonus('全灭幽灵', BONUS.GHOST_SWEEP)));
+        toast('全灭幽灵！+' + fmtNum(awardBonus('全灭幽灵', BONUS.GHOST_SWEEP, true)));
       }
     } else if (invuln<=0){
       loseLife();
