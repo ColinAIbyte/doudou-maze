@@ -1002,7 +1002,7 @@ body.in-game .marquee{
             <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
               <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
             <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
-            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 1 秒</dd>
+            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>1 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次</span></dd>
             <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
           </dl>
         </div>
@@ -1606,7 +1606,7 @@ function resetLevel(fullReset){
   player = {
     x: SPAWN.player.x, y: SPAWN.player.y, dir:{x:0,y:0}, want:{x:0,y:0},
     baseSpeed: playerSpeed, speed: playerSpeed,
-    mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0,
+    mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0, warpCdCh:null,
     // odometer driving the distance-based turn buffer (see player control)
     distTravelled:0, wantAtDist:0,
     // tiles run without changing direction, and the fading motion trail it drives
@@ -1623,7 +1623,7 @@ function resetLevel(fullReset){
     // file out one at a time because the house has a single door.
     state: 'exiting',
     releaseAt: 0,
-    eatenFlashUntil:0, warpCd:0,
+    eatenFlashUntil:0, warpCd:0, warpCdCh:null,
     eatenThisFright:false,   // 这一轮能量豆里已经被吃过一次，见 isEdible
     homeY:null,               // 走回老巢后停下的位置，见 'eaten' 分支
     fusedWith:null, isFusionHost:false,
@@ -1823,6 +1823,16 @@ function rescueFromWall(){
 // A full second after landing before the exit portal can fire again, so the
 // player has time to read the new surroundings and pick a direction instead of
 // being bounced straight back.
+//
+// 冷却是**按颜色分开算**的：走了红门，蓝门照样能立刻用。
+//
+// 原来一个 warpCd 管所有门，用了红的连蓝的一起锁。那是多锁的 —— 冷却存在的
+// 唯一理由是"别刚落地就被弹回去"，而落点永远是**同色**的另一头，跟另一种
+// 颜色毫无关系。四个角上两种颜色各占两格，红门的落点上不可能有蓝门，
+// 所以分开算不会有任何来回弹的风险。
+//
+// 分开之后还多出一条真正的路线：红门跳过去、紧接着踩蓝门再跳一次。
+// 被幽灵堵在角上时，这是一条能救命的连跳 —— 本来就该允许。
 const PORTAL_COOLDOWN_SECONDS = 1.0;
 
 function checkPortal(ent){
@@ -1834,11 +1844,13 @@ function checkPortal(ent){
   // setTimeout — a timeout would keep running while the game is paused and
   // could expire mid-pause. It also stops an idle entity that lands on the
   // exit portal from being bounced straight back, over and over.
-  if (ent.warpCd > 0) return;
+  // 只有**同色**的门在冷却里才拦；另一种颜色不受影响
+  if (ent.warpCd > 0 && ent.warpCdCh === ch) return;
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
     if (grid[y][x]===ch && !(x===cx&&y===cy)){
       ent.x = x; ent.y = y;
       ent.warpCd = PORTAL_COOLDOWN_SECONDS;
+      ent.warpCdCh = ch;               // 记下是哪种颜色在冷却
       if (ent===player){
         Audio2.warp();
         // 第一次用到才讲。写在说明里没人看，而这一刻他刚被传走，正想知道
@@ -2654,13 +2666,13 @@ function loseLife(){
   hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
-  player.warpCd=0;
+  player.warpCd=0; player.warpCdCh=null;
   player.straightTiles=0; player.trail.length=0; // respawn at a standstill, no leftover wind-up
   frightTimer = 0; // dying cancels the power pellet outright
   ghostEatChain = 0;
   ghosts.forEach((g,i)=>{
     g.x=SPAWN.ghosts[i].x; g.y=SPAWN.ghosts[i].y; g.state='exiting';
-    g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.releaseAt = 0;
+    g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.warpCdCh=null; g.releaseAt = 0;
     // 上面 frightTimer 已经清零，这两个是配套的每局状态，一起归位：
     // homeY 留着会让下次进巢停在上一条命的位置，eatenThisFright 留着会让
     // 新一轮能量豆里有幽灵莫名其妙吃不了。
@@ -3787,7 +3799,9 @@ function drawMaze(){
         /* 冷却中的传送门画暗、且不再旋转。
            踩上去之后有 1 秒冷却，这期间再踩没反应 —— 之前门看起来一切正常，
            玩家只会以为卡住了或者门坏了。让"暂时不能用"这件事看得见。 */
-        const cooling = player.warpCd > 0;
+        // 只有正在冷却的那个颜色变暗；另一种颜色照常发光转动，
+        // 玩家一眼就能看出"红的要等，蓝的现在能走"
+        const cooling = player.warpCd > 0 && player.warpCdCh === ch;
         ctx.save();
         ctx.translate(cxp,cyp);
         if (cooling) ctx.globalAlpha = 0.32;
