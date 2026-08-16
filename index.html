@@ -555,6 +555,38 @@ body{
   align-self:center;
 }
 
+/* 关卡选择：六个小方块，没到过的画一把锁。
+   刻意做得比「开始」小、比排行榜轻 —— 它是备选路，不该抢主线的位置。 */
+.levelsel{
+  display:flex;gap:5px;justify-content:center;align-items:center;flex-wrap:wrap;
+  font-family:var(--font-display);
+}
+.levelsel-k{
+  font-size:9px;letter-spacing:.18em;color:var(--text-dim);margin-right:3px;
+}
+.lv{
+  width:30px;height:26px;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:6px;
+  border:1px solid var(--panel-border);
+  background:rgba(138,107,255,.08);
+  color:var(--text);
+  font-size:12px;font-weight:700;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:border-color .15s ease,color .15s ease;
+}
+.lv:hover,.lv:focus-visible{border-color:var(--amber);color:var(--amber);}
+.lv:active{background:var(--wall-core);}
+.lv[disabled]{
+  color:var(--panel-border);
+  background:transparent;
+  cursor:default;
+  /* 锁住的关不做任何反馈 —— 看着能点却点不动最恼人 */
+  pointer-events:none;
+}
+
 /* 通关评级。字母做得很大很亮 —— 它是通关那一屏唯一需要一眼看到的东西，
    分数明细可以慢慢读，这个字母是"我打得怎么样"的答案。
    S 用金色、A 青色、B 紫色、C 灰 —— 颜色本身就是梯度，不用再解释。 */
@@ -839,6 +871,9 @@ body.in-game .marquee{
       <div class="best-line hidden" id="bestLine"></div>
       <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
       <div class="challenge hidden" id="challengeBox"></div>
+      <!-- 关卡选择。只列已经打到过的关；没到过的显示锁。
+           摆在「开始」上面而不是下面：正式挑战仍然是主线，练习是备选。 -->
+      <div class="levelsel" id="levelSel"></div>
       <div class="board" id="startBoard"></div>
       <!-- 「玩法说明」跟「开始」并排，而不是让玩家去找标题旁边那个「?」。
            原来这儿写的是"完整玩法　点标题下方的 ?"——那要求玩家先读一行字、
@@ -947,6 +982,9 @@ body.in-game .marquee{
       <div class="board" id="overBoard"></div>
       <div class="over-actions">
         <button class="btn" id="restartBtn">再来一局</button>
+        <!-- 小玩家的原话是"能不能从失败的那关开始"。那这个入口就该出现在她
+             失败的那一刻、那一屏上，而不是让她回开始页自己找。 -->
+        <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
         <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
       </div>
       <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
@@ -1526,10 +1564,59 @@ function resetLevel(fullReset){
   elapsed = 0;
 }
 
+/* ---------- 练习模式 ----------
+ *
+ * 起因是一位小玩家的原话："一失败就要从头开始，能不能从失败的那关开始。"
+ * 卡在第五关的小孩，要重打前四关才能再试一次——那四关她早就会了，重复的
+ * 部分不是挑战，是罚站。
+ *
+ * 但直接允许"从第五关继续"会毁掉通关这件事本身：六关连着打不死才叫通关，
+ * 能接关的话这个成就就不值钱了，而通关的满足感恰恰是整个游戏的终点。
+ *
+ * 所以拆成两种模式，边界划得很硬：
+ *   正式挑战：六关连打，计分、进排行榜、有评级、有通关庆祝
+ *   练习：单独打某一关，**完全不计分**，没有排行榜、不更新最高分、
+ *        清掉也不算通关，只说一句"练习完成"
+ * 练习是拿来练手的，不是拿来刷成绩的——它换来的是"再试一次"的成本从
+ * 四关变成零，而通关的含金量一分没少。
+ *
+ * 只能练**已经打到过**的关卡：没到过第五关就直接跳过去练，六关递进的设计
+ * 就白做了，而且小孩会一头撞进远超自己水平的关卡。
+ */
+const REACHED_KEY = 'doudou.reached';
+let practiceLevel = null;          // null = 正式挑战
+let practiceOfferLevel = 1;        // 结算页那个「练习第 N 关」按钮指向哪一关
+
+function maxLevelReached(){
+  try { return Math.max(1, Math.min(MAX_LEVEL, Number(localStorage.getItem(REACHED_KEY)) || 1)); }
+  catch (e) { return 1; }
+}
+function noteLevelReached(lv){
+  // 只有正式挑战里到达的关卡才算解锁 —— 练习不能拿来给自己解锁下一关
+  if (practiceLevel) return;
+  try {
+    if (lv > maxLevelReached()) localStorage.setItem(REACHED_KEY, String(lv));
+  } catch (e) { /* 无痕模式就每次从第一关解锁起，不影响玩 */ }
+}
+
 function fullNewGame(){
+  practiceLevel = null;
   resetLevel(true);
   gameState='ready';
   updateHud();
+}
+
+/** 开一局练习：只打这一关，打完就结束，全程不计分。 */
+function startPractice(lv){
+  const target = Math.max(1, Math.min(maxLevelReached(), lv));
+  resetLevel(true);
+  practiceLevel = target;
+  level = target;
+  resetLevel(false);
+  updateHud();
+  syncChrome();
+  startLevelIntro();
+  gameState = 'playing';
 }
 
 /* ---------- movement helpers ---------- */
@@ -2686,6 +2773,30 @@ function bestCombo(){
   return loadScores().reduce((m, r)=> Math.max(m, r.combo || 0), 0);
 }
 
+/** 开始页的关卡选择。只在解锁了第二关之后才出现——第一次玩的人屏幕上
+ *  只该有一个「开始」，多一行按钮就是多一个要理解的东西。 */
+function renderLevelSelect(){
+  const el = document.getElementById('levelSel');
+  if (!el) return;
+  const top = maxLevelReached();
+  if (top < 2){ el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
+  let html = '<span class="levelsel-k">练习</span>';
+  for (let i = 1; i <= MAX_LEVEL; i++){
+    const locked = i > top;
+    html += `<button class="lv" data-lv="${i}"${locked ? ' disabled aria-label="未解锁"' : ` title="练习第 ${i} 关 · ${levelName(i)}"`}>`
+          + (locked ? '🔒' : i) + '</button>';
+  }
+  el.innerHTML = html;
+  el.querySelectorAll('.lv[data-lv]').forEach(b=>{
+    b.addEventListener('click', ()=>{
+      Audio2.unlock();
+      document.getElementById('startOverlay').classList.add('hidden');
+      startPractice(Number(b.dataset.lv));
+    });
+  });
+}
+
 /** 开始页顶部那行 BEST。没有记录时整行不出现，免得挂一个 0 在那儿。 */
 function renderBest(){
   const el = document.getElementById('bestLine');
@@ -2744,23 +2855,35 @@ function endGame(won){
     if (deathsThisRun === 0) awardBonus('全程无伤通关', BONUS.FLAWLESS_RUN);
   }
 
+  /* 练习整局不计分：不入榜、不动最高分、不评级、不放礼花。
+     这条边界必须硬 —— 一旦练习的成绩能进榜，排行榜就没意义了
+     （谁都可以反复练第一关刷分），而排行榜正是"正式挑战"的全部价值。 */
+  const practice = !!practiceLevel;
+
   /* 旧纪录必须在把本局写进榜单**之前**读，否则读到的就是本局自己，
      "破纪录了没有"永远是 false，"差多少分"永远是 0。 */
-  const prevBest = bestScore();
-  const isNewBest = score > prevBest;
+  const prevBest = practice ? 0 : bestScore();
+  const isNewBest = !practice && score > prevBest;
 
   // The row is filed FIRST, under the remembered name, so the board is already
   // correct if the player never touches the input. Typing a name renames that
   // same row in place rather than filing a second one.
   const remembered = loadName();
-  const { rank, id } = recordScore({ score, level, combo: maxComboSeen, won, name: remembered });
+  const { rank, id } = practice ? { rank: 0, id: null }
+    : recordScore({ score, level, combo: maxComboSeen, won, name: remembered });
   lastRunId = id;
 
   if (won) Audio2.victory(); else if (isNewBest) Audio2.newBest(); else Audio2.gameOver();
-  document.getElementById('overTitle').textContent = won ? ('通关！全 ' + MAX_LEVEL + ' 关') : '游戏结束';
+  const practiceCleared = practice && pelletsLeft <= 0;
+  document.getElementById('overTitle').textContent =
+      practiceCleared ? ('练习完成 · 第 ' + level + ' 关')
+    : practice        ? ('练习结束 · 第 ' + level + ' 关')
+    : won             ? ('通关！全 ' + MAX_LEVEL + ' 关')
+    :                   '游戏结束';
   lastFinalScore = score;
   document.getElementById('finalScore').textContent = fmtNum(score);
-  document.getElementById('overSub').innerHTML = buildSummary(won, rank, prevBest, isNewBest);
+  document.getElementById('overSub').innerHTML =
+    practice ? buildPracticeSummary(practiceCleared) : buildSummary(won, rank, prevBest, isNewBest);
   document.getElementById('overOverlay').classList.remove('hidden');
   // 破纪录也放礼花：这是除了通关之外，唯一值得停下来庆祝一下的时刻
   if (isNewBest && !won && prevBest > 0) startFireworks(6000);
@@ -2778,7 +2901,23 @@ function endGame(won){
     if (!won) setTimeout(()=>input.focus(), 60);
   }
 
-  renderScoreboard('overBoard', rank > 0 ? id : null);
+  /* 「练习这一关」只在**正式挑战里失败**时出现：
+     - 通关了不该出现（该去看评级、再挑战一次刷分）
+     - 本来就在练习里也不出现（重开就是同一关，「再来一局」已经够了）
+     - 第一关失败也不出现（重开就是第一关，练习没有任何区别） */
+  const pb = document.getElementById('practiceBtn');
+  if (pb){
+    const offer = !practice && !won && level > 1;
+    pb.classList.toggle('hidden', !offer);
+    pb.textContent = offer ? `练习第 ${level} 关` : '练习这一关';
+    /* 关卡号存在变量里，不写 dataset —— 微信两个版本的元素是垫片造的假节点，
+       上面**没有 dataset**，赋值会直接抛异常。而这行在 endGame 里，一抛就是
+       "死一条命后黑屏"那种表现。同样的坑之前踩过一次（roundRect）。 */
+    practiceOfferLevel = level;
+  }
+  const ob = document.getElementById('overBoard');
+  if (ob) ob.classList.toggle('hidden', practice);   // 练习跟排行榜无关，不摆出来
+  if (!practice) renderScoreboard('overBoard', rank > 0 ? id : null);
   if (won) startFireworks();
 }
 
@@ -2842,6 +2981,26 @@ function gradeRun(){
      差一分掉到 B —— 那是一局打得挺好的游戏，卡在这种地方只会让人觉得系统
      在刁难。评级的边界宁可松半档，也不要让明显不错的一局吃亏。 */
   return pts >= 85 ? 'S' : pts >= 65 ? 'A' : pts >= 45 ? 'B' : 'C';
+}
+
+/**
+ * 练习模式的结算。
+ * 刻意做得比正式结算**朴素**：没有排名、没有评级、没有"差多少破纪录"。
+ * 那些都是正式挑战的东西，在练习页上摆一份缩水版只会让人分不清两种模式。
+ * 这里只回答一句话：这一关你过去了没有。
+ */
+function buildPracticeSummary(cleared){
+  const lines = [];
+  lines.push('<div class="sum-grid">'
+    + `<div class="sum-row"><span class="sum-k">关卡</span> <span class="sum-v">第 ${level} 关 · ${levelName(level)}</span></div>`
+    + `<div class="sum-row"><span class="sum-k">最高连击</span> <span class="sum-v">x${maxComboSeen}</span></div>`
+    + `<div class="sum-row"><span class="sum-k">幽灵击杀</span> <span class="sum-v">${ghostsEatenThisRun} 只</span></div>`
+    + '</div>');
+  lines.push(cleared
+    ? '<span style="color:var(--cyan)">这一关拿下了，回去正式挑战试试</span>'
+    : '<span style="color:var(--amber)">再练一次，或者回去正式挑战</span>');
+  lines.push('<span class="bonus-hint">练习不计分，也不进排行榜</span>');
+  return lines.join('<br>');
 }
 
 function buildSummary(won, rank, prevBest, isNewBest){
@@ -3202,6 +3361,17 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
     done('请手动复制');
   }
 });
+(function(){
+  const pb = document.getElementById('practiceBtn');
+  if (!pb) return;
+  pb.addEventListener('click', ()=>{
+    Audio2.unlock();
+    stopFireworks();
+    document.getElementById('overOverlay').classList.add('hidden');
+    startPractice(practiceOfferLevel);
+  });
+})();
+
 document.getElementById('helpCloseBtn').addEventListener('click', closeHelp);
 
 /** 开打时收起标题，回到任何弹层时再露出来。 */
@@ -3232,6 +3402,9 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
   Audio2.unlock();
   stopFireworks();
   document.getElementById('overOverlay').classList.add('hidden');
+  /* 练习里的「再来一局」= 再练这一关。回到第一关的话，这个按钮就正好
+     做了玩家最不想要的那件事 —— 而"不想从头再来"正是练习模式的由来。 */
+  if (practiceLevel){ startPractice(practiceLevel); return; }
   fullNewGame();
   // 必须在 fullNewGame 之后：它内部会 resetLevel，而 resetLevel 会把卡片清零
   startLevelIntro();
@@ -3343,8 +3516,13 @@ function update(dt){
     if (perfect){ perfectLevelsThisRun++; awardBonus(`第 ${level} 关无伤`, BONUS.PERFECT_LEVEL * level); }
     const earned = levelBonuses.slice();
 
+    /* 练习只打这一关。清掉之后直接进结算，**不推进到下一关**——
+       否则从第五关练起、连着清掉五和六，看起来就跟通关一样了，
+       而通关必须是六关连打不死才算。 */
+    if (practiceLevel){ endGame(false); return; }
     if (level >= MAX_LEVEL){ endGame(true); return; }
     level++;
+    noteLevelReached(level);
     resetLevel(false);
     lives++; // clearing a level is rewarded with an extra life
     updateHud();
@@ -3654,6 +3832,7 @@ function loop(t){
 fullNewGame();
 renderScoreboard('startBoard');
 renderBest();
+renderLevelSelect();
 renderChallengeBanner();
 requestAnimationFrame(loop);
 
