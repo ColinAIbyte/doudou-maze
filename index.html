@@ -982,8 +982,8 @@ body.in-game .marquee{
         <div class="help-sec">
           <h3>连击</h3>
           <dl class="kv">
-            <dt>怎么涨</dt><dd>每吃一颗涨一级，<b>上不封顶</b></dd>
-            <dt>怎么断</dt><dd>一边跑一边吃，约 <b>1.6 秒</b>没吃到才断<br><span class="dim">停下不动断得快得多，约 0.5 秒</span></dd>
+            <dt>怎么涨</dt><dd>每吃一颗涨一级，<b>上不封顶</b><br><span class="dim">吃幽灵、吃水果同样算——追幽灵不会弄断连击</span></dd>
+            <dt>怎么断</dt><dd>一边跑一边吃，约 <b>1.6 秒</b>没吃到才断<br><span class="dim">停下不动断得快得多，约 0.5 秒；连得越长，这个时间给得越宽</span></dd>
             <dt>值多少</dt><dd>所有吃到的东西都乘这个倍率</dd>
           </dl>
         </div>
@@ -2150,15 +2150,50 @@ const COMBO_WINDOW = 1.6;
 /** 停下不动时的额外衰减倍率。见上面的说明。 */
 const COMBO_IDLE_DECAY = 3.0;
 
+/* 连得越长，窗口给得越宽 —— 但**有上限**。
+ *
+ * 理由不是"让玩家轻松"，而是难度曲线本身是反的：连击越高，剩下的豆子越少、
+ * 越分散，续上一颗的难度自然越大。窗口不变的话，等于越到后面越苛刻，
+ * 高连击不是靠本事保住的，是靠地图还没被吃空。
+ *
+ * 封在 +0.9 秒（x45 触顶）：再宽下去，高连击就变成"断不了"，那份"别断啊"的
+ * 紧张感——也就是连击唯一的乐趣——就没了。停下不动仍然是 3 倍速扣，
+ * 所以"别停"这条规矩一点没松。
+ */
+const COMBO_GRACE_PER = 0.02;   // 每级加多少秒
+const COMBO_GRACE_MAX = 0.9;    // 最多加到这么多
+
+function comboWindow(){
+  return COMBO_WINDOW + Math.min(COMBO_GRACE_MAX, combo * COMBO_GRACE_PER);
+}
+
 /** 剩几颗豆子开始呼吸闪烁 / 几颗开始明显跳动。见豆子的绘制。 */
 const LAST_PELLET_HINT = 10;
 // 剩三颗才转成明显跳动：那时候才真的开始「到底在哪」，五颗时一般还看得见
 const LAST_PELLET_LOUD = 3;
 
+/**
+ * 续上连击：加一级、把倒计时打满。**不加分**——给谁加、加多少由调用方决定。
+ *
+ * 抽出来是因为原先只有"吃豆子"这一条路会续连击，于是出现了一个很别扭的冲突：
+ * 游戏用 1 万 / 2 万 / 3 万的悬赏拼命鼓励玩家转身去追幽灵，可追幽灵要横穿
+ * 半张图、好几秒吃不到豆 —— **连击就这么断了**。一边发奖金让你去做一件事，
+ * 一边因为你做了而没收你的倍率，两套核心机制在互相拆台。
+ *
+ * 吃幽灵是这游戏里最难、最需要胆量的操作，它理应喂养连击，而不是掐断它。
+ * 水果同理：它拿 combo 当倍率却不续期，等于只吃不喂。
+ */
+function sustainCombo(){
+  combo = combo + 1;
+  comboTimer = comboWindow();
+  checkComboMilestone();
+  updateHud();
+}
+
 function addPelletScore(base){
   addScore(base * combo);
   combo = combo + 1; // uncapped — keep the chain alive and the multiplier keeps climbing
-  comboTimer = COMBO_WINDOW;
+  comboTimer = comboWindow();
   /* 连击是这游戏最核心的计分机制，可界面上只有一根没标注的条 —— 玩家看得见
      它在动，不知道它值钱。等第一次真的连起来（x5）再说，比开局塞一行字有用：
      这时候他刚做出这个行为，一句话就能把"我刚才干了什么"和"为什么加分多"
@@ -2526,6 +2561,9 @@ function handleGhostCollisions(){
          按线性递增而不是翻倍：翻倍到第 7 只会是 64 万，一次全灭就锁死排行榜，
          后面再玩多久都没意义。 */
       const pts = addScore(ghostEatChain * GHOST_BOUNTY_STEP, true);
+      /* 悬赏本身不乘连击（要保住"整万"这个招牌数字），但这一口**必须续上连击**
+         ——追幽灵是全场最难的操作，不该反过来砸掉自己的倍率。见 sustainCombo。 */
+      sustainCombo();
       const wasHost = g.isFusionHost;
       unfuseNow(g); // release the partner before the host leaves play
       g.state='eaten';
@@ -3184,7 +3222,9 @@ let maxComboSeen = 1;
  * 动。这也是它单独拆出来的唯一原因。
  */
 function updateComboBar(){
-  const left = combo > 1 ? Math.max(0, comboTimer) / COMBO_WINDOW : 0;
+  // 分母要用**当前**窗口：窗口会随连击变宽，拿固定值当分母的话，
+  // 高连击时条永远填不满，看起来像刚吃就快断了。
+  const left = combo > 1 ? Math.max(0, comboTimer) / comboWindow() : 0;
   const fill = document.getElementById('comboFill');
   fill.style.width = (left * 100) + '%';
   fill.classList.toggle('urgent', left > 0 && left < 0.35);   // 快断了变红
@@ -3232,7 +3272,8 @@ function updateFruit(dt){
   const dist = Math.hypot(fruit.x-player.x, fruit.y-player.y);
   if (dist < 0.6){
     fruit.active = false;
-    addScore(300*combo); updateHud();
+    addScore(300*combo);
+    sustainCombo();   // 水果原先只拿 combo 当倍率却不续期，等于只吃不喂
     player.phase = FRUIT_PHASE_SECONDS;
     toast('神秘水果！' + FRUIT_PHASE_SECONDS + ' 秒穿墙');
     Audio2.fruit();
