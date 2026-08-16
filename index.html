@@ -377,7 +377,18 @@ body{
    而内容有 899px，玩家要滚七八次才能看完）。加上之后它吃满标题与按钮
    之间的全部剩余空间。min-height:0 不能省 —— flex 项默认不肯缩到内容
    以下，少了它 overflow 根本不会生效。 */
+/* 底部那道渐隐是**滚动提示**，不是装饰。
+   说明内容 1050px 而可视区只有 573px —— 将近一半在折叠线以下（奖励分、
+   意见反馈、关于这个游戏三节全在下面），而原来屏幕上没有任何迹象表明还有
+   下文。连知道内容存在的人都没往下滚，小朋友更不会。
+   用 background-attachment 的 local/scroll 组合做：内容滚到底时这道影子会
+   自己消失，纯 CSS，不需要每帧去算滚动位置。 */
 .help-doc{
+  background:
+    linear-gradient(#0a0614 28%, rgba(10,6,20,0)) center top / 100% 34px no-repeat local,
+    linear-gradient(rgba(10,6,20,0), #0a0614 72%) center bottom / 100% 34px no-repeat local,
+    radial-gradient(farthest-side at 50% 0,   rgba(138,107,255,.38), rgba(138,107,255,0)) center top / 100% 12px no-repeat scroll,
+    radial-gradient(farthest-side at 50% 100%, rgba(138,107,255,.38), rgba(138,107,255,0)) center bottom / 100% 12px no-repeat scroll;
   width:100%;
   max-width:340px;
   text-align:left;
@@ -408,6 +419,16 @@ body{
      18 秒——这中间点开说明，礼花就会炸在说明文字上。说明必须是最顶层。 */
   z-index:80;
 }
+.help-more{
+  font-family:var(--font-display);
+  font-size:10px;
+  letter-spacing:.16em;
+  color:var(--amber);
+  opacity:.85;
+  transition:opacity .2s ease;
+  pointer-events:none;
+}
+.help-more.hidden{opacity:0;}
 .help-sec h3{
   margin:0 0 5px;
   font-family:var(--font-display);
@@ -1075,6 +1096,8 @@ body.in-game .marquee{
             <span class="about-sign">—— 超级奶爸</span></p>
         </div>
       </div>
+      <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
+      <div class="help-more" id="helpMore">↓ 下面还有</div>
       <button class="btn" id="helpCloseBtn">知道了</button>
     </div>
 
@@ -3599,11 +3622,15 @@ catch { setPadHidden(false); }
 const helpOverlay = document.getElementById('helpOverlay');
 let helpPausedByUs = false;
 
+let helpSync = null;   // 由下面那段初始化；打开说明时重算滚动提示
+
 function openHelp(){
   if (!helpOverlay.classList.contains('hidden')) return;
   helpPausedByUs = (gameState === 'playing');
   if (helpPausedByUs) gameState = 'paused';
   helpOverlay.classList.remove('hidden');
+  // 弹层刚显示出来，这一帧才量得到真实高度
+  if (helpSync) setTimeout(helpSync, 0);
 }
 function closeHelp(){
   helpOverlay.classList.add('hidden');
@@ -3708,6 +3735,25 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
 (function(){
   const hp = document.getElementById('hudPauseBtn');
   if (hp) hp.addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
+})();
+
+/* 「↓ 下面还有」滚到底就收起来。
+   用 .hidden 会被那条全局 display:none 直接干掉，没有淡出，所以这里单独
+   切一个类只改透明度 —— 它是提示，不该硬闪。 */
+(function(){
+  const doc = document.querySelector('.help-doc');
+  const more = document.getElementById('helpMore');
+  if (!doc || !more) return;
+  const sync = ()=>{
+    // 差 8px 以内就算到底了：小数缩放下 scrollTop 很难精确等于差值
+    const atEnd = doc.scrollTop + doc.clientHeight >= doc.scrollHeight - 8;
+    const noScroll = doc.scrollHeight <= doc.clientHeight + 1;
+    more.classList.toggle('hidden', atEnd || noScroll);
+  };
+  doc.addEventListener('scroll', sync, { passive:true });
+  // 打开说明时内容和高度才定下来，所以每次开都要重算一次
+  helpSync = sync;
+  sync();
 })();
 
 document.getElementById('helpCloseBtn').addEventListener('click', closeHelp);
