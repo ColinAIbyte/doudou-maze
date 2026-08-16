@@ -3811,8 +3811,18 @@ document.getElementById('helpCloseBtn').addEventListener('click', closeHelp);
 
 /** 开打时收起标题，回到任何弹层时再露出来。 */
 function syncChrome(){
-  const playing = gameState === 'playing';
-  document.body.classList.toggle('in-game', playing);
+  /* 说明盖着的时候，**什么都别动**。
+   *
+   * 打开说明会把 gameState 变成 paused，于是这里摘掉 in-game、标题展开；
+   * 点「知道了」又变回 playing，标题再收回去。两次都是 280ms 的过渡，
+   * 而后一次正好发生在玩家刚点完按钮的那一刻 —— 整页还在动，看起来就像
+   * "点了没反应、没有立刻回到原来的界面"。玩家报的就是这个。
+   *
+   * 而说明本身是 position:fixed inset:0 整屏盖住的，它开着时底下长什么样
+   * 根本看不见，压根没有理由跟着变。开之前什么样，关掉还是什么样，
+   * 零动画、零位移。 */
+  if (!helpOverlay.classList.contains('hidden')) return;
+  document.body.classList.toggle('in-game', gameState === 'playing');
 }
 
 function togglePause(){
@@ -4235,6 +4245,10 @@ function drawGhost(g){
 }
 
 function render(){
+  /* 说明整屏盖着时，底下这一整套（迷宫、幽灵、主角、各种条）画了也看不见。
+     每帧白烧一次，在弱一点的手机上就是实打实的掉帧 —— 而掉帧的直接后果，
+     就是点按钮之后要等下一帧才有反应。 */
+  if (!helpOverlay.classList.contains('hidden')) return;
   drawMaze();
   drawFruit();
   ghosts.forEach(drawGhost);
