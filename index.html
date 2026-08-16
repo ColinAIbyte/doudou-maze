@@ -226,7 +226,10 @@ body{
 .hud .lives{display:flex;gap:4px;align-items:center;}
 /* HUD 上的图标按钮。图形一律用内联 SVG 描边画：emoji 在各家手机上字形、
    粗细、基线都不一样，三个挨在一起时高矮不齐很明显，而且没法跟着主题变色。 */
+/* 命中区至少 44x44：手指的最小舒适目标。图标本身仍是 30~32px，
+   靠透明的外扩把可点范围撑起来，不占视觉重量也不挤 HUD 的横向空间。 */
 .icon-btn{
+  position:relative;
   flex-shrink:0;
   background:transparent;
   border:1px solid var(--panel-border);
@@ -249,6 +252,14 @@ body{
   stroke-linejoin:round;
 }
 .icon-btn svg .solid{fill:currentColor;stroke:none;}
+.icon-btn::after{
+  content:'';
+  position:absolute;
+  left:50%; top:50%;
+  width:44px; height:44px;
+  transform:translate(-50%,-50%);
+  /* 纯命中区，不可见也不影响布局 */
+}
 .icon-btn:active{background:var(--wall-core);color:var(--text);}
 /* 关掉方向键时按钮本身要显出"已关"的状态，否则玩家看不出是自己关的 */
 .icon-btn.off{color:var(--panel-border);}
@@ -784,6 +795,27 @@ body{
    眼睛该直接落在这儿，而不是先读完说明再找入口。
    44px 是手指的最小舒适命中高度；桌面上鼠标不需要这么大，但统一尺寸
    省掉一套分支，而且大按钮在视觉层级上本来就该压过旁边的次要按钮。 */
+/* 次要按钮：弱到几乎只是一行字，但仍保有可点的边界感。
+   跟 .btn-hero 摆在一起时，视觉重量差得足够远，玩家不用做选择。 */
+.btn-quiet{
+  background:transparent;
+  border:1px solid rgba(138,107,255,.28);
+  box-shadow:none;
+  color:var(--text-dim);
+  font-family:var(--font-display);
+  letter-spacing:.08em;
+  padding:11px 18px;
+  font-size:13px;
+  border-radius:8px;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:color .12s ease, border-color .12s ease;
+}
+.btn-quiet:hover, .btn-quiet:focus-visible{color:var(--text);border-color:var(--panel-border);}
+.btn-quiet:active{background:rgba(138,107,255,.12);}
+.start-actions{gap:14px;}
+
 .btn-hero{
   min-height:46px;
   padding:12px 40px;
@@ -864,6 +896,14 @@ body{
   /* 弹层是竖向 flex，榜单作为其中一项会被压扁——实测只剩 20px，两行记录
      叠在一起看不清。它自己已经能滚，不需要再靠收缩让位。 */
   flex-shrink:0;
+}
+.board-note{
+  color:var(--text-dim);
+  font-size:9px;
+  letter-spacing:.08em;
+  opacity:.7;
+  margin-top:3px;
+  text-align:center;
 }
 .board-title{
   color:var(--text-dim);
@@ -1090,9 +1130,11 @@ body.in-game .marquee{
            实际几乎没人会走完。按钮就摆在他眼睛已经落着的地方（开始键旁边），
            而且写着字，不是一个光秃秃的问号。
            并排而不是上下叠：开始页在小屏上本来就快装不下了，横着排不占高度。 -->
-      <div class="over-actions">
+      <!-- 主次要拉得更开：原来两个按钮边框粗细相近、间距也小，看着像
+           一组并列选项。开始是主线，玩法是备选，第一眼不该需要挑。 -->
+      <div class="over-actions start-actions">
         <button class="btn btn-hero" id="startBtn">开始游戏</button>
-        <button class="btn ghost btn-share" id="startHelpBtn">玩法说明</button>
+        <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
       </div>
       <div class="credits">一个爸爸做给儿子的游戏</div>
     </div>
@@ -1104,7 +1146,7 @@ body.in-game .marquee{
       <h2 id="pauseTitle">已暂停</h2>
       <!-- 切走标签页会自动暂停，回来时这一行会换成说明原因的话 —— 否则玩家
            只看到一个暂停页，不知道是自己按的还是游戏出了什么事。 -->
-      <p id="pauseWhy" class="bonus-hint">按 P 或点「继续游戏」回到游戏</p>
+      <p id="pauseWhy" class="bonus-hint">按 P、Enter 或点「继续游戏」回到游戏</p>
       <div class="over-actions">
         <button class="btn btn-hero" id="resumeBtn">继续游戏</button>
         <button class="btn ghost btn-share" id="pauseHelpBtn">玩法说明</button>
@@ -1195,7 +1237,7 @@ body.in-game .marquee{
           <summary>关于这个游戏</summary>
           <p class="about">儿子想要一个简单又刺激的小游戏，我就和他一起做了一个。<br>
             他先玩，我再改；他说哪儿不好玩，就改哪儿。<br>
-            后来几个小朋友抢着刷分，才有了排行榜和这六关。<br>
+            后来几个小朋友抢着刷分，才有了纪录榜和这六关。<br>
             <span class="about-sign">—— 超级奶爸</span></p>
           <dl class="kv" style="margin-top:10px">
             <dt>微信</dt><dd>superpapa2011</dd>
@@ -1440,7 +1482,9 @@ function levelName(lvl){ return LEVEL_NAMES[(Math.max(1,lvl)-1) % LEVEL_NAMES.le
  * 恐惧和复活的计时也不走。街机的 READY! 就是这个作用——给玩家一个"看清楚
  * 这是哪一关"的空拍，而不是一睁眼幽灵已经压到脸上。
  */
-const LEVEL_INTRO_SECONDS = 1.8;
+// 1.8 → 1.4：第一次看很舒服，但重开时每次都等 1.8 秒就显得拖。
+// 1.3~1.5 是玩家给的可接受区间，取中。开场期间整局仍然冻结。
+const LEVEL_INTRO_SECONDS = 1.4;
 let introTimer = 0;
 
 function startLevelIntro(){ introTimer = LEVEL_INTRO_SECONDS; }
@@ -3288,16 +3332,25 @@ function renderScoreboard(elId, highlightId){
   const el = document.getElementById(elId);
   if (!el) return;
   const list = loadScores();
-  if (!list.length){ el.innerHTML = '<div class="board-empty">还没有记录，来跑一局</div>'; return; }
+  /* 一条纪录都没有时**整块藏起来**，不留占位。
+     原来显示一句"还没有记录，来跑一局"——它既没帮玩家开始，又在首屏多堆了
+     一层弱信息。第一次打开的人屏幕上该只有：投币 / 一句操作 / 开始游戏 /
+     玩法说明 / 署名。 */
+  if (!list.length){ el.innerHTML = ''; el.classList.add('hidden'); return; }
+  el.classList.remove('hidden');
   el.innerHTML =
-    '<div class="board-title">排行榜</div>' +
+    /* 叫「本机纪录」不叫「排行榜」：数据只在 localStorage 里，
+       换台电脑、清个缓存就没了。叫排行榜会让玩家以为是全网共用的在线榜单，
+       进而以为自己在和别人比 —— 那是个不存在的承诺。 */
+    '<div class="board-title">本机纪录</div>' +
     list.map((r,i)=>
       `<div class="board-row${i===0?' board-top':''}${r.id===highlightId?' board-mine':''}">` +
         `<span class="board-rank">${i+1}</span>` +
         `<span class="board-name">${r.name || DEFAULT_NAME}</span>` +
         `<span class="board-score">${fmtNum(r.score)}</span>` +
         `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
-      '</div>').join('');
+      '</div>').join('') +
+    '<div class="board-note">纪录只保存在当前浏览器</div>';
 
   /* 榜单最多只露五行左右（再高就把按钮挤出屏幕了），可名次是第几名不由我们说了算。
      结算页写着"本次排名第 5 名"，而那一行正好在可视区外边——最该看到的一行看不见，
@@ -3471,7 +3524,7 @@ function buildPracticeSummary(cleared){
   lines.push(cleared
     ? '<span style="color:var(--cyan)">这一关拿下了，回去正式挑战试试</span>'
     : '<span style="color:var(--amber)">再练一次，或者回去正式挑战</span>');
-  lines.push('<span class="bonus-hint">练习不计分，也不进排行榜</span>');
+  lines.push('<span class="bonus-hint">练习不计分，也不进本机纪录</span>');
   return lines.join('<br>');
 }
 
@@ -3527,7 +3580,7 @@ function buildSummary(won, rank, prevBest, isNewBest){
   } else {
     lines.push(`<span style="color:var(--amber)">差 ${fmtNum(prevBest - score)} 分打破自己的纪录</span>`);
   }
-  if (rank > 0) lines.push(`<span class="bonus-hint">本次排名第 ${rank} 名，留下你的名字</span>`);
+  if (rank > 0) lines.push(`<span class="bonus-hint">本机纪录第 ${rank} 名，留下你的名字</span>`);
 
   /* 六关全通才出现的一句话。
    *
@@ -3678,10 +3731,40 @@ function gameHasKeyboard(){
   return true;
 }
 
+/** 当前是哪一屏。Enter 的含义完全由它决定，不同位置各写一个监听必然打架。 */
+function currentScreen(){
+  if (!helpOverlay.classList.contains('hidden')) return 'help';
+  if (!document.getElementById('overOverlay').classList.contains('hidden')) return 'over';
+  if (!document.getElementById('pauseOverlay').classList.contains('hidden')) return 'paused';
+  if (!document.getElementById('startOverlay').classList.contains('hidden')) return 'start';
+  return 'playing';
+}
+
+/* Enter 快捷键：开始 / 继续 / 再来一局，都走各自按钮的 click，
+   这样恢复逻辑只有一份，不会出现"按 Enter 和点按钮走了两条路"。 */
+function handleEnter(e){
+  // 中文输入法正在组词时，Enter 是「上屏」，不是游戏指令
+  if (e.isComposing || e.keyCode === 229) return false;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')){
+    // 昵称框自己会处理 Enter（记录），这里绝不能顺手再重开一局
+    return false;
+  }
+  const click = (id)=>{ const b=document.getElementById(id); if (b) b.click(); return true; };
+  switch (currentScreen()){
+    case 'start':  return click('startBtn');
+    case 'paused': return click('resumeBtn');
+    case 'over':   return click('restartBtn');
+    // 说明页刻意不接 Enter：读到一半误按就关掉，比不支持更烦
+    default: return false;
+  }
+}
+
 window.addEventListener('keydown', (e)=>{
   Audio2.unlock();
   // Escape 任何时候都能关说明 —— 这是玩家唯一的逃生键
   if (e.key==='Escape'){ closeHelp(); return; }
+  if (e.key==='Enter'){ if (handleEnter(e)) e.preventDefault(); return; }
   if (!gameHasKeyboard()) return;      // 说明在读、名字在输，都不归游戏管
 
   const dir = keyMap[e.key];
@@ -3965,16 +4048,24 @@ function syncChrome(){
  */
 let pausedByBlur = false;
 
-document.addEventListener('visibilitychange', ()=>{
-  if (!document.hidden) return;
-  if (gameState !== 'playing') return;
+/** 两个入口共用一套逻辑，且**同一次失焦只处理一遍** ——
+ *  切标签时 visibilitychange 和 blur 往往一起来，不去重会走两遍。 */
+function autoPause(){
+  if (gameState !== 'playing') return;                     // 只在真的在玩时
   if (!helpOverlay.classList.contains('hidden')) return;   // 说明开着本来就是暂停态
+  if (pausedByBlur) return;                                // 已经自动暂停过了
   pausedByBlur = true;
   gameState = 'paused';
   document.getElementById('pauseOverlay').classList.remove('hidden');
   const why = document.getElementById('pauseWhy');
-  if (why) why.textContent = '你切走了，游戏替你按了暂停　按 P 或点「继续游戏」';
-});
+  if (why) why.textContent = '你切走了，游戏替你按了暂停　按 P / Enter 或点「继续游戏」';
+}
+
+document.addEventListener('visibilitychange', ()=>{ if (document.hidden) autoPause(); });
+/* blur 是必需的第二道：切到**另一个应用**（而不是另一个标签页）时，标签仍然
+   算「可见」，visibilitychange 根本不触发，只有窗口失焦。手机上切出去、
+   桌面上点到别的程序，都是走这条。 */
+window.addEventListener('blur', autoPause);
 
 function togglePause(){
   // 说明开着的时候 gameState 已经是 paused，此时按 P 会把游戏恢复成 playing
@@ -3987,7 +4078,7 @@ function togglePause(){
     if (pausedByBlur){
       pausedByBlur = false;
       const why = document.getElementById('pauseWhy');
-      if (why) why.textContent = '按 P 或点「继续游戏」回到游戏';
+      if (why) why.textContent = '按 P、Enter 或点「继续游戏」回到游戏';
     }
   }
 }
