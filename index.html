@@ -1002,7 +1002,7 @@ body.in-game .marquee{
             <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
               <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
             <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
-            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>2 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次</span></dd>
+            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>2 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次<br>落地会停一下等你选方向，按下方向键立刻就走</span></dd>
             <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
           </dl>
         </div>
@@ -1607,6 +1607,7 @@ function resetLevel(fullReset){
     x: SPAWN.player.x, y: SPAWN.player.y, dir:{x:0,y:0}, want:{x:0,y:0},
     baseSpeed: playerSpeed, speed: playerSpeed,
     mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0, warpCdCh:null,
+    warpChoiceUntil:0,   // 传送落地后的思考时间，见 orientAfterWarp
     // odometer driving the distance-based turn buffer (see player control)
     distTravelled:0, wantAtDist:0,
     // tiles run without changing direction, and the fading motion trail it drives
@@ -1858,14 +1859,46 @@ function orientAfterWarp(ent){
   const cx = Math.round(ent.x), cy = Math.round(ent.y);
   const can = d => canEnter(ent, cx + d.x, cy + d.y);
 
-  if ((ent.dir.x || ent.dir.y) && can(ent.dir)) return;   // 原方向还走得通，不打扰
+  /* 玩家落地先**停住**，把选择权交回去。
+   *
+   * 之前是"只有一个出口就替他转过去、立刻满速跑起来"。看着体贴，实际很糟：
+   * 人被瞬间挪到地图另一个角，还没看清自己在哪、幽灵在哪，就已经在跑了。
+   * 传送门本来是用来脱险的，结果落地那一下反而最容易送命。
+   *
+   * 停住不等于慢：按下方向的**那一帧**就走（人站在格心上，stepEntity 会立刻
+   * 重新选方向）。所以想好了的人零延迟，没想好的人有时间看——两头都照顾到。
+   *
+   * 一直不按也不会站死：过了 WARP_CHOICE_SECONDS，若只有一条路就自己走上去。
+   * 有岔路则继续等——那是真的需要玩家做决定，替他猜反而更糟。
+   */
+  if (ent === player){
+    ent.dir = {x:0, y:0};
+    ent.warpChoiceUntil = elapsed + WARP_CHOICE_SECONDS;
+    return;
+  }
 
+  // 幽灵不需要思考时间，照旧：能直走就直走，否则走唯一出口，再否则停下
+  if ((ent.dir.x || ent.dir.y) && can(ent.dir)) return;
   const exits = [];
   for (const k in DIRS) if (can(DIRS[k])) exits.push(DIRS[k]);
-  // 只有一个出口就替玩家转过去——这时候没有第二种选择，让他自己按纯属添堵
   if (exits.length === 1){ ent.dir = { x: exits[0].x, y: exits[0].y }; return; }
-  // 有岔路就停下来，把选择权交回去，别替他猜
   ent.dir = {x:0, y:0};
+}
+
+/** 落地后停下来等玩家按方向；超过这个时间还没按，且只有一条路，就自己走。 */
+const WARP_CHOICE_SECONDS = 0.75;
+
+/** 每帧检查：思考时间到了、人还站着、而且只有一条路可走，就替他迈出去。 */
+function resumeAfterWarp(){
+  if (!player.warpChoiceUntil) return;
+  if (player.dir.x || player.dir.y){ player.warpChoiceUntil = 0; return; }  // 已经自己走了
+  if (elapsed < player.warpChoiceUntil) return;
+  const cx = Math.round(player.x), cy = Math.round(player.y);
+  const exits = [];
+  for (const k in DIRS) if (canEnter(player, cx + DIRS[k].x, cy + DIRS[k].y)) exits.push(DIRS[k]);
+  // 有岔路就继续等：这时候是真的要玩家自己选，替他挑一条比让他站着更糟
+  if (exits.length === 1) player.dir = { x: exits[0].x, y: exits[0].y };
+  player.warpChoiceUntil = 0;
 }
 
 function checkPortal(ent){
@@ -2700,7 +2733,7 @@ function loseLife(){
   hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
-  player.warpCd=0; player.warpCdCh=null;
+  player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0;
   player.straightTiles=0; player.trail.length=0; // respawn at a standstill, no leftover wind-up
   frightTimer = 0; // dying cancels the power pellet outright
   ghostEatChain = 0;
@@ -3646,6 +3679,7 @@ function update(dt){
   }
   // portal cooldowns tick in simulation time so they freeze correctly on pause
   if (player.warpCd>0) player.warpCd -= dt;
+  resumeAfterWarp();
   ghosts.forEach(g=>{ if (g.warpCd>0) g.warpCd -= dt; });
   rescueFromWall();
 
