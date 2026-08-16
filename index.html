@@ -1002,7 +1002,7 @@ body.in-game .marquee{
             <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
               <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
             <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
-            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>2 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次<br>落地会停一下等你选方向，按下方向键立刻就走</span></dd>
+            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>1.2 秒</b><br><span class="dim">两种颜色各算各的：刚走完红门，蓝门可以立刻再跳一次<br>落地会停一下等你选方向，按下方向键立刻就走</span></dd>
             <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
           </dl>
         </div>
@@ -1608,6 +1608,7 @@ function resetLevel(fullReset){
     baseSpeed: playerSpeed, speed: playerSpeed,
     mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0, warpCdCh:null,
     warpChoiceUntil:0,   // 传送落地后的思考时间，见 orientAfterWarp
+    warpStandingOn:null, // 正踩着的那扇门（落地那扇不再触发）
     // odometer driving the distance-based turn buffer (see player control)
     distTravelled:0, wantAtDist:0,
     // tiles run without changing direction, and the fading motion trail it drives
@@ -1624,7 +1625,7 @@ function resetLevel(fullReset){
     // file out one at a time because the house has a single door.
     state: 'exiting',
     releaseAt: 0,
-    eatenFlashUntil:0, warpCd:0, warpCdCh:null,
+    eatenFlashUntil:0, warpCd:0, warpCdCh:null, warpStandingOn:null,
     eatenThisFright:false,   // 这一轮能量豆里已经被吃过一次，见 isEdible
     homeY:null,               // 走回老巢后停下的位置，见 'eaten' 分支
     fusedWith:null, isFusionHost:false,
@@ -1904,12 +1905,28 @@ function resumeAfterWarp(){
 function checkPortal(ent){
   const cx = Math.round(ent.x), cy = Math.round(ent.y);
   if (!nearCenter(ent.x) || !nearCenter(ent.y)) return;
+  // 已经离开落地的那扇门了，解除豁免 —— 下次再踩上来就正常传送
+  if (ent.warpStandingOn && (ent.warpStandingOn.x !== cx || ent.warpStandingOn.y !== cy)){
+    ent.warpStandingOn = null;
+  }
   const ch = grid[cy] && grid[cy][cx];
   if (ch !== '1' && ch !== '2') return;
   // Cooldown runs on simulation time (ticked in update), not a wall-clock
   // setTimeout — a timeout would keep running while the game is paused and
   // could expire mid-pause. It also stops an idle entity that lands on the
   // exit portal from being bounced straight back, over and over.
+  /* 脚下这扇门就是刚把你送过来的那扇 —— 不再触发，直到你走开。
+   *
+   * 这条比冷却更根本。原先只靠冷却兜底，于是出现了这个 bug：落在有岔路的
+   * 传送门上、玩家没按方向（正在看局面），冷却一到就被传回去，然后来回弹个
+   * 不停 —— 实测第二关干等 6 秒能弹 9 次。
+   *
+   * 靠"把冷却调长"去压这个问题是治标的：等得越久只是弹得越慢，而代价是
+   * 真正想再用一次传送门时也得干等。把"站着不算触发"单独写出来之后，
+   * 冷却就回归成一个纯粹的玩法旋钮，可以按手感自由调短。
+   */
+  if (ent.warpStandingOn && ent.warpStandingOn.x === cx && ent.warpStandingOn.y === cy) return;
+
   // 只有**同色**的门在冷却里才拦；另一种颜色不受影响
   if (ent.warpCd > 0 && ent.warpCdCh === ch) return;
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
@@ -1917,6 +1934,7 @@ function checkPortal(ent){
       ent.x = x; ent.y = y;
       ent.warpCd = PORTAL_COOLDOWN_SECONDS;
       ent.warpCdCh = ch;               // 记下是哪种颜色在冷却
+      ent.warpStandingOn = { x, y };    // 站在这扇门上不再触发，见上面的说明
       orientAfterWarp(ent);
       if (ent===player){
         Audio2.warp();
@@ -2733,13 +2751,13 @@ function loseLife(){
   hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
-  player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0;
+  player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0; player.warpStandingOn=null;
   player.straightTiles=0; player.trail.length=0; // respawn at a standstill, no leftover wind-up
   frightTimer = 0; // dying cancels the power pellet outright
   ghostEatChain = 0;
   ghosts.forEach((g,i)=>{
     g.x=SPAWN.ghosts[i].x; g.y=SPAWN.ghosts[i].y; g.state='exiting';
-    g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.warpCdCh=null; g.releaseAt = 0;
+    g.fusedWith=null; g.isFusionHost=false; g.warpCd=0; g.warpCdCh=null; g.warpStandingOn=null; g.releaseAt = 0;
     // 上面 frightTimer 已经清零，这两个是配套的每局状态，一起归位：
     // homeY 留着会让下次进巢停在上一条命的位置，eatenThisFright 留着会让
     // 新一轮能量豆里有幽灵莫名其妙吃不了。
