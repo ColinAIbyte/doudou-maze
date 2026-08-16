@@ -301,6 +301,7 @@ body{
   mix-blend-mode:overlay;
 }
 .overlay{
+  --ov-pad:20px;              /* 供 .over-actions 的 sticky 定位换算，见那里 */
   position:absolute;inset:10px;
   border-radius:8px;
   background:rgba(6,3,16,.86);
@@ -637,6 +638,34 @@ body{
 
 /* 署名。刻意压得很轻：它出现在开始页和结算页，两处都是玩家真正想看的东西
    （排行榜、本局得分）旁边，抢眼了就成了干扰。 */
+.credits-by{
+  display:block;
+  margin-top:3px;
+  opacity:.75;
+  letter-spacing:.08em;
+}
+/* 「关于」那段。行距放宽、字号比别处稍大一点点 —— 它是唯一一段需要"读"
+   而不是"查"的文字，其余全是词条。 */
+.about{
+  font-size:12px !important;
+  line-height:2 !important;
+  color:var(--text-dim) !important;
+}
+/* 通关那句话。用暖色但不用最亮的琥珀 —— 那是留给分数和评级的；
+   这句应当被看见，但不该抢在成绩前面。 */
+.warm{
+  color:var(--tang);
+  font-size:12px;
+  line-height:1.8;
+}
+.about-sign{
+  display:block;
+  margin-top:6px;
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:.1em;
+}
 .credits{
   margin-top:14px;
   font-family:var(--font-display);
@@ -693,7 +722,22 @@ body{
 }
 .challenge b{color:var(--cyan);}
 .challenge .ch-score{color:var(--amber);font-weight:700;margin:0 4px;}
-.over-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;}
+/* 按钮吸在弹层底部，内容从它下面滚过去。
+   通关结算是全场最长的一屏（评级 + 五行战绩 + 奖励明细 + 破纪录 + 排名 +
+   结尾那句），实测超出可视区 241px —— 玩家刚打穿六关，却要先摸索着往下滚
+   才能找到「再来一局」。这不是靠删内容能长久解决的：以后每加一行就会再犯，
+   所以让按钮永远在。
+   上方那道渐变是必需的：没有它，文字会直接怼到按钮边缘，看着像被切断。 */
+.over-actions{
+  display:flex;gap:10px;align-items:center;flex-wrap:wrap;justify-content:center;
+  position:sticky;
+  bottom:calc(-1 * var(--ov-pad, 20px));
+  padding:10px 0 var(--ov-pad, 20px);
+  margin-top:2px;
+  width:100%;
+  background:linear-gradient(180deg, rgba(6,3,16,0) 0%, rgba(6,3,16,.92) 28%, rgba(6,3,16,.98) 100%);
+  z-index:75;
+}
 .btn-share{padding:11px 18px;font-size:13px;}
 .name-done{
   font-family:var(--font-display);
@@ -843,7 +887,7 @@ body.in-game .marquee{
   .tag-words{gap:8px;}
   .combo-wrap{max-width:92px;min-width:48px;}
   /* 把弹层压紧，让开始页在一屏内装得下 */
-  .overlay{gap:9px;padding:14px 12px;}
+  .overlay{gap:9px;padding:14px 12px;--ov-pad:14px;}
   .overlay p{font-size:12px;line-height:1.55;}
   .bonus-hint{font-size:10px !important;line-height:1.5;}
   .board{max-height:112px;font-size:10px;}
@@ -940,7 +984,7 @@ body.in-game .marquee{
         <button class="btn" id="startBtn">开始</button>
         <button class="btn ghost btn-share" id="startHelpBtn">玩法说明</button>
       </div>
-      <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
+      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span></div>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1021,6 +1065,15 @@ body.in-game .marquee{
             <dt>邮箱</dt><dd><b>2685897@qq.com</b><br><span class="dim">有想法欢迎来信</span></dd>
           </dl>
         </div>
+        <!-- 来由放在说明的最末尾，而不是开始页：想知道的人自然会翻到，
+             不想知道的人一秒都不会被耽误。故事不该拦在玩游戏前面。 -->
+        <div class="help-sec">
+          <h3>关于这个游戏</h3>
+          <p class="about">儿子想要一个简单又刺激的小游戏，我就和他一起做了一个。<br>
+            他先玩，我再改；他说哪儿不好玩，就改哪儿。<br>
+            后来几个小朋友抢着刷分，才有了排行榜和这六关。<br>
+            <span class="about-sign">—— 超级奶爸</span></p>
+        </div>
       </div>
       <button class="btn" id="helpCloseBtn">知道了</button>
     </div>
@@ -1043,7 +1096,7 @@ body.in-game .marquee{
         <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
         <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
       </div>
-      <div class="credits">游戏设计者：超级奶爸　微信：superpapa2011</div>
+      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span></div>
     </div>
   </div>
 
@@ -3296,10 +3349,29 @@ function buildSummary(won, rank, prevBest, isNewBest){
     lines.push(`<span class="new-best">🎉 新纪录！比上次高 ${fmtNum(score - prevBest)} 分</span>`);
   } else if (isNewBest){
     lines.push(`<span class="new-best">🎉 第一条纪录，就是它了</span>`);
+  } else if (score === prevBest){
+    // 打平要单独说：写成"差 0 分打破自己的纪录"读着像出了 bug。
+    // 挑战那边早先修过一模一样的问题，这是同一类。
+    lines.push('<span style="color:var(--amber)">和自己的纪录打平，一分不差</span>');
   } else {
     lines.push(`<span style="color:var(--amber)">差 ${fmtNum(prevBest - score)} 分打破自己的纪录</span>`);
   }
   if (rank > 0) lines.push(`<span class="bonus-hint">本次排名第 ${rank} 名，留下你的名字</span>`);
+
+  /* 六关全通才出现的一句话。
+   *
+   * 只放在这里，别处一个字都不提，理由有三：
+   *   - 通关是玩家唯一愿意停下来读字的时刻。半路死掉的人只想立刻再来一局，
+   *     这时候跟他讲游戏的来由，是在挡路。
+   *   - 它得是**挣来**的。谁都能看到的话就不值钱；打穿六关的人看到，才会觉得
+   *     这句是说给自己听的。
+   *   - 一句就够，不加感叹号。"一个爸爸做给儿子的游戏"这几个字本身分量就够，
+   *     再堆形容词只会把它变轻。
+   */
+  if (won){
+    lines.push('<span class="warm">这游戏最早只是儿子的一个念头，谢谢你把它玩到最后。</span>');
+  }
+
   /* 收到挑战时，结算页第一件事就是回答"我超了没" —— 这是对方发链接给你的
      全部意义，藏在一堆明细里就白发了。 */
   if (challenge){
