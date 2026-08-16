@@ -429,6 +429,46 @@ body{
   pointer-events:none;
 }
 .help-more.hidden{opacity:0;}
+/* 折叠区。用原生 <details>，标题做成一个明显可点的条 ——
+   收起来的东西必须**看起来就想点**，否则等于藏了。 */
+.help-fold{
+  border:1px solid var(--panel-border);
+  border-radius:10px;
+  background:rgba(138,107,255,.05);
+  padding:0 12px;
+}
+.help-fold > summary{
+  list-style:none;
+  cursor:pointer;
+  padding:10px 2px;
+  font-family:var(--font-display);
+  font-size:12px;
+  letter-spacing:.12em;
+  color:var(--amber);
+  display:flex;align-items:center;justify-content:space-between;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.help-fold > summary::-webkit-details-marker{display:none;}
+/* 自己画箭头：默认那个三角在各家浏览器长得都不一样，还没法跟着主题变色 */
+.help-fold > summary::after{
+  content:'';
+  width:7px;height:7px;
+  border-right:1.6px solid currentColor;
+  border-bottom:1.6px solid currentColor;
+  transform:rotate(45deg) translateY(-2px);
+  transition:transform .18s ease;
+}
+.help-fold[open] > summary::after{transform:rotate(-135deg) translateY(-2px);}
+.help-fold > .help-sec, .help-fold > .about{padding-bottom:12px;}
+.help-fold .help-sec + .help-sec{margin-top:13px;}
+/* 里面那层再嵌一级：颜色压淡，看得出是"更深一层" */
+.help-fold.inner{
+  margin:10px 0 12px;
+  background:rgba(138,107,255,.04);
+}
+.help-fold.inner > summary{color:var(--text-dim);font-size:11px;}
+
 .help-sec h3{
   margin:0 0 5px;
   font-family:var(--font-display);
@@ -1005,7 +1045,7 @@ body.in-game .marquee{
         <button class="btn" id="startBtn">开始</button>
         <button class="btn ghost btn-share" id="startHelpBtn">玩法说明</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span></div>
+      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span><span class="credits-by">反馈 2685897@qq.com</span></div>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1027,74 +1067,85 @@ body.in-game .marquee{
       <!-- 内容与 微信小游戏版/js/ui.js 里那份 HELP 保持一致。两处是分开写的
            （一边 HTML、一边 canvas 逐行画），改一处务必改另一处 —— 说明对不上
            比没有说明更糟，玩家会照着做然后发现不是那么回事。 -->
+      <!-- 分层：第一屏只回答"怎么开始玩"，其余全部收起。
+           原来是一次性摊开全部规则——操作、计分、连击、四种幽灵、四种机关、
+           奖励分、反馈邮箱，1050px 的内容对第一次玩的人是劝退的。
+           规则可以复杂，但第一次接触必须简单：真正开始玩只需要知道
+           "吃豆、躲鬼、吃大豆反杀"，其余的边玩边发现更有意思。
+           用原生 <details>：不写一行 JS，键盘和读屏都能用，收起时内容仍在
+           DOM 里，所以微信那两版读纯文本也不会丢东西。 -->
       <div class="help-doc">
         <div class="help-sec">
-          <h3>操作</h3>
+          <h3>怎么玩</h3>
           <dl class="kv">
-            <dt>电脑</dt><dd>方向键 或 WASD 移动，<b>P</b> 暂停</dd>
-            <dt>手机</dt><dd>手指在迷宫上<b>滑动</b>转向，也可以点下方的方向键</dd>
+            <dt>移动</dt><dd>手机在迷宫上<b>滑动</b>　电脑<b>方向键 / WASD</b></dd>
+            <dt>吃豆</dt><dd>吃光豆子就过关；<b>连着吃</b>，倍率越叠越高</dd>
+            <dt>躲幽灵</dt><dd>碰到少一条命；吃下<b>能量豆</b>就能反过来吃它们</dd>
+            <dt>还有</dt><dd>传送门 · 冲刺 · 穿墙 · 幽灵融合
+              <br><span class="dim">这些不用记，边玩边撞见</span></dd>
           </dl>
         </div>
-        <div class="help-sec">
-          <h3>吃什么 · 多少分</h3>
-          <dl class="kv">
-            <dt>豆子</dt><dd><b>15</b> 分 × 连击</dd>
-            <dt>能量豆</dt><dd><b>75</b> 分 × 连击</dd>
-            <dt>幽灵</dt><dd><b>1万 → 2万 → 3万 → 4万…</b><br><span class="dim">同一次能量豆内第几只就是几万，上不封顶；这一项不乘连击</span></dd>
-            <dt>神秘水果</dt><dd><b>450</b> 分 × 连击，另送 10 秒<b>穿墙</b><br><span class="dim">穿墙期间移动会慢一点、转向随按随到——墙都没了，要的是准不是快</span></dd>
-          </dl>
-        </div>
-        <div class="help-sec">
-          <h3>连击</h3>
-          <dl class="kv">
-            <dt>怎么涨</dt><dd>每吃一颗涨一级，<b>上不封顶</b><br><span class="dim">吃幽灵、吃水果同样算——追幽灵不会弄断连击</span></dd>
-            <dt>怎么断</dt><dd>一边跑一边吃，约 <b>1.6 秒</b>没吃到才断<br><span class="dim">停下不动断得快得多，约 0.5 秒；连得越长，这个时间给得越宽</span></dd>
-            <dt>值多少</dt><dd>所有吃到的东西都乘这个倍率</dd>
-          </dl>
-        </div>
-        <div class="help-sec">
-          <h3>四种幽灵</h3>
-          <ul class="ghost-list">
-            <li><i style="color:var(--danger);background:var(--danger)"></i><b>追击者</b>　直线朝你追过来</li>
-            <li><i style="color:var(--pink);background:var(--pink)"></i><b>伏击者</b>　预判你的去向，提前拦截</li>
-            <li><i style="color:var(--tang);background:var(--tang)"></i><b>怕生鬼</b>　你一靠近它就跑</li>
-            <li><i style="color:var(--cyan);background:var(--cyan)"></i><b>巡逻者</b>　沿固定路线绕，不理你</li>
-          </ul>
-        </div>
-        <div class="help-sec">
-          <h3>机关</h3>
-          <dl class="kv">
-            <dt>能量豆</dt><dd>幽灵变蓝可反吃，持续 <b>9 秒</b>起<br>
-              <span class="dim">每过一关缩短，第 6 关只剩 5 秒；期间你快 15%，幽灵慢 15%</span></dd>
-            <dt>幽灵融合</dt><dd>两只蓝幽灵相撞合成「超级幽灵」，吃掉它会放出里面那只，两只各算一档悬赏</dd>
-            <dt>传送门</dt><dd>地图四角成对，<b>颜色相同即相连</b>，冷却 <b>0 秒</b><br><span class="dim">目前不设冷却，走回门上就能再穿一次<br>落地会停一下等你选方向，按下方向键立刻就走</span></dd>
-            <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b>，一转弯就归零</dd>
-          </dl>
-        </div>
-        <div class="help-sec">
-          <h3>奖励分</h3>
-          <dl class="kv">
-            <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
-            <dt>全灭幽灵</dt><dd><b>3000</b>　一次能量豆内吃光全场</dd>
-            <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
-            <dt>全程无伤</dt><dd><b>15000</b></dd>
-          </dl>
-        </div>
-        <div class="help-sec">
-          <h3>意见反馈</h3>
-          <dl class="kv">
-            <dt>邮箱</dt><dd><b>2685897@qq.com</b><br><span class="dim">有想法欢迎来信</span></dd>
-          </dl>
-        </div>
-        <!-- 来由放在说明的最末尾，而不是开始页：想知道的人自然会翻到，
-             不想知道的人一秒都不会被耽误。故事不该拦在玩游戏前面。 -->
-        <div class="help-sec">
-          <h3>关于这个游戏</h3>
+
+        <details class="help-fold">
+          <summary>进阶玩法</summary>
+          <div class="help-sec">
+            <h3>连击</h3>
+            <p>每吃一颗涨一级，<b>上不封顶</b>；吃幽灵、吃水果同样算。<br>
+              一边跑一边吃约 <b>1.6 秒</b>没吃到才断，停下不动约 <b>0.5 秒</b>就断。</p>
+          </div>
+          <div class="help-sec">
+            <h3>四种幽灵</h3>
+            <ul class="ghost-list">
+              <li><i style="color:var(--danger);background:var(--danger)"></i><b>追击者</b>　直线朝你追过来</li>
+              <li><i style="color:var(--pink);background:var(--pink)"></i><b>伏击者</b>　预判你的去向，提前拦截</li>
+              <li><i style="color:var(--tang);background:var(--tang)"></i><b>怕生鬼</b>　你一靠近它就跑</li>
+              <li><i style="color:var(--cyan);background:var(--cyan)"></i><b>巡逻者</b>　沿固定路线绕，不理你</li>
+            </ul>
+          </div>
+          <div class="help-sec">
+            <h3>特殊机关</h3>
+            <dl class="kv">
+              <dt>能量豆</dt><dd>短时间内幽灵可以反吃</dd>
+              <dt>传送门</dt><dd>地图四角成对，颜色相同的两个互通</dd>
+              <dt>冲刺</dt><dd>直线一直跑会越跑越快，一转弯就归零</dd>
+              <dt>神秘水果</dt><dd>十秒之内可以穿墙走</dd>
+              <dt>幽灵融合</dt><dd>两只蓝幽灵相撞会合成「超级幽灵」</dd>
+            </dl>
+          </div>
+          <div class="help-sec">
+            <h3>能拿多少分</h3>
+            <dl class="kv">
+              <dt>豆子</dt><dd><b>15</b> × 连击</dd>
+              <dt>能量豆</dt><dd><b>75</b> × 连击</dd>
+              <dt>神秘水果</dt><dd><b>450</b> × 连击</dd>
+              <dt>幽灵</dt><dd><b>1万 → 2万 → 3万…</b><span class="dim">同一颗能量豆内第几只就是几万</span></dd>
+            </dl>
+            <details class="help-fold inner">
+              <summary>完整计分与参数</summary>
+              <dl class="kv">
+                <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
+                <dt>全灭幽灵</dt><dd><b>3000</b>　一次能量豆内吃光全场</dd>
+                <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
+                <dt>全程无伤</dt><dd><b>15000</b></dd>
+                <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
+                  <span class="dim">期间你快 15%，幽灵慢 15%</span></dd>
+                <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b></dd>
+                <dt>传送门</dt><dd>冷却 <b>0 秒</b>，落地会停一下等你选方向</dd>
+                <dt>穿墙</dt><dd><b>10 秒</b>；期间移动放慢，转向随按随到</dd>
+                <dt>幽灵融合</dt><dd>吃掉超级幽灵会放出里面那只，两只各算一档悬赏</dd>
+                <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（幽灵悬赏除外）</dd>
+              </dl>
+            </details>
+          </div>
+        </details>
+
+        <details class="help-fold">
+          <summary>关于这个游戏</summary>
           <p class="about">儿子想要一个简单又刺激的小游戏，我就和他一起做了一个。<br>
             他先玩，我再改；他说哪儿不好玩，就改哪儿。<br>
             后来几个小朋友抢着刷分，才有了排行榜和这六关。<br>
             <span class="about-sign">—— 超级奶爸</span></p>
-        </div>
+        </details>
       </div>
       <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
       <div class="help-more" id="helpMore">↓ 下面还有</div>
@@ -1119,7 +1170,7 @@ body.in-game .marquee{
         <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
         <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span></div>
+      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span><span class="credits-by">反馈 2685897@qq.com</span></div>
     </div>
   </div>
 
