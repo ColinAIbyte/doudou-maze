@@ -767,6 +767,36 @@ body{
   border-color:var(--amber);
   box-shadow:0 0 0 2px rgba(255,207,92,.18);
 }
+/* 首屏主按钮。它必须是这一屏上**最明显**的东西 —— 第一次打开的人
+   眼睛该直接落在这儿，而不是先读完说明再找入口。
+   44px 是手指的最小舒适命中高度；桌面上鼠标不需要这么大，但统一尺寸
+   省掉一套分支，而且大按钮在视觉层级上本来就该压过旁边的次要按钮。 */
+.btn-hero{
+  min-height:46px;
+  padding:12px 40px;
+  font-size:16px;
+  letter-spacing:.14em;
+  /* 100~150ms：低于 80ms 察觉不到，高于 200ms 就开始显得黏 */
+  transition:transform .12s ease, filter .12s ease, box-shadow .12s ease;
+}
+.btn-hero:hover, .btn-hero:focus-visible{
+  filter:brightness(1.08);
+  box-shadow:0 4px 0 #c99a2e, 0 10px 22px rgba(255,207,92,.36);
+}
+.btn-hero:active{
+  transform:translateY(3px) scale(.985);
+  box-shadow:0 1px 0 #c99a2e;
+}
+
+/* 首屏那句操作提示：按设备只显示一句。
+   默认给触屏，桌面在媒体查询里覆盖 —— 顺序不能反，两条特指度不同但
+   同名属性靠后写的赢，写反了桌面会两句都露出来。 */
+.tip-key{display:none;}
+@media (hover: hover) and (pointer: fine){
+  .tip-key{display:inline;}
+  .tip-touch{display:none;}
+}
+
 .btn.btn-sm{padding:8px 16px;font-size:12px;box-shadow:0 3px 0 #c99a2e;}
 .btn.btn-sm:active{transform:translateY(2px);box-shadow:0 1px 0 #c99a2e;}
 /* 收到的挑战。放在开始页排行榜上方 —— 它是"这局要干嘛"的理由，
@@ -1029,7 +1059,13 @@ body.in-game .marquee{
            四种奖励分），但玩家如果没有一个"要超过的数"，这套东西有一半是白
            设计的。BEST 就是那个数，它得在按「开始」之前就看见。 -->
       <div class="best-line hidden" id="bestLine"></div>
-      <p>手指滑动屏幕　或　方向键 / WASD 移动<br>吃豆连击叠加倍率，能量豆可反杀幽灵</p>
+      <!-- 首屏只留**一句**。原来两行，第二行讲连击和反杀 —— 那是玩起来自然会
+           撞见的东西，写在这儿只是提高了开始前的阅读量。按设备分文案，用 CSS
+           切换而不是 JS：JS 判断要等脚本跑完，会先闪一下错的那句。 -->
+      <p class="start-tip">
+        <span class="tip-key">方向键 / WASD 移动</span><span class="tip-touch">滑动转向</span>
+        　·　吃光豆子即可过关
+      </p>
       <div class="challenge hidden" id="challengeBox"></div>
       <!-- 关卡选择。只列已经打到过的关；没到过的显示锁。
            摆在「开始」上面而不是下面：正式挑战仍然是主线，练习是备选。 -->
@@ -1042,10 +1078,10 @@ body.in-game .marquee{
            而且写着字，不是一个光秃秃的问号。
            并排而不是上下叠：开始页在小屏上本来就快装不下了，横着排不占高度。 -->
       <div class="over-actions">
-        <button class="btn" id="startBtn">开始</button>
+        <button class="btn btn-hero" id="startBtn">开始游戏</button>
         <button class="btn ghost btn-share" id="startHelpBtn">玩法说明</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span><span class="credits-by">反馈 2685897@qq.com</span></div>
+      <div class="credits">一个爸爸做给儿子的游戏</div>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1082,7 +1118,7 @@ body.in-game .marquee{
             <dt>吃豆</dt><dd>吃光豆子就过关；<b>连着吃</b>，倍率越叠越高</dd>
             <dt>躲幽灵</dt><dd>碰到少一条命；吃下<b>能量豆</b>就能反过来吃它们</dd>
             <dt>还有</dt><dd>传送门 · 冲刺 · 穿墙 · 幽灵融合
-              <br><span class="dim">这些不用记，边玩边撞见</span></dd>
+              <br><span class="dim">不用背，玩着就会</span></dd>
           </dl>
         </div>
 
@@ -1145,6 +1181,10 @@ body.in-game .marquee{
             他先玩，我再改；他说哪儿不好玩，就改哪儿。<br>
             后来几个小朋友抢着刷分，才有了排行榜和这六关。<br>
             <span class="about-sign">—— 超级奶爸</span></p>
+          <dl class="kv" style="margin-top:10px">
+            <dt>微信</dt><dd>superpapa2011</dd>
+            <dt>反馈</dt><dd>2685897@qq.com<br><span class="dim">有想法欢迎来信</span></dd>
+          </dl>
         </details>
       </div>
       <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
@@ -1170,7 +1210,7 @@ body.in-game .marquee{
         <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
         <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏<br><span class="credits-by">超级奶爸　微信 superpapa2011</span><span class="credits-by">反馈 2685897@qq.com</span></div>
+      <div class="credits">一个爸爸做给儿子的游戏</div>
     </div>
   </div>
 
@@ -3562,11 +3602,32 @@ function requestDir(dir){
   player.wantAtDist = player.distTravelled;
 }
 
+/* 只在**游戏真的掌握控制权**时才拦键盘。
+ *
+ * 原来是无条件拦方向键，于是玩法说明打开时——那是一份要上下滚的长文档——
+ * 方向键被游戏吃掉，键盘用户滚不动它。空格同理。
+ *
+ * 反过来也不能一个都不拦：正常游玩时方向键若走浏览器默认行为，页面会跟着
+ * 滚（现在 body 是 overflow:hidden 所以看不出来，但一旦哪天改了布局就会冒出来），
+ * 而且长按空格在很多浏览器上有翻页语义。
+ *
+ * 判断标准就一条：说明开着、或者光标在输入框里，游戏就没有控制权。 */
+function gameHasKeyboard(){
+  if (!helpOverlay.classList.contains('hidden')) return false;
+  const a = document.activeElement;
+  if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return false;
+  return true;
+}
+
 window.addEventListener('keydown', (e)=>{
   Audio2.unlock();
+  // Escape 任何时候都能关说明 —— 这是玩家唯一的逃生键
   if (e.key==='Escape'){ closeHelp(); return; }
+  if (!gameHasKeyboard()) return;      // 说明在读、名字在输，都不归游戏管
+
   const dir = keyMap[e.key];
   if (dir){ requestDir(dir); e.preventDefault(); }
+  else if (e.key===' ' || e.key==='Spacebar'){ e.preventDefault(); }  // 空格别翻页
   if (e.key==='p' || e.key==='P'){ togglePause(); }
 });
 document.querySelectorAll('[data-dir]').forEach(btn=>{
