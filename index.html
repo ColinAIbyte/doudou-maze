@@ -886,7 +886,7 @@ body.in-game .marquee{
             <dt>豆子</dt><dd><b>15</b> 分 × 连击</dd>
             <dt>能量豆</dt><dd><b>75</b> 分 × 连击</dd>
             <dt>幽灵</dt><dd><b>1万 → 2万 → 3万 → 4万…</b><br><span class="dim">同一次能量豆内第几只就是几万，上不封顶；这一项不乘连击</span></dd>
-            <dt>神秘水果</dt><dd><b>450</b> 分 × 连击，另送 10 秒穿墙</dd>
+            <dt>神秘水果</dt><dd><b>450</b> 分 × 连击，另送 10 秒<b>穿墙</b><br><span class="dim">穿墙期间移动会慢一点、转向随按随到——墙都没了，要的是准不是快</span></dd>
           </dl>
         </div>
         <div class="help-sec">
@@ -1614,6 +1614,8 @@ function stepEntity(ent, dt, chooseDir, onArrive){
 
 /** How long the mystery fruit lets the player walk through walls. */
 const FRUIT_PHASE_SECONDS = 10;
+/** 穿墙期间的速度倍率，同时顶替冲刺加成。见 applySpeedModifiers 里的说明。 */
+const FRUIT_PHASE_SPEED_MULT = 0.88;
 
 /**
  * Puts the player back on a legal tile if the phase power left them inside a
@@ -1734,6 +1736,23 @@ function applyCornerAssist(ent){
   const w = ent.want;
   if (w.x === ent.dir.x && w.y === ent.dir.y) return;          // straight on
   if (w.x === -ent.dir.x && w.y === -ent.dir.y) return;        // reversal's job
+
+  /* 穿墙时转向立刻生效，不必等到前方那个路口。
+   *
+   * 平时只允许提前 0.45 格是有道理的：转弯得落在真的路口上，否则会拐进墙里。
+   * 但穿墙时**每一格都是路口**，这条限制就纯粹是在碍事了——玩家眼看着目标在
+   * 左边，却要先往前飘过大半格才拐得动。这个道具最大的卖点就是"想去哪去哪"，
+   * 转向却不跟手，卖点就没了。
+   *
+   * 就近取整而不是取前方那一格：这样最多只修正半格，而且允许**往回**贴一点。
+   * 往回在平时是不行的（会退进墙里），穿墙时正好没有这个问题。
+   * 仍然落在格心上，不让玩家跑到格线之间——那会让 stepEntity 再也找不到
+   * 重新选方向的时机，人就卡死了（幽灵那个 bug 就是这么来的）。 */
+  if (ent.phase > 0){
+    ent.x = Math.round(ent.x); ent.y = Math.round(ent.y);
+    if (canEnter(ent, ent.x + w.x, ent.y + w.y)) ent.dir = { x: w.x, y: w.y };
+    return;
+  }
 
   const nx = ent.dir.x ? cellOf(ent.x, ent.dir.x) + ent.dir.x : Math.round(ent.x);
   const ny = ent.dir.y ? cellOf(ent.y, ent.dir.y) + ent.dir.y : Math.round(ent.y);
@@ -2256,7 +2275,20 @@ function momentumMult(){
 
 function applySpeedModifiers(){
   const powered = frightTimer > 0;
-  player.speed = player.baseSpeed * (powered ? FRIGHT_PLAYER_SPEED_MULT : 1) * momentumMult();
+  /* 穿墙时**不吃冲刺加成**，另外再慢一档。
+   *
+   * 冲刺的设计意图是"敢走长直线就奖励你"。可穿墙的时候没有墙逼你转弯，长直线
+   * 是白送的，动量必然顶满 1.22 倍 —— 奖励的不是胆量，只是道具本身。结果第六关
+   * 穿墙状态下是 6.86×1.22≈8.4 格/秒，横穿整张图 2.3 秒，根本来不及瞄。
+   *
+   * 道具变得难用，等于把最有意思的一个道具做废了：玩家吃到它反而不敢乱走。
+   * 现在改成穿墙期间锁 0.88 倍，比平时还慢一点 —— 换来的是能贴着想去的那颗豆
+   * 停下、能在墙里精确改道。速度它本来就不缺，缺的是控制。
+   * （第六关 6.86×0.88≈6.0，仍然远快过幽灵的 3.78，安全性没有变。） */
+  const phasing = player.phase > 0;
+  player.speed = player.baseSpeed
+    * (powered ? FRIGHT_PLAYER_SPEED_MULT : 1)
+    * (phasing ? FRUIT_PHASE_SPEED_MULT : momentumMult());
   ghosts.forEach(g=>{
     g.speed = g.baseSpeed * (powered ? FRIGHT_GHOST_SPEED_MULT : 1) * (g.isFusionHost ? 1.15 : 1);
   });
