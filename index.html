@@ -973,7 +973,8 @@ body.in-game .marquee{
     <div class="overlay hidden" id="overOverlay">
       <h2 id="overTitle">游戏结束</h2>
       <div class="big-score" id="finalScore">0</div>
-      <p id="overSub">再接再厉，虫洞与融合幽灵在等着你。</p>
+      <!-- 内容由 endGame 填充；这里留空，免得占位文本被误当成线上文案 -->
+      <p id="overSub"></p>
       <div class="name-row hidden" id="nameRow">
         <input id="nameInput" class="name-input" type="text" maxlength="8"
                placeholder="留下名字" autocomplete="off" spellcheck="false">
@@ -1495,7 +1496,26 @@ const Audio2 = (()=>{
     },
     fusion(){ const t=now(); tone(160,t,0.5,{type:'sawtooth',gain:0.13,slideTo:60,slideDur:0.5}); tone(320,t+0.05,0.45,{type:'sawtooth',gain:0.1,slideTo:120,slideDur:0.45}); },
     warp(){ const t=now(); tone(300,t,0.22,{type:'sine',gain:0.14,slideTo:1200,slideDur:0.22}); },
-    fruit(){ const t=now(); tone(700,t,0.09,{type:'triangle',gain:0.16}); tone(1050,t+0.09,0.14,{type:'triangle',gain:0.16}); },
+    fruit(){ const t=now();
+      // 吃到水果先"嗡"一下再叮 —— 那一声低频是"规则变了"的信号
+      tone(90, t, 0.34, {type:'sine', gain:0.20, slideTo:200, slideDur:0.34});
+      tone(700,t+0.06,0.09,{type:'triangle',gain:0.16}); tone(1050,t+0.15,0.16,{type:'triangle',gain:0.16}); },
+    /** 连击里程碑：档位越高，音符越多、越亮。x100 是全场最响的一次。 */
+    comboMilestone(m){
+      const t=now();
+      const tier = m>=100 ? 3 : m>=50 ? 2 : m>=25 ? 1 : 0;
+      const base = [523, 659, 784, 1047][tier];
+      const n = 2 + tier;
+      for (let i=0;i<n;i++){
+        tone(base * Math.pow(1.26, i), t + i*0.055, 0.14, {type:'triangle', gain:0.11 + tier*0.02});
+        if (tier >= 2) tone(base * Math.pow(1.26, i) / 2, t + i*0.055, 0.14, {type:'sine', gain:0.06});
+      }
+    },
+    /** 穿墙倒数：3/2/1，越数越高越急 */
+    phaseTick(n){ const t=now(); const f = n===3?520 : n===2?620 : 760;
+      tone(f, t, 0.10, {type:'triangle', gain:0.13 + (3-n)*0.03}); },
+    /** 穿墙结束：往下一沉，和吃到时的上扬正好相反 */
+    phaseEnd(){ const t=now(); tone(300,t,0.26,{type:'sine',gain:0.15,slideTo:120,slideDur:0.26}); },
     death(){ const t=now(); [520,440,360,280,200].forEach((f,i)=>tone(f, t+i*0.11, 0.13, {type:'sawtooth', gain:0.15})); },
     levelUp(){ const t=now(); [440,554,660,880].forEach((f,i)=>tone(f, t+i*0.09, 0.14, {type:'square', gain:0.14})); },
     gameOver(){ const t=now(); [392,349,294,220,164].forEach((f,i)=>tone(f, t+i*0.16, 0.2, {type:'sawtooth', gain:0.15})); },
@@ -1556,7 +1576,7 @@ function resetLevel(fullReset){
   }));
   fruit = { active:false, x:9, y:13, timer:0, nextAt: 60, path:0 };
   comboTimer = 0; combo = 1;
-  frightTimer = 0; ghostEatChain = 0;
+  frightTimer = 0; ghostEatChain = 0; comboMilestoneHit = 0;
   deathsThisLevel = 0; levelBonuses = [];
   introTimer = 0;   // 复位关卡时清掉卡片，免得它挂在上一关的画面上
   if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; perfectLevelsThisRun = 0; runBonuses = []; maxComboSeen = 1; }
@@ -2077,7 +2097,8 @@ const COMBO_IDLE_DECAY = 3.0;
 
 /** 剩几颗豆子开始呼吸闪烁 / 几颗开始明显跳动。见豆子的绘制。 */
 const LAST_PELLET_HINT = 10;
-const LAST_PELLET_LOUD = 5;
+// 剩三颗才转成明显跳动：那时候才真的开始「到底在哪」，五颗时一般还看得见
+const LAST_PELLET_LOUD = 3;
 
 function addPelletScore(base){
   addScore(base * combo);
@@ -2088,7 +2109,33 @@ function addPelletScore(base){
      这时候他刚做出这个行为，一句话就能把"我刚才干了什么"和"为什么加分多"
      对上号。 */
   if (combo === 5) hintOnce('combo', '连击 x5！不停嘴，所有得分都乘这个倍率', 0);
+  checkComboMilestone();
   updateHud();
+}
+
+/* ---------- 连击里程碑 ----------
+ *
+ * 连击上不封顶，可越往上爬反馈越不变 —— x8 和 x80 在屏幕上是一模一样的，
+ * 玩家没有理由为了保住 x47 而绷紧。给它几个台阶，让"别断"这件事自己有分量。
+ *
+ * 三条规矩：
+ *   1 反馈只升不降：音高一档比一档亮，到 x100 是最响的一次
+ *   2 **绝不挡住迷宫**。这时候玩家正贴着幽灵跑，屏幕中间糊一层特效等于害他送命。
+ *     所以只有声音 + HUD 上那行字变色，画面上一个像素都不加。
+ *   3 每档一局只响一次，攒到 x50 的路上不会把 x10 那档反复触发。
+ */
+const COMBO_MILESTONES = [10, 25, 50, 100];
+let comboMilestoneHit = 0;   // 本轮连击已经报到哪一档
+
+function checkComboMilestone(){
+  for (const m of COMBO_MILESTONES){
+    if (combo >= m && comboMilestoneHit < m){
+      comboMilestoneHit = m;
+      Audio2.comboMilestone(m);
+      // 只在够高的两档给一句话，x10/x25 光靠声音就够了，不打扰
+      if (m >= 50) toast(`连击 x${m}！`);
+    }
+  }
 }
 /* ---------- 新手提示 ----------
  * 「?」说明是可选的，绝大多数人不会点。真正有效的是在**正好需要的那一刻**
@@ -2467,6 +2514,10 @@ function handleFusion(){
       b.state = 'fused-hidden';
       frightTimer += 2; // fusing buys the player a little extra hunting time
       applySpeedModifiers();
+      /* 融合是这游戏最有记忆点的一幕，但**不能为了动画停顿**。
+         记一个时间戳，让 drawGhost 在接下来半秒里自己放大、闪一下白光；
+         游戏一帧都不停，孩子却看得见"咦，它俩合体了"。 */
+      a.fuseFlashUntil = elapsed + 0.5;
       toast('幽灵融合！超级幽灵出现');
       Audio2.fusion();
       return;
@@ -3102,7 +3153,14 @@ function updateHud(){
   document.getElementById('livesVal').innerHTML = Array.from({length:Math.max(lives,0)}).map(()=>
     '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 3 A7 7 0 1 1 3 12 L10 17 L17 12 A7 7 0 0 1 10 3 Z" fill="'+cssVar('--amber')+'"/></svg>'
   ).join('');
-  document.getElementById('comboLabel').textContent = '连击 x' + combo;
+  const cl = document.getElementById('comboLabel');
+  cl.textContent = '连击 x' + combo;
+  /* 连击的画面反馈**只在 HUD 上**：玩家这时候正贴着幽灵跑，在迷宫上糊特效
+     等于害他送命。一行字变个色，看得见又挡不着。 */
+  cl.style.color = combo >= 100 ? cssVar('--amber')
+                 : combo >= 50  ? cssVar('--tang')
+                 : combo >= 25  ? cssVar('--cyan')
+                 : cssVar('--text-dim');
   // combo is uncapped, so the bar tracks progress toward x20 and pins full beyond
   updateComboBar();
   maxComboSeen = Math.max(maxComboSeen, combo);
@@ -3415,13 +3473,23 @@ document.getElementById('restartBtn').addEventListener('click', ()=>{
 function update(dt){
   elapsed += dt;
   if (invuln>0) invuln -= dt;
-  if (player.phase>0) player.phase -= dt;
+  if (player.phase>0){
+    const was = player.phase;
+    player.phase -= dt;
+    /* 3、2、1 各响一声，一声比一声高。穿墙到期的那一下最容易翻车 ——
+       人正在墙里抄近路，规则突然变回来就卡在墙中间（靠 rescueFromWall 弹出来，
+       但那一下很懵）。声音提前三秒开始数，玩家才有机会往走廊里靠。 */
+    for (const mark of [3, 2, 1]){
+      if (was > mark && player.phase <= mark) Audio2.phaseTick(mark);
+    }
+    if (was > 0 && player.phase <= 0) Audio2.phaseEnd();
+  }
   checkPowerPelletNearby();
   if (comboTimer>0){
     // 在跑就慢扣，停下就快扣 —— 见 COMBO_WINDOW 上面那段说明
     const moving = !!(player.dir.x || player.dir.y);
     comboTimer -= dt * (moving ? 1 : COMBO_IDLE_DECAY);
-    if (comboTimer<=0){ combo=1; updateHud(); }
+    if (comboTimer<=0){ combo=1; comboMilestoneHit=0; updateHud(); }
   }
 
   // one global fright countdown for every ghost — see the power mode block
@@ -3538,8 +3606,19 @@ function update(dt){
 /* ---------- rendering ---------- */
 function drawMaze(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  const wallColor = cssVar('--wall');
+  /* 穿墙期间墙自己"虚掉"：变淡、变虚线、颜色偏向主角的青。
+     这是这个道具最值钱的一秒 —— 玩家真正要看懂的不是"我获得了穿墙"，而是
+     **"墙不算数了"**。让墙自己变样，比在角色身上加特效直接得多：他一眼看到
+     的是整张地图的规则变了，而不是自己身上多了层光。
+     最后 2 秒开始闪回实线，等于用墙本身做倒计时——不用再多一个提示条。 */
+  const phasing = player && player.phase > 0;
+  const ending  = phasing && player.phase < 2 && Math.floor(elapsed*6)%2===0;
+  const wallColor = (phasing && !ending) ? cssVar('--cyan') : cssVar('--wall');
   ctx.save();
+  if (phasing && !ending){
+    ctx.globalAlpha = 0.42;
+    ctx.setLineDash([4, 5]);
+  }
   ctx.strokeStyle = wallColor;
   ctx.lineWidth = 3;
   ctx.shadowColor = wallColor;
@@ -3720,7 +3799,25 @@ function drawGhost(g){
     const ending = frightTimer < 1.8 && Math.floor(elapsed*8)%2===0;
     color = ending ? '#ffffff' : cssVar('--cyan');
   }
-  const scale = g.isFusionHost ? 1.5 : 1;
+  /* 刚合体那半秒：先"胀"一下再落回，外面套一圈向外扩散的白光环。
+     半秒之内演完，游戏一帧都不停 —— 为一个动画卡住节奏不值得，何况这时候
+     玩家正在能量豆的倒计时里，每一秒都在算账。 */
+  const fusing = g.fuseFlashUntil && elapsed < g.fuseFlashUntil;
+  let pop = 1;
+  if (fusing){
+    const k = (g.fuseFlashUntil - elapsed) / 0.5;      // 1 -> 0
+    pop = 1 + Math.sin(k * Math.PI) * 0.45;
+    ctx.save();
+    ctx.globalAlpha = k * 0.75;
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2.5;
+    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(cxp, cyp, TILE*0.5 + (1-k)*TILE*1.5, 0, Math.PI*2);
+    ctx.stroke();
+    ctx.restore();
+  }
+  const scale = (g.isFusionHost ? 1.5 : 1) * pop;
   ctx.save();
   ctx.translate(cxp,cyp);
   ctx.scale(scale,scale);
