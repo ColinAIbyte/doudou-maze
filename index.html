@@ -1835,6 +1835,38 @@ function rescueFromWall(){
 // 被幽灵堵在角上时，这是一条能救命的连跳 —— 本来就该允许。
 const PORTAL_COOLDOWN_SECONDS = 1.0;
 
+/**
+ * 落地之后重新安顿好朝向、待转向和冲刺蓄力。
+ *
+ * 不做这一步的话，玩家是**朝着一堵墙、满速、还带着一个过期转向指令**落地的：
+ *   - 朝向照搬穿越前的方向，可落点的走廊往往完全不是那个走向。实测多数
+ *     传送门的落点**只有一个出口**（第一关四个全是），所以"落地面壁"是常态，
+ *     玩家得先愣一下、再重按方向键才动得了。
+ *   - want 是穿越前缓存的转向，跨过传送门之后早就没意义了，留着会在落点
+ *     附近某个路口冷不丁触发一次莫名其妙的拐弯。
+ *   - 冲刺蓄力原样保留 = 1.22 倍速落地。换了个完全陌生的角落还开着最高速，
+ *     这是最难控的一点。
+ *
+ * 处理顺序刻意是"能直走就直走"优先：保住流畅感，只有走不通时才接管。
+ */
+function orientAfterWarp(ent){
+  ent.want = {x:0, y:0};        // 过期的转向指令不跨传送门
+  ent.straightTiles = 0;        // 换地方了，冲刺从零重新起
+  if (ent.trail) ent.trail.length = 0;
+
+  const cx = Math.round(ent.x), cy = Math.round(ent.y);
+  const can = d => canEnter(ent, cx + d.x, cy + d.y);
+
+  if ((ent.dir.x || ent.dir.y) && can(ent.dir)) return;   // 原方向还走得通，不打扰
+
+  const exits = [];
+  for (const k in DIRS) if (can(DIRS[k])) exits.push(DIRS[k]);
+  // 只有一个出口就替玩家转过去——这时候没有第二种选择，让他自己按纯属添堵
+  if (exits.length === 1){ ent.dir = { x: exits[0].x, y: exits[0].y }; return; }
+  // 有岔路就停下来，把选择权交回去，别替他猜
+  ent.dir = {x:0, y:0};
+}
+
 function checkPortal(ent){
   const cx = Math.round(ent.x), cy = Math.round(ent.y);
   if (!nearCenter(ent.x) || !nearCenter(ent.y)) return;
@@ -1851,6 +1883,7 @@ function checkPortal(ent){
       ent.x = x; ent.y = y;
       ent.warpCd = PORTAL_COOLDOWN_SECONDS;
       ent.warpCdCh = ch;               // 记下是哪种颜色在冷却
+      orientAfterWarp(ent);
       if (ent===player){
         Audio2.warp();
         // 第一次用到才讲。写在说明里没人看，而这一刻他刚被传走，正想知道
