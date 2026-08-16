@@ -253,6 +253,19 @@ body{
 /* 关掉方向键时按钮本身要显出"已关"的状态，否则玩家看不出是自己关的 */
 .icon-btn.off{color:var(--panel-border);}
 .icon-btn.on{color:var(--amber);border-color:var(--amber);}
+/* 连击弹一下：105%~110%、150ms，一次性。
+   刻意不做持续抖动 —— 玩家这时候正盯着迷宫躲幽灵，余光里"跳一下"就够了，
+   一直动反而分散注意力。 */
+@keyframes comboBump{
+  0%{transform:scale(1);}
+  40%{transform:scale(1.09);}
+  100%{transform:scale(1);}
+}
+#comboLabel{display:inline-block;transform-origin:left center;}
+#comboLabel.bump{animation:comboBump .15s ease-out;}
+@media (prefers-reduced-motion: reduce){
+  #comboLabel.bump{animation:none;}
+}
 .combo-wrap{display:flex;flex-direction:column;gap:3px;flex:1;min-width:60px;max-width:120px;}
 .combo-bar{height:6px;border-radius:4px;background:#1c1436;overflow:hidden;border:1px solid var(--panel-border);}
 /* 不加 transition：这是倒计时条，每帧都在缩，补间只会让它看起来比实际慢半拍，
@@ -1088,9 +1101,12 @@ body.in-game .marquee{
          跟着一起没了 —— 也就是说玩到一半想不起规则的人，全程无处可查，而这
          正是最想查的时刻。暂停是他唯一会主动打开的界面，说明就该放在这儿。 -->
     <div class="overlay hidden" id="pauseOverlay">
-      <h2>暂停</h2>
+      <h2 id="pauseTitle">已暂停</h2>
+      <!-- 切走标签页会自动暂停，回来时这一行会换成说明原因的话 —— 否则玩家
+           只看到一个暂停页，不知道是自己按的还是游戏出了什么事。 -->
+      <p id="pauseWhy" class="bonus-hint">按 P 或点「继续游戏」回到游戏</p>
       <div class="over-actions">
-        <button class="btn" id="resumeBtn">继续</button>
+        <button class="btn btn-hero" id="resumeBtn">继续游戏</button>
         <button class="btn ghost btn-share" id="pauseHelpBtn">玩法说明</button>
       </div>
     </div>
@@ -1808,6 +1824,7 @@ function resetLevel(fullReset){
   frightTimer = 0; ghostEatChain = 0; comboMilestoneHit = 0;
   deathsThisLevel = 0; levelBonuses = [];
   introTimer = 0;   // 复位关卡时清掉卡片，免得它挂在上一关的画面上
+  deathPause = 0; deathFlash = 0;
   if (fullReset){ deathsThisRun = 0; sweepsThisRun = 0; ghostsEatenThisRun = 0; perfectLevelsThisRun = 0; runBonuses = []; maxComboSeen = 1; }
   invuln = 2.4;
   elapsed = 0;
@@ -2924,11 +2941,43 @@ function unfuseNow(g){
 }
 
 /* ---------- life / level ---------- */
+/* 死亡后的定格。
+ *
+ * 原来是**瞬间复活**：碰到幽灵的下一帧人就回到出生点继续跑。快是快，但玩家
+ * 常常不知道刚才发生了什么 —— 尤其连掉两条命时，画面上只是"位置突然变了"，
+ * 三条命可能在两秒内没光，而他全程没意识到自己在死。
+ *
+ * 定住 0.55 秒（规格给的是 400~700ms），配一圈红色内发光闪 130ms。
+ * 这段时间里 update 整个不跑，所以幽灵也停着 —— 复活后不会一睁眼就被贴脸。
+ */
+const DEATH_PAUSE_SECONDS = 0.55;
+const DEATH_FLASH_SECONDS = 0.13;
+let deathPause = 0, deathFlash = 0;
+
+function drawDeathFlash(){
+  if (deathFlash <= 0) return;
+  const k = deathFlash / DEATH_FLASH_SECONDS;          // 1 -> 0
+  const W = COLS*TILE, H = ROWS*TILE;
+  ctx.save();
+  /* 只在四周描一圈内发光，不铺满整屏 —— 铺满会盖住幽灵和主角，
+     而这一刻玩家最需要看清的恰恰是"我是被谁碰到的"。 */
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  ctx.globalAlpha = 0.55 * k;
+  ctx.strokeStyle = cssVar('--danger');
+  ctx.shadowColor = cssVar('--danger');
+  ctx.shadowBlur = 34;
+  ctx.lineWidth = 10;
+  ctx.strokeRect(5, 5, W-10, H-10);
+  ctx.restore();
+}
+
 function loseLife(){
   lives--;
   deathsThisLevel++; deathsThisRun++;
   updateHud();
   Audio2.death();
+  deathFlash = DEATH_FLASH_SECONDS;
+  deathPause = DEATH_PAUSE_SECONDS;
   // 第一次死掉的那一刻，正是最想知道"还能怎么办"的时候
   hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
   if (lives<=0){ endGame(false); return; }
@@ -3540,6 +3589,7 @@ function fmtNum(n){
   return sign + String(Math.abs(v)).replace(/\B(?=(\d{3})+$)/g, ',');
 }
 
+let lastComboShown = 1;   // 只在连击真的变了时才弹，见下面
 function updateHud(){
   document.getElementById('scoreVal').textContent = fmtNum(score);
   document.getElementById('levelVal').textContent = level + '/' + MAX_LEVEL;
@@ -3550,6 +3600,15 @@ function updateHud(){
   cl.textContent = '连击 x' + combo;
   /* 连击的画面反馈**只在 HUD 上**：玩家这时候正贴着幽灵跑，在迷宫上糊特效
      等于害他送命。一行字变个色，看得见又挡不着。 */
+  /* 连击涨一级就轻轻弹一下。只加一个 class，动画交给 CSS：
+     每次都要重新触发，所以先摘掉、强制回流、再加上 —— 不这么做的话
+     连续涨级时动画只播第一次。 */
+  if (combo > 1 && combo !== lastComboShown){
+    cl.classList.remove('bump');
+    void cl.offsetWidth;
+    cl.classList.add('bump');
+  }
+  lastComboShown = combo;
   cl.style.color = combo >= 100 ? cssVar('--amber')
                  : combo >= 50  ? cssVar('--tang')
                  : combo >= 25  ? cssVar('--cyan')
@@ -3891,12 +3950,46 @@ function syncChrome(){
   document.body.classList.toggle('in-game', gameState === 'playing');
 }
 
+/* ---------- 切走标签页自动暂停 ----------
+ *
+ * 网页版特有的一种"冤死"：玩到一半去回个微信、看一眼别的标签，回来发现
+ * 已经没了两条命 —— 而这十几秒里他根本不在场。手机上尤其常见。
+ *
+ * 注意**光靠浏览器节流是不够的**：页面隐藏时 rAF 会被停掉，看起来游戏也停了；
+ * 可各家浏览器的节流策略并不一致（有的降到 1Hz 而不是完全停），一旦还在跑，
+ * dt 被 Math.min(0.033) 夹住，游戏就在后台慢动作前进 —— 玩家回来时状态已经
+ * 变了。所以必须显式暂停，不能指望环境。
+ *
+ * 回来之后**不自动继续**：他的手大概率还没回到键盘上，自动恢复等于刚回来
+ * 就送一条命。停在暂停页，由他自己按键或点按钮。
+ */
+let pausedByBlur = false;
+
+document.addEventListener('visibilitychange', ()=>{
+  if (!document.hidden) return;
+  if (gameState !== 'playing') return;
+  if (!helpOverlay.classList.contains('hidden')) return;   // 说明开着本来就是暂停态
+  pausedByBlur = true;
+  gameState = 'paused';
+  document.getElementById('pauseOverlay').classList.remove('hidden');
+  const why = document.getElementById('pauseWhy');
+  if (why) why.textContent = '你切走了，游戏替你按了暂停　按 P 或点「继续游戏」';
+});
+
 function togglePause(){
   // 说明开着的时候 gameState 已经是 paused，此时按 P 会把游戏恢复成 playing
   // 而说明还盖在上面 —— 玩家看着一张静止的说明页，幽灵却已经在后面跑了。
   if (!helpOverlay.classList.contains('hidden')) return;
   if (gameState==='playing'){ gameState='paused'; document.getElementById('pauseOverlay').classList.remove('hidden'); }
-  else if (gameState==='paused'){ gameState='playing'; document.getElementById('pauseOverlay').classList.add('hidden'); }
+  else if (gameState==='paused'){
+    gameState='playing';
+    document.getElementById('pauseOverlay').classList.add('hidden');
+    if (pausedByBlur){
+      pausedByBlur = false;
+      const why = document.getElementById('pauseWhy');
+      if (why) why.textContent = '按 P 或点「继续游戏」回到游戏';
+    }
+  }
 }
 
 document.getElementById('startBtn').addEventListener('click', ()=>{
@@ -4322,6 +4415,7 @@ function render(){
   drawFrightBar();
   drawPhaseBar();
   drawSwipeHint();
+  drawDeathFlash();
   drawLevelIntro();
   updateComboBar();   // 倒计时条要每帧动，而 updateHud 只在得分时触发
   syncChrome();
@@ -4373,16 +4467,29 @@ function drawPhaseBar(){
 
 /* ---------- main loop ---------- */
 let lastT = performance.now();
-function loop(t){
-  const dt = Math.min(0.033, (t-lastT)/1000);
-  lastT = t;
+/* 一帧要做的事全在这儿，loop 只负责算 dt 和排下一帧。
+ *
+ * 抽出来是为了让测试能跑**同一份代码**。之前测试里手抄了一份一模一样的
+ * tick()，结果是：把这里的分支删掉，测试照样全绿 —— 它测的是自己那份抄件。
+ * 同样的坑连着踩了三次（syncChrome、键盘作用域、死亡定格），根子都是
+ * "测试验的不是真实路径"。共用一个函数，这类假绿就不可能再发生。 */
+function stepFrame(dt){
   if (gameState==='playing'){
     // 关卡卡片期间整局冻住：不跑 update，elapsed 就不走，幽灵、恐惧倒计时、
     // 复活计时全部停在原地。玩家有个空拍看清这是哪一关。
     if (introTimer > 0) introTimer -= dt;
+    else if (deathPause > 0) deathPause -= dt;   // 死亡定格，幽灵一起停
     else update(dt);
   }
+  // 红闪自己走，不受定格影响 —— 它就是用来填这段定格的
+  if (deathFlash > 0) deathFlash -= dt;
   render();
+}
+
+function loop(t){
+  const dt = Math.min(0.033, (t-lastT)/1000);
+  lastT = t;
+  stepFrame(dt);
   requestAnimationFrame(loop);
 }
 
