@@ -84,7 +84,7 @@ ${body}
     get lastRunId(){ return lastRunId; },
     MAX_LEVEL,
     requestDir, togglePause, fullNewGame, render, update, Audio2,
-    renderScoreboard, loadScores, recordScore, renameScore, cleanName,
+    renderScoreboard, loadScores, recordScore, renameScore, cleanName, renderBest, bestScore,
     commitName, openHelp, closeHelp,
   };
 }

@@ -16,6 +16,20 @@ window.__dbg = {
            document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden')); },
   newRun(){ fullNewGame(); gameState='playing';
             document.querySelectorAll('.overlay').forEach(o=>o.classList.add('hidden')); },
+  /* 直接跳到结算页，用来看排版：真打一局到第六关要好几分钟，而排版问题
+     （数字多长、榜单几行、烟花挡不挡字）只跟结算页的数据有关。 */
+  finish(won, sc, lv, deaths){
+    gameState='playing';
+    score = sc==null ? 431070 : sc;
+    level = lv==null ? MAX_LEVEL : lv;
+    deathsThisRun = deaths==null ? 0 : deaths;
+    maxComboSeen = 7;
+    endGame(won!==false);
+    return { score, rank:'见榜单' };
+  },
+  /* 把关卡卡片按住不放，用来截图核对排版 —— 它只显示 1.8 秒，
+     截图的往返延迟比这还长，正常跑是抓不到的。 */
+  intro(sec){ introTimer = (sec == null ? 8 : sec); return `卡片保持 ${introTimer}s`; },
   snap(){ return ghosts.map(g=>({id:g.id, st:g.state, host:!!g.isFusionHost, linked:!!g.fusedWith})); },
   power(){ startPowerMode(); },
   forceFuse(){ const f=ghosts.filter(g=>g.state==='frightened'&&!g.fusedWith); if(f.length<2) return 'need 2';

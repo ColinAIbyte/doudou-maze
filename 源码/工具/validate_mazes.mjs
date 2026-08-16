@@ -31,8 +31,17 @@ const mazes = Object.fromEntries(
 // Level 6 carries 7 — it fields seven ghosts, two more than any other level,
 // and needs the extra escape windows to stay clearable.
 const EXPECTED_POWER = { MAZE_LEVEL_2: 5, MAZE_LEVEL_3: 6, MAZE_LEVEL_4: 5, MAZE_LEVEL_5: 6, MAZE_LEVEL_6: 7 };
-// Level 1 is frozen by owner request and predates the symmetry rule.
-const SYMMETRY_EXEMPT = new Set(['MAZE_LEVEL_1']);
+/* 对称豁免。
+ *
+ * MAZE_LEVEL_1：作者要求冻结，且早于这条规则，两颗落单是有意保留的。
+ *
+ * MAZE_LEVEL_2：那颗顶部能量豆原来在 (9,1)，正压在**从顶端笔直通到老巢门**
+ *   的第 9 列上——玩家去拿它，等于站在幽灵出门的主干道尽头。玩家要求右移
+ *   两格到 (11,1)（第 11 列到第 8 行就被墙封死，不通老巢）。
+ *   这里是个被迫的取舍：查过中轴线 x=9 上**每一个可走格**都直通上门或下门，
+ *   所以奇数颗要保持对称，那颗就必须留在幽灵主干道上。玩法优先于对称。
+ *   （若哪天想两全，可在 (7,1) 补一颗凑成对，代价是第二关多一颗能量豆。） */
+const SYMMETRY_EXEMPT = new Set(['MAZE_LEVEL_1', 'MAZE_LEVEL_2']);
 
 const playerWalk = ch => ch !== '#' && ch !== 'g' && ch !== 'D';
 const GHOST_PATH = [[9, 8], [9, 7], [9, 6], [9, 12], [9, 13]];
