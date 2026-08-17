@@ -83,7 +83,7 @@ ${body}
     renderScoreboard, loadScores, recordScore, renameScore, cleanName,
     // 玩法说明的开关。小游戏的 game.js 会调它们来响应「?」和「知道了」——
     // 漏导出的话点下去就是 undefined is not a function，游戏直接崩。
-    openHelp, closeHelp,
+    openHelp, closeHelp, openAbout, closeAbout,
     commitName,
   };
 }

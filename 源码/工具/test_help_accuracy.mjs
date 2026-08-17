@@ -125,13 +125,42 @@ if (wxHelpStart < 0 || wxHelpEnd < 0){
   }
 }
 
-/* 作者自己那段话，三份都必须在，而且不许被"顺手改写"。
-   它不是规则文案，是这个游戏为什么存在 —— 而正是这类没有测试盯着的文字，
-   最容易在某次"统一措辞"里被改掉。这里只认原文里最要紧的几句。 */
-const ABOUT = ['暑期，儿子想玩一个简单又刺激的小游戏', '他负责试玩和提意见', '超级奶爸', '2685897@qq.com'];
-for (const [name, text] of [['网页', src], ['小游戏', ui], ['小程序', wxml]]){
-  for (const line of ABOUT){
-    if (!text.includes(line)) fail.push(`${name}版缺了作者那段话里的「${line}」`);
+/* 作者自己那段话：三份都必须有，不许被"顺手改写"，而且**必须在「关于这个游戏」
+   那一页、不在玩法说明里**。
+   它不是规则文案，是这个游戏为什么存在 —— 正是这类没有测试盯着的文字，最容易
+   在某次"统一措辞"里被改掉，或者在整理说明时被顺手挪回规则堆里。
+   所以两头都查：在该在的地方、且不在不该在的地方。 */
+const ABOUT_LINES = ['儿子想玩一个简单又刺激的小游戏', '他负责试玩和提意见',
+                     '其它小朋友也加入了试玩', '游戏制作者：超级奶爸', '2685897@qq.com'];
+
+/** 从一份文本里切出某一段；切不出来返回 null（而不是悄悄拿整份文件去搜）。 */
+function section(text, startPat, endPat){
+  const a = text.indexOf(startPat);
+  if (a < 0) return null;
+  const b = text.indexOf(endPat, a + startPat.length);
+  return text.slice(a, b > a ? b : undefined);
+}
+
+for (const [name, part] of [
+  ['网页',   section(src,  'id="aboutOverlay"',    'id="aboutCloseBtn"')],
+  ['小游戏', section(ui,   'const ABOUT = [',      '\n  ];')],
+  ['小程序', section(wxml, "overlay === 'about'",  'onAboutClose')],
+]){
+  if (!part){ fail.push(`${name}版找不到「关于这个游戏」那一页`); continue; }
+  for (const line of ABOUT_LINES){
+    if (!part.includes(line)) fail.push(`${name}版「关于」页里缺了「${line}」`);
+  }
+}
+
+// 反过来：玩法说明里不许再出现作者那段话
+for (const [name, part] of [
+  ['网页',   helpHtml],
+  ['小游戏', section(ui, 'const HELP = [', '\n  ];')],
+  ['小程序', wxHelpStart >= 0 ? wxml.slice(wxHelpStart, wxHelpEnd) : null],
+]){
+  if (!part) continue;
+  for (const line of ABOUT_LINES){
+    if (part.includes(line)) fail.push(`${name}版玩法说明里混进了「${line}」—— 它该只在「关于」页`);
   }
 }
 
@@ -139,5 +168,5 @@ console.log('从代码读到的真值：');
 console.log(`  倍率 ${MULT}　豆子 ${10*MULT}　能量豆 ${50*MULT}　水果 ${300*MULT}`);
 console.log(`  奖励 无伤${bonus('PERFECT_LEVEL')*MULT} 全灭${bonus('GHOST_SWEEP')*MULT} 剩命${bonus('LIFE_LEFT')*MULT} 全程${bonus('FLAWLESS_RUN')*MULT}`);
 console.log(`  恐惧 ${fright[0]}→${fright[fright.length-1]} 秒　冲刺 ${dash}x　连击 ${comboWin}s（停下 ${comboIdle}x）　传送门冷却 ${portalCd}s`);
-console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : '三份说明里的数字都和代码一致，作者那段话三处都在。'));
+console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : '三份说明的数字都和代码一致；作者那段话三处都在「关于」页，且没混进玩法说明。'));
 process.exit(fail.length ? 1 : 0);

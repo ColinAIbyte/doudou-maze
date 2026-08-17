@@ -453,14 +453,63 @@ body{
   pointer-events:none;
 }
 .help-more.hidden{opacity:0;}
-/* 「关于这个游戏」单独框起来。
-   它是全篇唯一一段不是规则的内容 —— 不给个边界，读者的眼睛会把它当成又一条
-   说明滑过去。这是作者想让人看见的那一段，值得一个自己的位置。 */
-.about-block{
-  border:1px solid var(--panel-border);
-  border-radius:10px;
-  background:rgba(138,107,255,.05);
-  padding:12px 14px;
+/* 「关于这个游戏」这一页。跟玩法说明一样铺满屏幕、内容自己滚 ——
+   它比说明短得多，但小屏加上系统安全区仍然可能装不下，而"装不下就滚"是这里
+   唯一不用按屏幕尺寸分情况讨论的做法。 */
+#aboutOverlay{
+  position:fixed;
+  inset:0;
+  border-radius:0;
+  background:#0a0614;
+  /* 居中，不像玩法说明那样从顶部排起。
+     说明有五六屏内容，必须顶部排、自己滚；这一页只有一段话，顶部排会把
+     「知道了」甩到屏幕最下沿、中间空出一大片，看起来像还没加载完。 */
+  justify-content:center;
+  padding:calc(env(safe-area-inset-top) + 18px) 16px
+          calc(env(safe-area-inset-bottom) + 16px);
+  z-index:80;   /* 同说明：要压在礼花之上 */
+}
+.about-doc{
+  width:100%;
+  max-width:420px;
+  text-align:left;
+  /* 不撑高（flex 不 grow），但万一装不下（横屏、系统超大字号）还能自己滚。
+     min-height:0 不能省：flex 项默认不肯缩到内容以下，少了它 overflow 不生效，
+     而在居中布局里超出的部分会从**顶部**被切掉——最该先读到的那几行。 */
+  flex:0 1 auto;
+  min-height:0;
+  max-height:100%;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+}
+.about-feedback{
+  margin-top:18px;
+  padding-top:14px;
+  border-top:1px solid var(--panel-border);
+}
+.about-feedback h3{
+  margin:0 0 5px;
+  font-family:var(--font-display);
+  font-size:11px;
+  letter-spacing:.14em;
+  color:var(--amber);
+  font-weight:700;
+}
+/* 邮箱链接。用青色而不是琥珀：琥珀在这个界面里是"分数和奖励"的颜色，
+   而这里既要看出可点、又不该比正文更抢眼 —— 一条下划线加一点青就够了。
+   光晕故意压得很淡（3px），它不是霓虹招牌的一部分。 */
+.mail-link{
+  color:var(--cyan);
+  text-decoration:none;
+  border-bottom:1px solid rgba(90,224,255,.45);
+  padding-bottom:1px;
+  text-shadow:0 0 3px rgba(90,224,255,.35);
+  /* 手机上点链接有 300ms 的双击等待，不去掉会觉得"点了没反应" */
+  touch-action:manipulation;
+}
+.mail-link:hover, .mail-link:focus-visible{
+  border-bottom-color:var(--cyan);
+  text-shadow:0 0 8px rgba(90,224,255,.6);
 }
 
 .help-sec h3{
@@ -1050,6 +1099,13 @@ body.in-game .marquee{
           <circle cx="12" cy="17.6" r="1.15" class="solid"/>
         </svg>玩法
       </button>
+      <!-- 「关于」跟「玩法」并排，同一种胶囊。图标用心形而不是问号：这一页讲的
+           不是规则，是这游戏怎么来的，图标先把这件事说清楚。 -->
+      <button class="help-pill" id="aboutBtn" title="关于《豆豆迷宫》" aria-label="关于《豆豆迷宫》">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path class="solid" d="M12 20.3s-7.4-4.7-7.4-9.7a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 5-7.4 9.7-7.4 9.7z"/>
+        </svg>关于
+      </button>
     </p>
   </div>
 
@@ -1130,13 +1186,10 @@ body.in-game .marquee{
         <button class="btn btn-hero" id="startBtn">开始游戏</button>
         <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
       </div>
-      <!-- 署名这行本来是纯文字，现在它自己就是入口。
-           故事原来要"点玩法说明 → 往下滚到底"才看得到，等于藏着；而这游戏是
-           怎么来的，恰恰是它最值得先说的一件事。做成一行可点的字而不是再加一个
-           按钮：开始页在小屏上本来就快装不下了，这样高度一点没变。 -->
-      <button class="credits credits-link" id="aboutBtn">
-        一个爸爸做给儿子的游戏<span class="cl-more">我们的故事 ›</span>
-      </button>
+      <!-- 署名回到纯文字：入口挪到标题旁边那个「♡ 关于」了。
+           两个入口同时摆在开始页上就是重复 —— 而重复的入口不会让人更容易找到，
+           只会让这一屏更满。 -->
+      <div class="credits">一个爸爸做给儿子的游戏</div>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1232,27 +1285,38 @@ body.in-game .marquee{
             </dl>
           </div>
 
-        <!-- 这一段是作者自己的话，原文照录，不要替他改写。
-             也不折叠 —— 一个爸爸和儿子把游戏做出来这件事，是这个游戏最不该藏
-             起来的部分。 -->
-        <div class="help-sec about-block" id="aboutBlock">
-          <h3>关于这个游戏</h3>
-          <p class="about">暑期，儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
-          <p class="about">他负责试玩和提意见，我负责一点点修改完善。后来，他的朋友们也加入试玩，才有了现在的《豆豆迷宫》和六个关卡。</p>
-          <p class="about-sign">—— 超级奶爸</p>
-        </div>
-        <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏
-             是公开链接、还打算给小朋友传 —— 联系方式留一个够用的就行，
-             邮箱可以随时不看，微信不能。 -->
-        <div class="help-sec">
-          <h3>反馈</h3>
-          <p class="about">如果你有任何建议，或者创意，欢迎来信<br>
-            <b>Email：2685897@qq.com</b></p>
-        </div>
+        <!-- 「关于这个游戏」和「反馈」不在这里 —— 它们搬去了 #aboutOverlay。
+             玩法说明只讲玩法：来查规则的人要的是"传送门怎么用"，作者的话和
+             联系邮箱夹在参数表后面，对他既没用又是干扰。而那段话本身值得一个
+             自己的页面，不该当成规则的第八节。 -->
       </div>
       <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
       <div class="help-more" id="helpMore">↓ 下面还有</div>
       <button class="btn" id="helpCloseBtn">知道了</button>
+    </div>
+
+    <!-- 关于这个游戏。自己一个页面，从开始页那行署名点进来。
+         内容与 微信小游戏版/js/ui.js 的 ABOUT、微信小程序版 game.wxml 的
+         about 弹层保持一致 —— 三处是分开写的，test_help_accuracy 会一起核。
+         作者的原话，不要替他改写或压缩。 -->
+    <div class="overlay hidden" id="aboutOverlay" role="dialog" aria-modal="true"
+         aria-labelledby="aboutTitle" tabindex="-1">
+      <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
+      <!-- about-panel 是"弹层内部"，点它不关闭；点它外面（也就是 #aboutOverlay
+           自己那片底）才关闭。少了这一层，点正文选个字都会把弹层关掉。 -->
+      <div class="about-doc" id="aboutPanel">
+        <p class="about">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。他负责试玩和提意见，我负责一点点修改完善。后来，其它小朋友也加入了试玩，才有了现在的《豆豆迷宫》和六个关卡。</p>
+        <p class="about-sign">—— 游戏制作者：超级奶爸</p>
+        <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
+             链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时
+             不看，微信不能。 -->
+        <div class="about-feedback">
+          <h3>反馈与建议</h3>
+          <p class="about">如果你有建议，或者发现了问题，欢迎来信<br>
+            Email：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
+        </div>
+      </div>
+      <button class="btn" id="aboutCloseBtn">知道了</button>
     </div>
 
     <div class="overlay hidden" id="overOverlay">
@@ -3770,7 +3834,7 @@ function requestDir(dir){
  *
  * 判断标准就一条：说明开着、或者光标在输入框里，游戏就没有控制权。 */
 function gameHasKeyboard(){
-  if (!helpOverlay.classList.contains('hidden')) return false;
+  if (docPanelOpen()) return false;
   const a = document.activeElement;
   if (a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA')) return false;
   return true;
@@ -3779,6 +3843,7 @@ function gameHasKeyboard(){
 /** 当前是哪一屏。Enter 的含义完全由它决定，不同位置各写一个监听必然打架。 */
 function currentScreen(){
   if (!helpOverlay.classList.contains('hidden')) return 'help';
+  if (!aboutOverlay.classList.contains('hidden')) return 'about';
   if (!document.getElementById('overOverlay').classList.contains('hidden')) return 'over';
   if (!document.getElementById('pauseOverlay').classList.contains('hidden')) return 'paused';
   if (!document.getElementById('startOverlay').classList.contains('hidden')) return 'start';
@@ -3807,8 +3872,9 @@ function handleEnter(e){
 
 window.addEventListener('keydown', (e)=>{
   Audio2.unlock();
-  // Escape 任何时候都能关说明 —— 这是玩家唯一的逃生键
-  if (e.key==='Escape'){ closeHelp(); return; }
+  // Escape 任何时候都能关掉盖在上面的文档页 —— 这是玩家唯一的逃生键。
+  // 两个都关：两者不会同时打开，各调一次比先判断谁开着更省事，也不会漏。
+  if (e.key==='Escape'){ closeHelp(); closeAbout(); return; }
   if (e.key==='Enter'){ if (handleEnter(e)) e.preventDefault(); return; }
   if (!gameHasKeyboard()) return;      // 说明在读、名字在输，都不归游戏管
 
@@ -3924,12 +3990,28 @@ catch { setPadHidden(false); }
  * 而不是把他直接丢回赛场。
  */
 const helpOverlay = document.getElementById('helpOverlay');
+const aboutOverlay = document.getElementById('aboutOverlay');
 let helpPausedByUs = false;
+
+/**
+ * 有没有整屏的文档页盖在游戏上（玩法说明 / 关于这个游戏）。
+ *
+ * 单独抽出来是因为有六处行为都取决于这一件事：键盘归谁、Enter 是什么意思、
+ * 标题栏要不要动、切走要不要自动暂停、按 P 管不管用、还要不要渲染。
+ * 原来六处各写一遍 `!helpOverlay.classList.contains('hidden')`，加第二个
+ * 文档页时就得记得改六个地方 —— 漏掉任何一个都不会报错，只会变成一个很难
+ * 复现的怪毛病（比如说明开着按 P，幽灵在背后跑起来）。
+ */
+function docPanelOpen(){
+  return !helpOverlay.classList.contains('hidden')
+      || !aboutOverlay.classList.contains('hidden');
+}
 
 let helpSync = null;   // 由下面那段初始化；打开说明时重算滚动提示
 
 function openHelp(){
   if (!helpOverlay.classList.contains('hidden')) return;
+  closeAbout();               // 两页互斥，理由见 openAbout
   helpPausedByUs = (gameState === 'playing');
   if (helpPausedByUs) gameState = 'paused';
   helpOverlay.classList.remove('hidden');
@@ -3949,23 +4031,61 @@ function closeHelp(){
   if (b) b.addEventListener('click', ()=>{ Audio2.unlock(); openHelp(); });
 });
 
-/* 开始页那行署名点进来，直接落在「关于这个游戏」那一段上。
-   同一份说明，只是换个落点 —— 想看故事的人不用先滚过四屏规则。 */
-const aboutBtn = document.getElementById('aboutBtn');
-if (aboutBtn) aboutBtn.addEventListener('click', ()=>{
-  Audio2.unlock();
-  openHelp();
-  /* 用 scrollTop 而不是 scrollIntoView：后者会连带滚祖先和整个页面，而这个
-     页面是锁死不滚的。offsetTop 相减就够——两者的定位父级是同一个。
-     微信那两版的元素是垫片造的假节点，没有 offsetTop，所以整段都要能安全跳过；
-     那边说明是逐行画的纯文本，本来也没有"滚到某一段"这回事。 */
-  setTimeout(()=>{
-    const doc = document.querySelector ? document.querySelector('#helpOverlay .help-doc') : null;
-    const box = document.getElementById('aboutBlock');
-    if (!doc || !box || typeof box.offsetTop !== 'number' || typeof doc.offsetTop !== 'number') return;
-    doc.scrollTop = Math.max(0, box.offsetTop - doc.offsetTop - 8);
-    if (helpSync) helpSync();      // 滚过之后「↓ 下面还有」要跟着重算
-  }, 0);
+/* ---------- 关于《豆豆迷宫》 ----------
+ * 和玩法说明各占一页，互不嵌套。行为上和说明有一处**故意不同**：
+ *
+ *   说明关掉后会把游戏恢复（你是查规则，查完接着打）；
+ *   关于关掉后**停在暂停页，不自动继续**。
+ *
+ * 因为这两页的性质不一样。查规则是打到一半的一个动作，读作者的话是离开游戏
+ * 去读一段文字 —— 读完抬头，手指未必已经回到键盘上，这时候直接把幽灵放出来
+ * 就是白掉一条命。让玩家自己按「继续」。
+ *
+ * 所以打开时如果正在玩，顺手把暂停页也显示出来：关掉这一页，底下露出的就是
+ * 暂停画面，玩家自然会去点「继续」。
+ */
+let aboutOpener = null;    // 从哪个元素点进来的，关掉要把焦点还回去
+
+function openAbout(){
+  if (!aboutOverlay.classList.contains('hidden')) return;
+  /* 两页互斥。docPanelOpen() 和小游戏那边的绘制顺序都假设"最多只开一页"，
+     两页同时打开会叠在一起，而且关掉一页之后另一页还盖着。
+     与其到处判断，不如让这个前提在开的时候就成立。 */
+  closeHelp();
+  /* 记住是谁把它打开的。用键盘的人关掉弹层后，焦点必须回到刚才那个按钮上，
+     否则焦点掉回 body，再按 Tab 是从整页最开头重新数起。 */
+  aboutOpener = (typeof document.activeElement === 'object') ? document.activeElement : null;
+  if (gameState === 'playing'){
+    gameState = 'paused';
+    const po = document.getElementById('pauseOverlay');
+    if (po) po.classList.remove('hidden');   // 关掉这一页后露出的就是暂停页
+  }
+  aboutOverlay.classList.remove('hidden');
+  /* 焦点移进弹层本身，而不是「知道了」按钮上 —— 按钮拿到焦点后，Enter 就等于
+     关闭，而读到一半误按 Enter 把它关掉，比不支持这个键更烦。
+     微信那两版的元素是垫片造的假节点，没有 focus，所以要能安全跳过。 */
+  if (typeof aboutOverlay.focus === 'function') aboutOverlay.focus();
+}
+
+function closeAbout(){
+  if (aboutOverlay.classList.contains('hidden')) return;
+  aboutOverlay.classList.add('hidden');
+  // 不恢复 gameState：从哪儿进来的就停在哪儿（开始页 / 暂停页 / 结算页）
+  if (aboutOpener && typeof aboutOpener.focus === 'function') aboutOpener.focus();
+  aboutOpener = null;
+}
+
+const aboutBtnEl = document.getElementById('aboutBtn');
+if (aboutBtnEl) aboutBtnEl.addEventListener('click', ()=>{ Audio2.unlock(); openAbout(); });
+
+const aboutCloseBtn = document.getElementById('aboutCloseBtn');
+if (aboutCloseBtn) aboutCloseBtn.addEventListener('click', ()=>{ Audio2.unlock(); closeAbout(); });
+
+/* 点弹层外面也关。判断"点的是不是底"用 e.target === aboutOverlay：
+   点在正文上时 target 是那个 <p>，冒泡上来的事件不会误伤 —— 否则在正文里
+   选几个字都会把弹层关掉。 */
+if (aboutOverlay.addEventListener) aboutOverlay.addEventListener('click', (e)=>{
+  if (e.target === aboutOverlay) closeAbout();
 });
 
 /* ---------- 分享成绩 ----------
@@ -4093,7 +4213,7 @@ function syncChrome(){
    * 而说明本身是 position:fixed inset:0 整屏盖住的，它开着时底下长什么样
    * 根本看不见，压根没有理由跟着变。开之前什么样，关掉还是什么样，
    * 零动画、零位移。 */
-  if (!helpOverlay.classList.contains('hidden')) return;
+  if (docPanelOpen()) return;
   document.body.classList.toggle('in-game', gameState === 'playing');
 }
 
@@ -4116,7 +4236,7 @@ let pausedByBlur = false;
  *  切标签时 visibilitychange 和 blur 往往一起来，不去重会走两遍。 */
 function autoPause(){
   if (gameState !== 'playing') return;                     // 只在真的在玩时
-  if (!helpOverlay.classList.contains('hidden')) return;   // 说明开着本来就是暂停态
+  if (docPanelOpen()) return;                              // 文档页开着本来就是暂停态
   if (pausedByBlur) return;                                // 已经自动暂停过了
   pausedByBlur = true;
   gameState = 'paused';
@@ -4134,7 +4254,7 @@ window.addEventListener('blur', autoPause);
 function togglePause(){
   // 说明开着的时候 gameState 已经是 paused，此时按 P 会把游戏恢复成 playing
   // 而说明还盖在上面 —— 玩家看着一张静止的说明页，幽灵却已经在后面跑了。
-  if (!helpOverlay.classList.contains('hidden')) return;
+  if (docPanelOpen()) return;
   if (gameState==='playing'){ gameState='paused'; document.getElementById('pauseOverlay').classList.remove('hidden'); }
   else if (gameState==='paused'){
     gameState='playing';
@@ -4580,7 +4700,7 @@ function render(){
   /* 说明整屏盖着时，底下这一整套（迷宫、幽灵、主角、各种条）画了也看不见。
      每帧白烧一次，在弱一点的手机上就是实打实的掉帧 —— 而掉帧的直接后果，
      就是点按钮之后要等下一帧才有反应。 */
-  if (!helpOverlay.classList.contains('hidden')) return;
+  if (docPanelOpen()) return;
   drawMaze();
   drawFruit();
   ghosts.forEach(drawGhost);
