@@ -5,12 +5,18 @@
 // 任何报错。这次就抓到一条 —— 连击规则早改成"跑动 1.6 秒"，说明里还写着
 // "超过约 1 秒"。玩家照着做发现不是那么回事，比没有说明更糟。
 //
-// 而且说明有**两份**（网页 HTML 一份、小游戏 canvas 一份），改一处忘另一处
-// 是必然会发生的事，这里一起核。
+// 而且说明有**三份**（网页 HTML、小游戏 canvas 逐行画、小程序 WXML），改一处
+// 忘另外两处是必然会发生的事，这里一起核。
+//
+// 第三份是后来补进来的，补的理由值得记下来：它原先没被测，于是悄悄腐烂到只剩
+// 四节、参数全是旧值 —— 没有传送门冷却、没有连击断线时间、能量豆还写着"自己还
+// 会加速"。而三份说明的注释里都写着"改一处记得改另一处"。被测到的两份一直对得
+// 上，没被测的那份烂掉了：靠注释提醒自己不管用，这就是证据。
 import { readFileSync } from 'node:fs';
 
-const src = readFileSync(new URL('../pacman_fragment.html', import.meta.url), 'utf8');
-const ui  = readFileSync(new URL('../../微信小游戏版/js/ui.js', import.meta.url), 'utf8');
+const src  = readFileSync(new URL('../pacman_fragment.html', import.meta.url), 'utf8');
+const ui   = readFileSync(new URL('../../微信小游戏版/js/ui.js', import.meta.url), 'utf8');
+const wxml = readFileSync(new URL('../../微信小程序版/pages/game/game.wxml', import.meta.url), 'utf8');
 
 /* 只在**说明那一段**里找，不能在整个文件里找。
    第一版就是拿整个文件搜的，结果 `const COMBO_WINDOW = 2.4;` 这行常量声明
@@ -90,10 +96,48 @@ const uiChecks = [
 for (const [what, pat] of uiChecks){
   if (!new RegExp(pat).test(ui)) fail.push(`小游戏那份说明里「${what}」和代码对不上`);
 }
+/* 小程序那份是 WXML，数字包在 <text class="b"> 里，所以模式跟网页那份不一样，
+   但要核的是同一批数。只截说明那一段，别拿整个文件搜 —— 这个坑前面踩过两次。 */
+const wxHelpStart = wxml.indexOf('<scroll-view class="help-doc"');
+const wxHelpEnd   = wxml.indexOf('</scroll-view>', wxHelpStart);
+if (wxHelpStart < 0 || wxHelpEnd < 0){
+  fail.push('定位不到小程序版的说明段落');
+} else {
+  const wxHelp = wxml.slice(wxHelpStart, wxHelpEnd);
+  const wxChecks = [
+    ['豆子',       `豆子</text>[\\s\\S]{0,12}?${num2(10*MULT)} × 连击`],
+    ['能量豆分数', `能量豆</text>[\\s\\S]{0,12}?${num2(50*MULT)} × 连击`],
+    ['水果',       `神秘水果</text>[\\s\\S]{0,12}?${num2(300*MULT)} × 连击`],
+    ['整关无伤',   `整关无伤</text>[\\s\\S]{0,12}?${num2(bonus('PERFECT_LEVEL')*MULT)}`],
+    ['全灭幽灵',   `全灭幽灵</text>[\\s\\S]{0,12}?${num2(bonus('GHOST_SWEEP')/10000)}万`],
+    ['通关剩余命', `通关剩余命</text>[\\s\\S]{0,12}?${num2(bonus('LIFE_LEFT')*MULT)}`],
+    ['全程无伤',   `全程无伤</text>[\\s\\S]{0,12}?${num2(bonus('FLAWLESS_RUN')*MULT)}`],
+    ['恐惧起始秒', `${num2(fright[0])} 秒起`],
+    ['恐惧末关秒', `第 6 关只剩 ${num2(fright[fright.length-1])} 秒`],
+    ['冲刺倍率',   `提速到 ${num2(dash)} 倍`],
+    ['玩家加速%',  `你快 ${Math.round((pSpeed-1)*100)}%`],
+    ['幽灵减速%',  `幽灵慢 ${Math.round((1-gSpeed)*100)}%`],
+    ['连击窗口',   `${num2(comboWin)} 秒</text>没吃到才断`],
+    ['传送门冷却', `冷却 ${num2(portalCd)} 秒`],
+  ];
+  for (const [what, pat] of wxChecks){
+    if (!new RegExp(pat).test(wxHelp)) fail.push(`小程序那份说明里「${what}」和代码对不上（代码是相关常量）`);
+  }
+}
+
+/* 作者自己那段话，三份都必须在，而且不许被"顺手改写"。
+   它不是规则文案，是这个游戏为什么存在 —— 而正是这类没有测试盯着的文字，
+   最容易在某次"统一措辞"里被改掉。这里只认原文里最要紧的几句。 */
+const ABOUT = ['暑期，儿子想玩一个简单又刺激的小游戏', '他负责试玩和提意见', '超级奶爸', '2685897@qq.com'];
+for (const [name, text] of [['网页', src], ['小游戏', ui], ['小程序', wxml]]){
+  for (const line of ABOUT){
+    if (!text.includes(line)) fail.push(`${name}版缺了作者那段话里的「${line}」`);
+  }
+}
 
 console.log('从代码读到的真值：');
 console.log(`  倍率 ${MULT}　豆子 ${10*MULT}　能量豆 ${50*MULT}　水果 ${300*MULT}`);
 console.log(`  奖励 无伤${bonus('PERFECT_LEVEL')*MULT} 全灭${bonus('GHOST_SWEEP')*MULT} 剩命${bonus('LIFE_LEFT')*MULT} 全程${bonus('FLAWLESS_RUN')*MULT}`);
 console.log(`  恐惧 ${fright[0]}→${fright[fright.length-1]} 秒　冲刺 ${dash}x　连击 ${comboWin}s（停下 ${comboIdle}x）　传送门冷却 ${portalCd}s`);
-console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : '两份说明里的数字都和代码一致。'));
+console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : '三份说明里的数字都和代码一致，作者那段话三处都在。'));
 process.exit(fail.length ? 1 : 0);

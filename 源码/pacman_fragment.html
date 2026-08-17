@@ -409,45 +409,15 @@ body{
   pointer-events:none;
 }
 .help-more.hidden{opacity:0;}
-/* 折叠区。用原生 <details>，标题做成一个明显可点的条 ——
-   收起来的东西必须**看起来就想点**，否则等于藏了。 */
-.help-fold{
+/* 「关于这个游戏」单独框起来。
+   它是全篇唯一一段不是规则的内容 —— 不给个边界，读者的眼睛会把它当成又一条
+   说明滑过去。这是作者想让人看见的那一段，值得一个自己的位置。 */
+.about-block{
   border:1px solid var(--panel-border);
   border-radius:10px;
   background:rgba(138,107,255,.05);
-  padding:0 12px;
+  padding:12px 14px;
 }
-.help-fold > summary{
-  list-style:none;
-  cursor:pointer;
-  padding:10px 2px;
-  font-family:var(--font-display);
-  font-size:12px;
-  letter-spacing:.12em;
-  color:var(--amber);
-  display:flex;align-items:center;justify-content:space-between;
-  touch-action:manipulation;
-  -webkit-tap-highlight-color:transparent;
-}
-.help-fold > summary::-webkit-details-marker{display:none;}
-/* 自己画箭头：默认那个三角在各家浏览器长得都不一样，还没法跟着主题变色 */
-.help-fold > summary::after{
-  content:'';
-  width:7px;height:7px;
-  border-right:1.6px solid currentColor;
-  border-bottom:1.6px solid currentColor;
-  transform:rotate(45deg) translateY(-2px);
-  transition:transform .18s ease;
-}
-.help-fold[open] > summary::after{transform:rotate(-135deg) translateY(-2px);}
-.help-fold > .help-sec, .help-fold > .about{padding-bottom:12px;}
-.help-fold .help-sec + .help-sec{margin-top:13px;}
-/* 里面那层再嵌一级：颜色压淡，看得出是"更深一层" */
-.help-fold.inner{
-  margin:10px 0 12px;
-  background:rgba(138,107,255,.04);
-}
-.help-fold.inner > summary{color:var(--text-dim);font-size:11px;}
 
 .help-sec h3{
   margin:0 0 5px;
@@ -692,6 +662,9 @@ body{
   line-height:2 !important;
   color:var(--text-dim) !important;
 }
+/* 段与段之间要留白：作者原文是分段的，挤成一坨就读不出那个停顿。
+   .help-sec p 把 margin 归零了，这里补回来。 */
+.about + .about{margin-top:10px !important;}
 /* 通关那句话。用暖色但不用最亮的琥珀 —— 那是留给分数和评级的；
    这句应当被看见，但不该抢在成绩前面。 */
 .warm{
@@ -716,6 +689,27 @@ body{
   opacity:.75;
   text-align:center;
 }
+/* 可点的那一版署名。要让人看出能点，又不能抢「开始游戏」的注意力：
+   本体仍是暗色小字，只有后半句「我们的故事 ›」用琥珀 —— 一个恰好够被看见的
+   钩子。整行都是热区（不只那半句），手指够得着。 */
+.credits-link{
+  display:block;
+  width:100%;
+  background:none;
+  border:0;
+  padding:6px 4px;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+  transition:opacity .15s ease;
+}
+.credits-link .cl-more{
+  color:var(--amber);
+  margin-left:8px;
+  opacity:.95;
+}
+.credits-link:hover{opacity:1;}
+.credits-link:active{opacity:.6;}
 
 /* Name entry on the end screen. Shown only when the run actually made the
    board — asking for a name you're about to throw away is worse than not
@@ -1092,7 +1086,13 @@ body.in-game .marquee{
         <button class="btn btn-hero" id="startBtn">开始游戏</button>
         <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏</div>
+      <!-- 署名这行本来是纯文字，现在它自己就是入口。
+           故事原来要"点玩法说明 → 往下滚到底"才看得到，等于藏着；而这游戏是
+           怎么来的，恰恰是它最值得先说的一件事。做成一行可点的字而不是再加一个
+           按钮：开始页在小屏上本来就快装不下了，这样高度一点没变。 -->
+      <button class="credits credits-link" id="aboutBtn">
+        一个爸爸做给儿子的游戏<span class="cl-more">我们的故事 ›</span>
+      </button>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1117,13 +1117,8 @@ body.in-game .marquee{
       <!-- 内容与 微信小游戏版/js/ui.js 里那份 HELP 保持一致。两处是分开写的
            （一边 HTML、一边 canvas 逐行画），改一处务必改另一处 —— 说明对不上
            比没有说明更糟，玩家会照着做然后发现不是那么回事。 -->
-      <!-- 分层：第一屏只回答"怎么开始玩"，其余全部收起。
-           原来是一次性摊开全部规则——操作、计分、连击、四种幽灵、四种机关、
-           奖励分、反馈邮箱，1050px 的内容对第一次玩的人是劝退的。
-           规则可以复杂，但第一次接触必须简单：真正开始玩只需要知道
-           "吃豆、躲鬼、吃大豆反杀"，其余的边玩边发现更有意思。
-           用原生 <details>：不写一行 JS，键盘和读屏都能用，收起时内容仍在
-           DOM 里，所以微信那两版读纯文本也不会丢东西。 -->
+      <!-- 一份从头读到尾的文档，不折叠。顺序本身就是分层：「怎么玩」在最前面，
+           看完前三行就能开打，剩下的往下滚就是。滚动是零成本的，点开不是。 -->
       <div class="help-doc">
         <div class="help-sec">
           <h3>怎么玩</h3>
@@ -1136,8 +1131,13 @@ body.in-game .marquee{
           </dl>
         </div>
 
-        <details class="help-fold">
-          <summary>进阶玩法</summary>
+        <!-- 全部摊开，不折叠。
+             这里原来是分层的：只留「怎么玩」，其余收进两个折叠条。想法是不让
+             第一次玩的人被 1050px 的规则劝退 —— 但实际用下来是反的：折叠条
+             把"往下读"变成了"先做个决定"，而多数人不会为了一份说明去做决定，
+             于是连想看的人也没看到。滚动是零成本的，点开不是。
+             所以恢复成一份从头读到尾的文档，只保留顺序上的分层：
+             「怎么玩」在最前面，看完前三行就能开打，剩下的往下滚就是。 -->
           <div class="help-sec">
             <h3>连击</h3>
             <p>每吃一颗涨一级，<b>上不封顶</b>；吃幽灵、吃水果同样算。<br>
@@ -1170,38 +1170,41 @@ body.in-game .marquee{
               <dt>神秘水果</dt><dd><b>450</b> × 连击</dd>
               <dt>幽灵</dt><dd><b>1万 → 2万 → 3万…</b><span class="dim">同一颗能量豆内第几只就是几万</span></dd>
             </dl>
-            <details class="help-fold inner">
-              <summary>完整计分与参数</summary>
-              <dl class="kv">
-                <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
-                <dt>全灭幽灵</dt><dd><b>10万</b>　一次能量豆内吃光全场</dd>
-                <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
-                <dt>全程无伤</dt><dd><b>15000</b></dd>
-                <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
-                  <span class="dim">期间你快 15%，幽灵慢 15%</span></dd>
-                <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b></dd>
-                <dt>传送门</dt><dd>冷却 <b>0 秒</b>，落地会停一下等你选方向</dd>
-                <dt>穿墙</dt><dd><b>10 秒</b>；期间移动放慢，转向随按随到</dd>
-                <dt>幽灵融合</dt><dd>吃掉超级幽灵会放出里面那只，两只各算一档悬赏</dd>
-                <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（幽灵悬赏除外）</dd>
-              </dl>
-            </details>
           </div>
-        </details>
+          <div class="help-sec">
+            <h3>完整计分与参数</h3>
+            <dl class="kv">
+              <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
+              <dt>全灭幽灵</dt><dd><b>10万</b>　一次能量豆内吃光全场</dd>
+              <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
+              <dt>全程无伤</dt><dd><b>15000</b></dd>
+              <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
+                <span class="dim">期间你快 15%，幽灵慢 15%</span></dd>
+              <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b></dd>
+              <dt>传送门</dt><dd>冷却 <b>0 秒</b>，落地会停一下等你选方向</dd>
+              <dt>穿墙</dt><dd><b>10 秒</b>；期间移动放慢，转向随按随到</dd>
+              <dt>幽灵融合</dt><dd>吃掉超级幽灵会放出里面那只，两只各算一档悬赏</dd>
+              <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（幽灵悬赏除外）</dd>
+            </dl>
+          </div>
 
-        <details class="help-fold">
-          <summary>关于这个游戏</summary>
-          <p class="about">儿子想要一个简单又刺激的小游戏，我就和他一起做了一个。<br>
-            他先玩，我再改；他说哪儿不好玩，就改哪儿。<br>
-            后来几个小朋友抢着刷分，才有了纪录榜和这六关。<br>
-            <span class="about-sign">—— 超级奶爸</span></p>
-          <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏
-               是公开链接、还打算给小朋友传 —— 联系方式留一个够用的就行，
-               邮箱可以随时不看，微信不能。 -->
-          <dl class="kv" style="margin-top:10px">
-            <dt>反馈</dt><dd>2685897@qq.com<br><span class="dim">有想法欢迎来信</span></dd>
-          </dl>
-        </details>
+        <!-- 这一段是作者自己的话，原文照录，不要替他改写。
+             也不折叠 —— 一个爸爸和儿子把游戏做出来这件事，是这个游戏最不该藏
+             起来的部分。 -->
+        <div class="help-sec about-block" id="aboutBlock">
+          <h3>关于这个游戏</h3>
+          <p class="about">暑期，儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
+          <p class="about">他负责试玩和提意见，我负责一点点修改完善。后来，他的朋友们也加入试玩，才有了现在的《豆豆迷宫》和六个关卡。</p>
+          <p class="about-sign">—— 超级奶爸</p>
+        </div>
+        <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏
+             是公开链接、还打算给小朋友传 —— 联系方式留一个够用的就行，
+             邮箱可以随时不看，微信不能。 -->
+        <div class="help-sec">
+          <h3>反馈</h3>
+          <p class="about">如果你有任何建议，或者创意，欢迎来信<br>
+            <b>Email：2685897@qq.com</b></p>
+        </div>
       </div>
       <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
       <div class="help-more" id="helpMore">↓ 下面还有</div>
@@ -3900,6 +3903,25 @@ function closeHelp(){
 ['helpBtn', 'startHelpBtn', 'pauseHelpBtn'].forEach(id=>{
   const b = document.getElementById(id);
   if (b) b.addEventListener('click', ()=>{ Audio2.unlock(); openHelp(); });
+});
+
+/* 开始页那行署名点进来，直接落在「关于这个游戏」那一段上。
+   同一份说明，只是换个落点 —— 想看故事的人不用先滚过四屏规则。 */
+const aboutBtn = document.getElementById('aboutBtn');
+if (aboutBtn) aboutBtn.addEventListener('click', ()=>{
+  Audio2.unlock();
+  openHelp();
+  /* 用 scrollTop 而不是 scrollIntoView：后者会连带滚祖先和整个页面，而这个
+     页面是锁死不滚的。offsetTop 相减就够——两者的定位父级是同一个。
+     微信那两版的元素是垫片造的假节点，没有 offsetTop，所以整段都要能安全跳过；
+     那边说明是逐行画的纯文本，本来也没有"滚到某一段"这回事。 */
+  setTimeout(()=>{
+    const doc = document.querySelector ? document.querySelector('#helpOverlay .help-doc') : null;
+    const box = document.getElementById('aboutBlock');
+    if (!doc || !box || typeof box.offsetTop !== 'number' || typeof doc.offsetTop !== 'number') return;
+    doc.scrollTop = Math.max(0, box.offsetTop - doc.offsetTop - 8);
+    if (helpSync) helpSync();      // 滚过之后「↓ 下面还有」要跟着重算
+  }, 0);
 });
 
 /* ---------- 分享成绩 ----------
