@@ -30,6 +30,12 @@ window.__dbg = {
   /* 把关卡卡片按住不放，用来截图核对排版 —— 它只显示 1.8 秒，
      截图的往返延迟比这还长，正常跑是抓不到的。 */
   intro(sec){ introTimer = (sec == null ? 8 : sec); return `卡片保持 ${introTimer}s`; },
+  /* 强制画一帧，并且可以把 elapsed 钉死。
+     两个用处：一是预览窗报 document.hidden=true，rAF 被节流到几乎不触发，
+     等它自己画是等不到的；二是拿两个版本做像素对比时时间必须一致 ——
+     豆子的呼吸、传送门的旋转都跟 elapsed 走，差一点点就分不清"这处不同是
+     改动引起的，还是只是时刻不同"。 */
+  draw(e){ if (e != null) elapsed = e; render(); return elapsed; },
   snap(){ return ghosts.map(g=>({id:g.id, st:g.state, host:!!g.isFusionHost, linked:!!g.fusedWith})); },
   power(){ startPowerMode(); },
   forceFuse(){ const f=ghosts.filter(g=>g.state==='frightened'&&!g.fusedWith); if(f.length<2) return 'need 2';

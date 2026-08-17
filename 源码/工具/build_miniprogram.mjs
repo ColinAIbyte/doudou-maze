@@ -82,6 +82,11 @@ ${body}
     // 小程序的榜单是自己用 WXML 渲的，拿不到逻辑层写好的那串 HTML，
     // 所以得把"这一局是哪条记录"给出去，不然高亮不出玩家自己那行。
     get lastRunId(){ return lastRunId; },
+    // 练习模式。逻辑本来就在（跟网页版同一份代码），但小程序的界面是自己写的
+    // WXML，够不到闭包里的这几个东西，所以得显式放出来。
+    // practiceLevel 用 getter：页面要靠它决定结算页是不是该藏排行榜。
+    get practiceLevel(){ return practiceLevel; },
+    startPractice, maxLevelReached, levelName,
     MAX_LEVEL,
     requestDir, togglePause, fullNewGame, render, update, Audio2,
     renderScoreboard, loadScores, recordScore, renameScore, cleanName, renderBest, bestScore,

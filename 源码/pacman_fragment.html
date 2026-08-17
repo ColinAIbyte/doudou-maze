@@ -1642,7 +1642,24 @@ function ghostDefsForLevel(lvl){
 const PATROL_ROUTE = [{x:2,y:2},{x:16,y:2},{x:16,y:18},{x:2,y:18}];
 const PATROL_ROUTE_REV = PATROL_ROUTE.slice().reverse();
 
-const cssVar = (name)=>getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/* 调色板全程不变，所以查一次就存下来。
+ *
+ * 之所以值得单独说：原来这行每次调用都是一次 getComputedStyle，而它被写在了
+ * 画豆子的双层循环里 —— 实测第一关每帧 361 次。getComputedStyle 不是读个属性
+ * 那么便宜，它会迫使浏览器把样式重新解析一遍，是那种不看数字永远不会怀疑到的
+ * 大头。缓存之后每帧只剩十来次（各画一次就命中）。
+ *
+ * 前提是颜色真的不变：整份代码没有一处 setProperty / documentElement.style，
+ * 也没有主题切换。哪天真要做换肤，记得在切换时 CSSVAR.clear()。 */
+const CSSVAR = new Map();
+const cssVar = (name)=>{
+  let v = CSSVAR.get(name);
+  if (v === undefined){
+    v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    CSSVAR.set(name, v);
+  }
+  return v;
+};
 
 /* ---------- retro synthesized audio (no external assets) ---------- */
 const Audio2 = (()=>{
@@ -1792,6 +1809,7 @@ function resetLevel(fullReset){
   }
   pelletsTotal = pelletsLeft; // fixed at level load, so eating progress reads 0 -> 1
   buildEyeField();            // 迷宫定下来了，把眼睛的回家地图重算一遍
+  buildWallEdges();           // 墙的线段表也只跟迷宫有关，一关算一次就够
   const playerSpeed = 5.408 + (level-1)*0.2912;
   player = {
     x: SPAWN.player.x, y: SPAWN.player.y, dir:{x:0,y:0}, want:{x:0,y:0},
@@ -2376,6 +2394,28 @@ const GHOST_RESPAWN_DELAY = 1.5;
    屏幕上就是"啪"地闪一下。直接拿老巢中心当终点，它自己穿过门走进去。
    六关的老巢格局完全一致（(9,8) 是门 D，(9,9)(9,10) 是巢 g），已逐关验过。 */
 const EYE_HOME = {x:9, y:10};
+
+/* 墙的线段表。只在只跟非墙格相邻的那一侧画线（这是那种"矢量描边"观感的来源，
+ * 不是把每格描成一个方框），而这个判断只跟迷宫布局有关 —— 一整关都不会变。
+ * 摊平成 [x1,y1,x2,y2, x1,y1,x2,y2, ...] 一维数组而不是对象数组：每帧要走一遍，
+ * 少几百个对象的间接寻址，在低端手机上是白捡的。
+ * 不用 Path2D —— 微信的 canvas 没有它，而这份代码三个平台共用。 */
+let wallEdges = [];
+function buildWallEdges(){
+  const e = [];
+  const n = (yy,xx)=> (xx<0||xx>=COLS||yy<0||yy>=ROWS) ? '#' : grid[yy][xx];
+  for (let y=0;y<ROWS;y++){
+    for (let x=0;x<COLS;x++){
+      if (grid[y][x] !== '#') continue;
+      const px = x*TILE, py = y*TILE;
+      if (n(y-1,x)!=='#') e.push(px+2, py+2, px+TILE-2, py+2);
+      if (n(y+1,x)!=='#') e.push(px+2, py+TILE-2, px+TILE-2, py+TILE-2);
+      if (n(y,x-1)!=='#') e.push(px+2, py+2, px+2, py+TILE-2);
+      if (n(y,x+1)!=='#') e.push(px+TILE-2, py+2, px+TILE-2, py+TILE-2);
+    }
+  }
+  wallEdges = e;
+}
 
 function buildEyeField(){
   const f = Array.from({length:ROWS}, () => new Array(COLS).fill(Infinity));
@@ -4220,21 +4260,14 @@ function drawMaze(){
   ctx.shadowColor = wallColor;
   ctx.shadowBlur = 8;
   ctx.lineCap = 'round';
-  for (let y=0;y<ROWS;y++){
-    for (let x=0;x<COLS;x++){
-      const ch = grid[y][x];
-      if (ch !== '#') continue;
-      const cxp = x*TILE, cyp = y*TILE;
-      // draw edges only where adjacent to non-wall for a cleaner vector look
-      const n = (yy,xx)=> (xx<0||xx>=COLS||yy<0||yy>=ROWS) ? '#' : grid[yy][xx];
-      ctx.beginPath();
-      if (n(y-1,x)!=='#'){ ctx.moveTo(cxp+2,cyp+2); ctx.lineTo(cxp+TILE-2,cyp+2); }
-      if (n(y+1,x)!=='#'){ ctx.moveTo(cxp+2,cyp+TILE-2); ctx.lineTo(cxp+TILE-2,cyp+TILE-2); }
-      if (n(y,x-1)!=='#'){ ctx.moveTo(cxp+2,cyp+2); ctx.lineTo(cxp+2,cyp+TILE-2); }
-      if (n(y,x+1)!=='#'){ ctx.moveTo(cxp+TILE-2,cyp+2); ctx.lineTo(cxp+TILE-2,cyp+TILE-2); }
-      ctx.stroke();
-    }
+  /* 一条路径画完整张墙。原来是每个墙格 beginPath + stroke，第一关就是 200 次
+     带阴影的描边 —— 而墙一整关都不动，每帧重算邻居、重描一遍纯属白干。 */
+  ctx.beginPath();
+  for (let i=0;i<wallEdges.length;i+=4){
+    ctx.moveTo(wallEdges[i], wallEdges[i+1]);
+    ctx.lineTo(wallEdges[i+2], wallEdges[i+3]);
   }
+  ctx.stroke();
   ctx.restore();
 
   // ghost house door
@@ -4249,35 +4282,60 @@ function drawMaze(){
   });
   ctx.restore();
 
-  // pellets / portals
+  /* ---------- 豆子 ----------
+     所有小豆子的半径和光晕是**同一个值** —— 它们只跟"还剩几颗"和时间有关，
+     跟位置无关。所以整张图的豆子可以攒成一条路径、一次 fill 画完：
+     175 次带阴影的绘制变成 1 次。shadowBlur 是 canvas 2D 里最贵的操作，
+     而在手机上这一项就是掉帧的主因。
+
+     每段 arc 之前必须先 moveTo：arc 会从当前点连一条线过来，不另起子路径
+     就会在豆子之间连出线段。
+     唯一的差别是光晕重叠处：分开画时两团光会叠加变亮，合成一条路径则不会。
+     正常间距（26px）下光晕只有 4px，根本碰不到；只有剩最后几颗、光晕涨到
+     20px 且刚好相邻时才可能有极轻微的差别，这个代价换 175 倍的绘制量值得。 */
+  let r = 2.6, glow = 4;
+  if (pelletsLeft <= LAST_PELLET_HINT){
+    /* 剩最后几颗时让豆子自己"喘气"。
+       这是吃豆类通病：前 90% 一路吃得很爽，剩最后一两颗突然变成满地图找，
+       节奏一下垮掉。目的不是降低难度 —— 豆子在哪儿本来就不是难点，
+       **找它的那段时间纯粹是无聊**，把无聊删掉而已。
+       两档：10 颗以内轻微呼吸，5 颗以内明显跳动，越少越显眼。 */
+    const urgency = pelletsLeft <= LAST_PELLET_LOUD ? 1 : 0.45;
+    const beat = (Math.sin(elapsed * (5 + urgency*3)) + 1) / 2;   // 0..1
+    r    = 2.6 + beat * (1.8 * urgency + 0.7);
+    glow = 4   + beat * (16 * urgency + 4);
+  }
+  const amber = cssVar('--amber');
+  const pulse = 4.4+Math.sin(elapsed*6)*1.2;
+  const TAU = Math.PI*2;
+
+  let anyDot = false, anyPower = false;
+  ctx.fillStyle = amber; ctx.shadowColor = amber;
+
+  ctx.shadowBlur = glow;
+  ctx.beginPath();
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    if (grid[y][x] !== '.') continue;
+    const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
+    ctx.moveTo(cxp+r, cyp); ctx.arc(cxp,cyp,r,0,TAU); anyDot = true;
+  }
+  if (anyDot) ctx.fill();
+
+  ctx.shadowBlur = 12;
+  ctx.beginPath();
+  for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
+    if (grid[y][x] !== 'o') continue;
+    const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
+    ctx.moveTo(cxp+pulse, cyp); ctx.arc(cxp,cyp,pulse,0,TAU); anyPower = true;
+  }
+  if (anyPower) ctx.fill();
+
+  // 传送门只有四格，而且每个都要单独旋转，攒路径没有意义，照旧一个一个画。
   for (let y=0;y<ROWS;y++){
     for (let x=0;x<COLS;x++){
       const ch = grid[y][x];
       const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
-      if (ch==='.'){
-        /* 剩最后几颗时让豆子自己"喘气"。
-           这是吃豆类通病：前 90% 一路吃得很爽，剩最后一两颗突然变成满地图找，
-           节奏一下垮掉。目的不是降低难度 —— 豆子在哪儿本来就不是难点，
-           **找它的那段时间纯粹是无聊**，把无聊删掉而已。
-           两档：10 颗以内轻微呼吸，5 颗以内明显跳动，越少越显眼。 */
-        let r = 2.6, glow = 4;
-        if (pelletsLeft <= LAST_PELLET_HINT){
-          const urgency = pelletsLeft <= LAST_PELLET_LOUD ? 1 : 0.45;
-          const beat = (Math.sin(elapsed * (5 + urgency*3)) + 1) / 2;   // 0..1
-          r    = 2.6 + beat * (1.8 * urgency + 0.7);
-          glow = 4   + beat * (16 * urgency + 4);
-        }
-        ctx.beginPath();
-        ctx.fillStyle = cssVar('--amber');
-        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=glow;
-        ctx.arc(cxp,cyp,r,0,Math.PI*2); ctx.fill();
-      } else if (ch==='o'){
-        const pulse = 4.4+Math.sin(elapsed*6)*1.2;
-        ctx.beginPath();
-        ctx.fillStyle = cssVar('--amber');
-        ctx.shadowColor = cssVar('--amber'); ctx.shadowBlur=12;
-        ctx.arc(cxp,cyp,pulse,0,Math.PI*2); ctx.fill();
-      } else if (ch==='1' || ch==='2'){
+      if (ch==='1' || ch==='2'){
         const col = ch==='1' ? cssVar('--cyan') : cssVar('--pink');
         /* 冷却中的传送门画暗、且不再旋转。
            踩上去之后有 1 秒冷却，这期间再踩没反应 —— 之前门看起来一切正常，
