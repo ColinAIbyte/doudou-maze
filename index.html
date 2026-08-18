@@ -765,18 +765,16 @@ body{
   font-size:12px;
   line-height:1.8;
 }
-/* 标题下面那行署名。当副标题用：字号比标题小一档、颜色压到暗色，
-   这样它属于标题这一组，又不会跟标题争。
-   注意是**居中**的 —— 正文左对齐，但这行跟标题一组，跟着标题走。
-   还要盖掉 .overlay p 的 max-width:340px，否则它会按 340 的盒子居中，
-   在宽屏上看着像往左偏了一点点。 */
+/* 正文末尾那行署名。跟正文一样左对齐（它是这段话的落款，不是标题的一部分），
+   用琥珀色跟正文的暗色拉开 —— 否则接在正文后面会被当成最后一句话读下去。
+   要盖掉 .overlay p 的 max-width:340px，不然它和正文不同宽，左边缘对不齐。 */
 .about-by{
-  margin:6px 0 0 !important;
-  color:var(--text-dim);
+  margin:10px 0 0 !important;
+  color:var(--amber);
   font-family:var(--font-display);
-  font-size:12px;
+  font-size:11px;
   letter-spacing:.1em;
-  text-align:center;
+  text-align:left;
   max-width:none !important;
 }
 .credits{
@@ -1308,15 +1306,13 @@ body.in-game .marquee{
     <div class="overlay hidden" id="aboutOverlay" role="dialog" aria-modal="true"
          aria-labelledby="aboutTitle" tabindex="-1">
       <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
-      <!-- 署名紧跟标题，当副标题用，不放在正文末尾。
-           摆在这儿它就是这一页的落款——"谁做的"和"叫什么"连在一起读；
-           压在正文最后则要读完整段才看见，而且容易被当成正文的一部分。
-           破折号去掉：标题下面这个位置本来就是署名位，不需要再用符号说明。 -->
-      <p class="about-by">游戏制作者：超级奶爸</p>
       <!-- about-doc 是"弹层内部"，点它不关闭；点它外面（也就是 #aboutOverlay
            自己那片底）才关闭。少了这一层，点正文选个字都会把弹层关掉。 -->
       <div class="about-doc" id="aboutPanel">
         <p class="about">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。他负责试玩和提意见，我负责一点点修改完善。后来，其它小朋友也加入了试玩，才有了现在的《豆豆迷宫》和六个关卡。</p>
+        <!-- 署名跟在正文后面、分隔线之前 —— 这段话是他写的，落款就该在话说完的
+             地方。破折号去掉：这个位置本身已经说明它是落款了。 -->
+        <p class="about-by">游戏制作者：超级奶爸</p>
         <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
              链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时
              不看，微信不能。 -->
