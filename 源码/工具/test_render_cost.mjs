@@ -100,4 +100,31 @@ if (bad.length){
   console.log('东西（墙、豆子）又改回一格一次 beginPath+fill。');
   process.exit(1);
 }
+/* ---------- 画布分辨率的接线检查 ----------
+   这部分没法在无头环境里量（没有布局、没有 devicePixelRatio），但接线断没断
+   是能从源码看出来的，而断了的后果很实在：要么高清屏上糊回去，要么微信两版
+   直接崩。后者不是假设 —— 守卫写错过一次，小游戏当场 setTransform 报错。 */
+const src = readFileSync(new URL('../pacman_fragment.html', import.meta.url), 'utf8');
+const wire = [
+  ['每帧套用变换',      /function render\(\)\{[\s\S]{0,400}?applyMazeTransform\(\)/],
+  ['按 dpr 分配像素',   /canvas\.width = w; canvas\.height = h;/],
+  ['dpr 有上限',        /Math\.min\(window\.devicePixelRatio \|\| 1, DPR_CAP\)/],
+  ['尺寸没变就不重建',  /if \(canvas\.width === w && canvas\.height === h\) return;/],
+  ['盯着画布本身变化',  /new ResizeObserver\(fitMazeCanvas\)/],
+  // 这三条是微信那两版不被误伤的全部保障
+  ['守卫用 instanceof', /canvas instanceof HTMLCanvasElement/],
+  ['fit 受守卫保护',    /function fitMazeCanvas\(\)\{\s*\n\s*if \(!CAN_OWN_CANVAS\) return;/],
+  ['变换受守卫保护',    /function applyMazeTransform\(\)\{\s*\n\s*if \(!CAN_OWN_CANVAS\) return;/],
+  ['清屏用逻辑尺寸',    /ctx\.clearRect\(0, 0, COLS\*TILE, ROWS\*TILE\)/],
+];
+const broken = wire.filter(([, re]) => !re.test(src)).map(([w]) => w);
+if (broken.length){
+  console.log('\n画布分辨率的接线断了：');
+  broken.forEach(b => console.log('  ✗ ' + b));
+  console.log('\n少了守卫，微信两版会在 render 里崩（它们的画布由各自外壳定尺寸）；');
+  console.log('少了变换或 dpr，高清屏上迷宫会糊回去。');
+  process.exit(1);
+}
+console.log(`  ✓ 画布分辨率接线完整（${wire.length} 项）`);
+
 console.log('\n渲染开销在上限内。');

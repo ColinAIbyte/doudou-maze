@@ -1557,6 +1557,68 @@ const canvas = document.getElementById('mazeCanvas');
 canvas.width = COLS*TILE; canvas.height = ROWS*TILE;
 const ctx = canvas.getContext('2d');
 
+/* 让画布的**内部像素**跟上它实际被显示的大小。
+ *
+ * 原来这块画布固定 494x546 内部像素，而 CSS 把它按可用高度拉伸 —— 在一台
+ * 1280x900 的窗口上实测被拉到 593x655，等于每个像素放大 1.2 倍；而这还是
+ * devicePixelRatio=1 的情况。在 Mac、iPhone 这类 2 倍屏上就是 2.4 倍欠采样。
+ * 这游戏整个观感靠的是霓虹细线和光晕，糊掉的正是它最值钱的部分。
+ *
+ * 同一份文件里的烟花画布（fxResize）从一开始就是这么做的，主画布反而漏了。
+ *
+ * 逻辑始终按 494x546 这套坐标画，不改一行绘制代码：把缩放交给变换矩阵。
+ *
+ * dpr 上限取 2：3 倍屏（多数安卓旗舰和 iPhone Pro）按原样就是 9 倍的填充量，
+ * 而 2 倍和 3 倍在这种尺寸的线条上肉眼已经分不出来，不值得拿帧率换。
+ */
+const DPR_CAP = 2;
+/* 只有网页版自己管这块画布的尺寸。
+ *
+ * 微信那两版的外壳各有各的算法，尤其小游戏版把画布铺满整个屏幕、再用 translate
+ * 把迷宫摆到中间 —— 那边要是按"画布宽 / 494"去算缩放，会得出一个完全不对的
+ * 倍数，还会把外壳的位移一起抹掉。
+ *
+ * 判据必须是"这是不是一块真的 DOM 画布"，不能是"它有没有某个方法"。
+ * 第一版写的是 typeof canvas.getBoundingClientRect === 'function'，结果小游戏
+ * 版当场崩了 —— 我们自己的垫片给假元素补了 getBoundingClientRect，它返回的还是
+ * 非零尺寸，于是守卫形同虚设。冒烟测试逮住的。
+ * instanceof 骗不过去：垫片造的是普通对象，无论补了多少方法都不是 HTMLCanvasElement。 */
+const CAN_OWN_CANVAS =
+  typeof HTMLCanvasElement === 'function' &&
+  canvas instanceof HTMLCanvasElement &&
+  typeof ctx.setTransform === 'function';
+
+function fitMazeCanvas(){
+  if (!CAN_OWN_CANVAS) return;
+  const r = canvas.getBoundingClientRect();
+  if (!r.width || !r.height) return;              // 还没布局好，等下一次
+  const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+  const w = Math.round(r.width * dpr), h = Math.round(r.height * dpr);
+  if (canvas.width === w && canvas.height === h) return;   // 尺寸没变就别动
+  /* 给 canvas.width 赋值会清空画布并**重置变换矩阵**，所以这两件事必须
+     一起做，而且只在真的变了的时候做 —— 每帧无脑设一次等于每帧清一次屏。 */
+  canvas.width = w; canvas.height = h;
+}
+
+/* 变换在每帧开头设，不是在 fitMazeCanvas 里设一次就完。
+   绘制代码里有大量 save/restore，任何一处配对不当都会把矩阵带回默认值，
+   而那种错只在某个特定状态下出现，极难查。每帧重设一次是 O(1)，买个踏实。 */
+function applyMazeTransform(){
+  if (!CAN_OWN_CANVAS) return;   // 微信两版由各自外壳设好变换，不许覆盖
+  ctx.setTransform(canvas.width / (COLS*TILE), 0, 0, canvas.height / (ROWS*TILE), 0, 0);
+}
+
+/* 画布的显示尺寸不只在窗口缩放时变：开打之后标题栏会收起（body.in-game），
+   可用高度一变，CSS 算出来的棋盘尺寸就跟着变。只听 window.resize 是漏的，
+   所以用 ResizeObserver 直接盯这块画布本身。
+   没有 ResizeObserver 的环境（以及微信）退回 resize 事件，再不行就算了 ——
+   fitMazeCanvas 本身对"量不到尺寸"是安全的。 */
+if (CAN_OWN_CANVAS){
+  if (typeof ResizeObserver === 'function') new ResizeObserver(fitMazeCanvas).observe(canvas);
+  else if (window.addEventListener) window.addEventListener('resize', fitMazeCanvas);
+  fitMazeCanvas();
+}
+
 /** Cycles through the available mazes once levels outrun the list. */
 function templateForLevel(lvl){
   return MAZE_TEMPLATES[(Math.max(1, lvl) - 1) % MAZE_TEMPLATES.length];
@@ -4389,7 +4451,8 @@ function update(dt){
 
 /* ---------- rendering ---------- */
 function drawMaze(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // 逻辑尺寸，不是 canvas.width —— 加了缩放变换之后那个数是设备像素
+  ctx.clearRect(0, 0, COLS*TILE, ROWS*TILE);
   /* 穿墙期间墙自己"虚掉"：变淡、变虚线、颜色偏向主角的青。
      这是这个道具最值钱的一秒 —— 玩家真正要看懂的不是"我获得了穿墙"，而是
      **"墙不算数了"**。让墙自己变样，比在角色身上加特效直接得多：他一眼看到
@@ -4663,6 +4726,7 @@ function render(){
      每帧白烧一次，在弱一点的手机上就是实打实的掉帧 —— 而掉帧的直接后果，
      就是点按钮之后要等下一帧才有反应。 */
   if (docPanelOpen()) return;
+  applyMazeTransform();
   drawMaze();
   drawFruit();
   ghosts.forEach(drawGhost);
