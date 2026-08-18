@@ -38,6 +38,16 @@ if (aboutStart < 0 || aboutEnd < 0){
                       '反馈与建议', '如果你有建议，或者发现了问题']){
     if (!panel.includes(line)) fail.push(`关于页缺了原文里的「${line}」`);
   }
+  /* 署名的**位置**：紧跟标题、排在正文前面，而且不带破折号。
+     这条得单独钉住 —— 位置和标点都是"改了也照样能跑"的东西，
+     而它恰恰是作者亲自指定的版式。 */
+  const iTitle = panel.indexOf('关于《豆豆迷宫》');
+  const iBy    = panel.indexOf('游戏制作者：超级奶爸');
+  const iBody  = panel.indexOf('儿子想玩一个简单又刺激的小游戏');
+  if (!(iTitle < iBy && iBy < iBody))
+    fail.push('署名不在「标题之后、正文之前」，位置错了');
+  if (/——\s*游戏制作者/.test(panel))
+    fail.push('署名前面又出现了破折号，作者要求去掉');
 }
 
 // 入口：标题旁边那个「关于」胶囊，和「玩法」并排
