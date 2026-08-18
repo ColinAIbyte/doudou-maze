@@ -721,17 +721,19 @@ body{
   font-size:12px;
   line-height:1.8;
 }
-/* 正文末尾那行署名。跟正文一样左对齐（它是这段话的落款，不是标题的一部分），
-   用琥珀色跟正文的暗色拉开 —— 否则接在正文后面会被当成最后一句话读下去。
-   要盖掉 .overlay p 的 max-width:340px，不然它和正文不同宽，左边缘对不齐。 */
+/* 正文末尾那行署名，**右对齐** —— 落款靠右是中文书面惯例，而且靠右之后它
+   和正文的左边缘错开，一眼就分得出"这不是正文的最后一句"。
+   用琥珀色跟正文的暗色再拉开一层。
+   宽度**必须跟正文一样**（也就是继承 .overlay p 的 max-width:340px，不要覆盖）：
+   正文被那条规则限在 340 宽，而外层容器有 343 —— 一旦放开，署名就会比正文多出
+   3px，右边缘对不齐。实测过：放开是 359，正文右边缘 356。 */
 .about-by{
   margin:10px 0 0 !important;
   color:var(--amber);
   font-family:var(--font-display);
   font-size:11px;
   letter-spacing:.1em;
-  text-align:left;
-  max-width:none !important;
+  text-align:right;
 }
 .credits{
   margin-top:14px;
