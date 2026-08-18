@@ -465,13 +465,29 @@ body{
      说明有五六屏内容，必须顶部排、自己滚；这一页只有一段话，顶部排会把
      「知道了」甩到屏幕最下沿、中间空出一大片，看起来像还没加载完。 */
   justify-content:center;
-  padding:calc(env(safe-area-inset-top) + 18px) 16px
+  /* 左右各 20px：手机上贴边的文字读起来很局促，而且靠边的字容易被曲面屏和
+     手掌握持挡住。上下各自加安全区，刘海和小白条都不压字。 */
+  padding:calc(env(safe-area-inset-top) + 18px) 20px
           calc(env(safe-area-inset-bottom) + 16px);
   z-index:80;   /* 同说明：要压在礼花之上 */
+  gap:0;        /* 间距全部由内部元素自己控制，避免和 .overlay 的 gap 叠加 */
+}
+/* 「知道了」和反馈内容之间的距离，单独给 —— 上面把 gap 归零了。 */
+#aboutOverlay > .btn{ margin-top:26px; flex-shrink:0; }
+/* 标题跟正文在同一个盒子里，所以它"居中"的范围和正文一样宽，
+   左右边缘天然对齐，不会像原来那样各居各的中。 */
+#aboutOverlay h2{
+  font-size:clamp(22px, 6vw, 26px);
+  text-align:center;
+  margin:0 0 22px;
+  align-self:stretch;
 }
 .about-doc{
   width:100%;
-  max-width:420px;
+  /* 460px：中文一行放得下约 30 个字，正好是一眼扫得完、又不用频繁回行的宽度。
+     原来是 420，而里面的 <p> 还被 .overlay p 的 max-width:340px 又卡了一道 ——
+     340px 一行只有二十来个字，于是出现"做了出 / 来"这种把词劈开的断行。 */
+  max-width:460px;
   text-align:left;
   /* 不撑高（flex 不 grow），但万一装不下（横屏、系统超大字号）还能自己滚。
      min-height:0 不能省：flex 项默认不肯缩到内容以下，少了它 overflow 不生效，
@@ -483,15 +499,20 @@ body{
   overscroll-behavior:contain;
 }
 .about-feedback{
-  margin-top:18px;
-  padding-top:14px;
-  border-top:1px solid var(--panel-border);
+  /* 署名与分隔线之间 20px（规格 18~22） */
+  margin-top:20px;
+  padding-top:18px;
+  /* 比 --panel-border 更弱：这条线只是分节，不该比它下面的「反馈与建议」还显眼。
+     线是背景，标题才是内容。 */
+  border-top:1px solid rgba(138,107,255,.16);
 }
 .about-feedback h3{
-  margin:0 0 5px;
+  margin:0 0 8px;
   font-family:var(--font-display);
-  font-size:11px;
-  letter-spacing:.14em;
+  /* 跟正文同字号：它是分节标题，靠颜色（金）和字重区分就够，
+     再加大就会盖过它要引出的那两行字。 */
+  font-size:14px;
+  letter-spacing:.1em;
   color:var(--amber);
   font-weight:700;
 }
@@ -751,13 +772,20 @@ body{
 /* 「关于」那段。行距放宽、字号比别处稍大一点点 —— 它是唯一一段需要"读"
    而不是"查"的文字，其余全是词条。 */
 .about{
-  font-size:12px !important;
-  line-height:2 !important;
+  font-size:14px !important;
+  line-height:1.9 !important;
   color:var(--text-dim) !important;
+  /* 解除 .overlay p 的 max-width:340px。正文的宽度该由 .about-doc 定，
+     被两道上限夹着的结果就是那种把词劈开的断行。 */
+  max-width:none !important;
 }
-/* 段与段之间要留白：作者原文是分段的，挤成一坨就读不出那个停顿。
-   .help-sec p 把 margin 归零了，这里补回来。 */
+/* 段与段之间留 10px：作者原文是分段的，挤成一坨就读不出那个停顿。
+   .overlay p 把 margin 归零了，这里补回来。 */
 .about + .about{margin-top:10px !important;}
+/* 书名号里的游戏名不许被拆开。中文本来可以在任意两字之间断行，所以
+   "《豆豆 / 迷宫》"是合法的 —— 但一个专有名词被劈成两半读起来就是磕的，
+   跟"做了出 / 来"是同一类问题。只圈住这一处，不影响其余正常断行。 */
+.nb{white-space:nowrap;}
 /* 通关那句话。用暖色但不用最亮的琥珀 —— 那是留给分数和评级的；
    这句应当被看见，但不该抢在成绩前面。 */
 .warm{
@@ -771,16 +799,18 @@ body{
    宽度**必须跟正文一样**（也就是继承 .overlay p 的 max-width:340px，不要覆盖）：
    正文被那条规则限在 340 宽，而外层容器有 343 —— 一旦放开，署名就会比正文多出
    3px，右边缘对不齐。实测过：放开是 359，正文右边缘 356。 */
+/* 落款：右对齐，跟正文右边缘齐平。
+   颜色用比正文亮一档的次级色，不用琥珀 —— 琥珀在这个界面里是分数和奖励的
+   颜色，用在这儿会让它跳成一个"重点"，而它只是一句落款。 */
 .about-by{
-  margin:10px 0 0 !important;
-  color:var(--amber);
-  font-family:var(--font-display);
-  font-size:11px;
-  letter-spacing:.1em;
+  margin:14px 0 0 !important;
+  color:var(--text);
+  font-size:13px !important;
+  line-height:1.9 !important;
+  letter-spacing:.04em;
   text-align:right;
-  /* 从右边缘再往里缩四个字。用 em 而不是 px：em 就是"一个字宽"，
-     所以这行字面上就是"四个字的空间"，将来字号一改它也还是四个字。 */
-  padding-right:4em;
+  max-width:none !important;
+  opacity:.82;
 }
 .credits{
   margin-top:14px;
@@ -1310,21 +1340,26 @@ body.in-game .marquee{
          作者的原话，不要替他改写或压缩。 -->
     <div class="overlay hidden" id="aboutOverlay" role="dialog" aria-modal="true"
          aria-labelledby="aboutTitle" tabindex="-1">
-      <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
       <!-- about-doc 是"弹层内部"，点它不关闭；点它外面（也就是 #aboutOverlay
-           自己那片底）才关闭。少了这一层，点正文选个字都会把弹层关掉。 -->
+           自己那片底）才关闭。少了这一层，点正文选个字都会把弹层关掉。
+           标题也放进来：这样标题、正文、署名、反馈共用同一个盒子，也就共用
+           同一条左边缘（标题自己居中，但它居中的范围和正文一样宽）。 -->
       <div class="about-doc" id="aboutPanel">
-        <p class="about">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。他负责试玩和提意见，我负责一点点修改完善。后来，其它小朋友也加入了试玩，才有了现在的《豆豆迷宫》和六个关卡。</p>
-        <!-- 署名跟在正文后面、分隔线之前 —— 这段话是他写的，落款就该在话说完的
-             地方。破折号去掉：这个位置本身已经说明它是落款了。 -->
-        <p class="about-by">游戏制作者：超级奶爸</p>
+        <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
+        <!-- 两段，中间留白。整段不写任何 <br>：中文该在哪儿断行由宽度决定，
+             手写的换行只在某一个屏幕宽度上好看，换台设备就断在奇怪的地方。 -->
+        <p class="about">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
+        <p class="about">他负责试玩和提意见，我负责一点点修改完善。后来，几个小朋友也加入了试玩，才有了现在的<span class="nb">《豆豆迷宫》</span>和六个关卡。</p>
+        <!-- 落款：靠右，紧跟故事，不居中。居中会让它看起来像新的一节，
+             把"读完一段话"的节奏打断。 -->
+        <p class="about-by">—— 超级奶爸</p>
         <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
              链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时
              不看，微信不能。 -->
         <div class="about-feedback">
           <h3>反馈与建议</h3>
-          <p class="about">如果你有建议，或者发现了问题，欢迎来信<br>
-            Email：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
+          <p class="about">如果你有任何建议，或在游戏中发现了问题，欢迎来信告诉我。</p>
+          <p class="about">邮箱：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
         </div>
       </div>
       <button class="btn" id="aboutCloseBtn">知道了</button>

@@ -33,22 +33,43 @@ if (aboutStart < 0 || aboutEnd < 0){
     if (!panel.includes(pat)) fail.push(`关于页缺少：${what}（找不到 ${pat}）`);
   }
   // 作者原文，逐句核
-  for (const line of ['儿子想玩一个简单又刺激的小游戏', '他负责试玩和提意见',
-                      '其它小朋友也加入了试玩', '游戏制作者：超级奶爸',
-                      '反馈与建议', '如果你有建议，或者发现了问题']){
+  for (const line of ['儿子想玩一个简单又刺激的小游戏', '于是我们一起把它做了出来',
+                      '他负责试玩和提意见', '几个小朋友也加入了试玩',
+                      '—— 超级奶爸',
+                      '反馈与建议', '如果你有任何建议，或在游戏中发现了问题',
+                      '邮箱']){
     if (!panel.includes(line)) fail.push(`关于页缺了原文里的「${line}」`);
   }
-  /* 署名的**位置**：跟在正文之后、「反馈与建议」之前，而且不带破折号。
-     这条得单独钉住 —— 位置和标点都是"改了也照样能跑"的东西，而它恰恰是
-     作者亲自指定的版式（中间还改错过一次：一度被放到标题下面当副标题）。 */
+  /* 阅读顺序：标题 → 故事 → 落款 → 反馈。
+     这条得单独钉住 —— 顺序是"改了也照样能跑"的东西，而它恰恰是作者亲自
+     指定的版式（中途还改错过一次：一度被放到标题下面当副标题）。 */
   const iTitle = panel.indexOf('关于《豆豆迷宫》');
   const iBody  = panel.indexOf('儿子想玩一个简单又刺激的小游戏');
-  const iBy    = panel.indexOf('游戏制作者：超级奶爸');
+  const iBy    = panel.indexOf('—— 超级奶爸');
   const iFb    = panel.indexOf('反馈与建议');
   if (!(iTitle < iBody && iBody < iBy && iBy < iFb))
-    fail.push('署名不在「正文之后、反馈与建议之前」，位置错了');
-  if (/——\s*游戏制作者/.test(panel))
-    fail.push('署名前面又出现了破折号，作者要求去掉');
+    fail.push('顺序不是「标题 → 故事 → 落款 → 反馈」');
+
+  /* story = 故事那一段，下面两条检查都只看它。
+     起点要取**第一个 <p class="about"> 标签本身**，不能用正文首句的位置 ——
+     首句在标签内部，从它切会把第一段的开标签切掉，段落数永远少一个
+     （第一版就是这样，在完全正确的页面上报"实得 1 段"）。 */
+  const iP1 = panel.indexOf('<p class="about">');
+  const story = panel.slice(iP1 < 0 ? iBody : iP1, iFb);
+  /* 正文里不许再出现手动换行。<br> 只在某一个屏幕宽度上好看，换台设备就断在
+     奇怪的地方 —— 作者报的"做了出 / 来"正是这一类。断行交给宽度决定。 */
+  if (/<br\s*\/?>/i.test(story))
+    fail.push('故事正文里又出现了手动换行 <br>，断行该交给宽度决定');
+
+  // 「Email」统一改成「邮箱」
+  if (/Email\s*[:：]/.test(panel))
+    fail.push('还留着「Email：」，应当统一成「邮箱：」');
+
+  /* 故事必须是**两段**，不是一整坨。
+     只数 story 那一区间里的段落 —— 第一版数的是整页，而反馈区自己就有两段，
+     把故事合并成一段照样能凑够数，测试就成了摆设。 */
+  const storyParas = (story.match(/<p class="about">/g) || []).length;
+  if (storyParas !== 2) fail.push(`故事应当正好分两段，实得 ${storyParas} 段`);
 }
 
 // 入口：标题旁边那个「关于」胶囊，和「玩法」并排
