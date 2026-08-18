@@ -734,6 +734,9 @@ body{
   font-size:11px;
   letter-spacing:.1em;
   text-align:right;
+  /* 从右边缘再往里缩四个字。用 em 而不是 px：em 就是"一个字宽"，
+     所以这行字面上就是"四个字的空间"，将来字号一改它也还是四个字。 */
+  padding-right:4em;
 }
 .credits{
   margin-top:14px;
