@@ -644,9 +644,107 @@ body{
 }
 
 .best-combo{
+  /* 再压暗一档：这一屏的主角是最高分和那句欢迎语，连击是给已经在乎的人看的。 */
   font-size:10.5px;letter-spacing:.12em;color:var(--text-dim);
   align-self:center;
+  opacity:.6;
 }
+
+/* 开始页那句迎接的话。
+   刻意不加发光：这一屏发光的东西已经够多（标题、最高分、按钮），再加一个
+   就没有"轻声说一句"的效果了。米白偏暖，和满屏的紫青拉开一点温度。 */
+/* 开始页中央一层极轻的金色光晕。
+   不是装饰，是把视线往中间收一点：这一屏的信息横向铺得比较开（最高分、
+   练习条、榜单），一点点暖光能让"投币 → 欢迎语 → 开始"这条主线更聚拢。
+   透明度压到 .07：要的是"感觉这里暖一点"，不是看得出有一团光。
+   叠在原有半透明底色之上，不改任何既有颜色。 */
+#startOverlay{
+  /* 行距收紧：这一屏要装的东西比别的弹层多（欢迎语、最高分、练习条、榜单、
+     两个按钮、那句故事）。
+     实测 375x812：可用 304px，而前三名全展开需要 309px —— 只差 5px。
+     从行距里省，而不是把「开始游戏」做小：那是主按钮，缩它是拿最重要的东西
+     换最不重要的空间。7px 省出 6px，正好够，且各元素之间仍然分得开。 */
+  gap:7px;
+  background:
+    radial-gradient(ellipse 70% 45% at 50% 46%,
+                    rgba(255,207,92,.07), rgba(255,207,92,0) 70%),
+    rgba(6,3,16,.86);
+}
+
+.welcome{
+  font-size:13px;
+  line-height:1.6;
+  color:#e9e0d2;
+  opacity:.9;
+  letter-spacing:.02em;
+  margin:0 0 10px !important;   /* 与最高纪录之间 10px（规格 8~12） */
+  max-width:none !important;
+}
+
+/* 开始页最后那句故事，也是「关于」的情感入口。
+   浅金而不是琥珀：琥珀是分数和按钮的颜色，这一句不该跟它们抢。
+   悬停只轻微提亮，不放大、不变色 —— 它是一句话，不是一个控件。 */
+.story-line{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-top:18px;              /* 距按钮 18px（规格 16~20） */
+  padding:4px 8px;
+  background:none;
+  border:0;
+  cursor:pointer;
+  font-family:var(--font-body);
+  font-size:12.5px;
+  letter-spacing:.04em;
+  color:#f0dfb4;
+  opacity:.78;
+  transition:opacity .18s ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.story-line:hover, .story-line:focus-visible{ opacity:1; }
+.story-heart{
+  /* 小、静、不闪。会动的心会变成一个"提示"，而这只是一句署名。 */
+  font-size:11px;
+  color:#ff8fd0;
+  opacity:.85;
+  line-height:1;
+}
+
+/* 「新」徽章。独立成块，不拼在名字后面 ——
+   拼上去读出来就是"超级奶爸新"，看着像名字的一部分或者程序出错。 */
+.board-new{
+  flex-shrink:0;
+  margin-left:6px;
+  padding:0 5px;
+  border:1px solid rgba(255,207,92,.45);
+  border-radius:4px;
+  font-size:9px;
+  line-height:15px;
+  letter-spacing:.08em;
+  color:var(--amber);
+}
+
+/* 「查看全部纪录 / 收起纪录」。弱按钮：一行小字加一点下划线，
+   它是个出口，不该看起来比纪录本身重要。 */
+.board-more{
+  display:block;
+  width:100%;
+  margin-top:4px;
+  padding:4px 0;
+  background:none;
+  border:0;
+  cursor:pointer;
+  font-family:var(--font-body);
+  font-size:10.5px;
+  letter-spacing:.06em;
+  color:var(--text-dim);
+  opacity:.75;
+  transition:opacity .15s ease;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+.board-more:hover, .board-more:focus-visible{ opacity:1; color:var(--cyan); }
 
 /* 关卡选择：六个小方块，没到过的画一把锁。
    刻意做得比「开始」小、比排行榜轻 —— 它是备选路，不该抢主线的位置。 */
@@ -929,11 +1027,32 @@ body{
   display:flex;
   flex-direction:column;
   gap:2px;
+  /* 装不下时**由榜单让位**，但有底线。
+     原来写的是 flex-shrink:0（完全不让），因为更早的一版被压到只剩 20px、
+     两行记录叠在一起。可完全不让也有代价：屏幕一矮，被挤出去的就是它下面
+     那句"一个爸爸和儿子一起做的小游戏" —— 而那句是这一屏最该被看到的。
+     现在允许收缩，但给一个 70px 的下限（标题 + 两行），再矮它就自己滚。
+     让位的顺序是对的：榜单是可以滚的列表，那句话不是。 */
+  /* 下限只留标题 + 一行：真正的收缩发生在里层的 .board-list 上，
+     这里给个不至于塌成一条缝的底。 */
+  flex-shrink:1;
+  min-height:52px;
+}
+/* 真正滚动的是这一层。外面那层负责固定标题和展开按钮。
+   叫 board-list 不叫 board-rows：后者和每一行的 board-row 是前缀关系，
+   任何按 "board-row" 去数行数的地方都会把这个外框也算进去（测试当场就红了）。 */
+.board-list{
+  display:flex;
+  flex-direction:column;
+  gap:2px;
   max-height:150px;
   overflow-y:auto;
-  /* 弹层是竖向 flex，榜单作为其中一项会被压扁——实测只剩 20px，两行记录
-     叠在一起看不清。它自己已经能滚，不需要再靠收缩让位。 */
-  flex-shrink:0;
+  overscroll-behavior:contain;
+  /* min-height:0 是关键：flex 项默认 min-height:auto，不肯缩到内容以下，
+     少了这行整块榜单就压不下去，被挤出屏幕的又会变成下面那句故事。
+     这样收缩全部落在"行"上，而行本来就能滚 —— 让位的顺序才是对的。 */
+  flex-shrink:1;
+  min-height:0;
 }
 .board-note{
   color:var(--text-dim);
@@ -952,7 +1071,7 @@ body{
 .board-empty{color:var(--text-dim);font-size:11px;}
 .board-row{
   display:flex;align-items:baseline;gap:8px;
-  padding:3px 8px;
+  padding:2px 8px;
   border-radius:5px;
   background:rgba(138,107,255,.07);
 }
@@ -964,7 +1083,7 @@ body{
   background:rgba(90,224,255,.16);
   box-shadow:0 0 0 1px rgba(90,224,255,.4) inset;
 }
-.board-rank{color:var(--text-dim);min-width:14px;}
+.board-rank{color:var(--text-dim);min-width:14px;opacity:.7;}
 .board-name{
   color:var(--text);
   min-width:0;
@@ -980,7 +1099,8 @@ body{
   text-align:right;
 }
 .board-top .board-score{color:var(--amber);}
-.board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;}
+/* 名次和「第几关·连击」压暗：留着是给想看的人，但它们不该和名字、分数一样亮。 */
+.board-meta{color:var(--text-dim);font-size:10px;min-width:62px;text-align:right;opacity:.62;}
 /* ---------- 竖屏 ----------
    左右键直接铺到两边（1fr），中间留给上下键。正方形按钮在手机上并不好按：
    拇指在屏幕上是横向扫的，左右转向也最频繁，所以左右键最需要的是横向命中
@@ -1156,6 +1276,10 @@ body.in-game .marquee{
       <!-- 最高分放在最上面、字最大。这游戏的计分系统很深（连击、悬赏阶梯、
            四种奖励分），但玩家如果没有一个"要超过的数"，这套东西有一半是白
            设计的。BEST 就是那个数，它得在按「开始」之前就看见。 -->
+      <!-- 一句迎接的话。第一次来和再回来说的不一样 —— 这游戏本来就是给
+           一个小孩和他的朋友们玩的，他们会一次次回来，那就该认得出他们。
+           文案由 renderWelcome() 按有没有纪录决定，不写死在这儿。 -->
+      <p class="welcome" id="welcomeLine"></p>
       <div class="best-line hidden" id="bestLine"></div>
       <!-- 首屏只留**一句**。原来两行，第二行讲连击和反杀 —— 那是玩起来自然会
            撞见的东西，写在这儿只是提高了开始前的阅读量。按设备分文案，用 CSS
@@ -1181,10 +1305,12 @@ body.in-game .marquee{
         <button class="btn btn-hero" id="startBtn">开始游戏</button>
         <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
       </div>
-      <!-- 署名回到纯文字：入口挪到标题旁边那个「♡ 关于」了。
-           两个入口同时摆在开始页上就是重复 —— 而重复的入口不会让人更容易找到，
-           只会让这一屏更满。 -->
-      <div class="credits">一个爸爸做给儿子的游戏</div>
+      <!-- 这一句是开始页最主要的情感表达，所以它紧跟在「开始游戏」下面 ——
+           视线离开按钮的第一站。点它直接打开「关于」，不用再去找标题旁的图标。
+           心是静的，不闪：闪烁会把它变成一个"提示"，而它不是提示。 -->
+      <button class="story-line" id="storyLine">
+        <span class="story-heart" aria-hidden="true">♥</span>一个爸爸和儿子一起做的小游戏
+      </button>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1339,7 +1465,7 @@ body.in-game .marquee{
         <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
         <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
       </div>
-      <div class="credits">一个爸爸做给儿子的游戏</div>
+      <div class="credits">一个爸爸和儿子一起做的小游戏</div>
     </div>
   </div>
 
@@ -2061,6 +2187,10 @@ function noteLevelReached(lv){
 }
 
 function fullNewGame(){
+  /* 开新一局就取消上一局的「新」徽章，并把榜单收回前三 ——
+     不然玩家回到开始页，看到的还是上一局残留的状态。 */
+  justAddedId = null;
+  boardExpanded = false;
   practiceLevel = null;
   resetLevel(true);
   gameState='ready';
@@ -2069,6 +2199,8 @@ function fullNewGame(){
 
 /** 开一局练习：只打这一关，打完就结束，全程不计分。 */
 function startPractice(lv){
+  justAddedId = null;
+  boardExpanded = false;
   const target = Math.max(1, Math.min(maxLevelReached(), lv));
   resetLevel(true);
   practiceLevel = target;
@@ -3486,7 +3618,30 @@ function renderLevelSelect(){
   });
 }
 
-/** 开始页顶部那行 BEST。没有记录时整行不出现，免得挂一个 0 在那儿。 */
+/**
+ * 开始页那句迎接的话。
+ *
+ * 第一次来和再回来说的不是同一句：这游戏是给一个小孩和他的朋友们做的，
+ * 他们会一次次回来 —— 那就该认得出他们。判据用"有没有本机纪录"，因为它
+ * 恰好等于"以前玩过没有"，不需要另存一个标记。
+ */
+function renderWelcome(){
+  const el = document.getElementById('welcomeLine');
+  if (!el) return;
+  let played = false;
+  try { played = loadScores().length > 0; } catch (e) {}
+  el.textContent = played ? '欢迎回来，再闯一次迷宫吧。' : '准备好了吗？一起出发吧。';
+
+  /* 老玩家不再显示"滑动转向 · 吃光豆子即可过关"。
+     他早就会走了，而这一行占掉的高度，正是那句故事需要的 —— 有纪录的人屏幕上
+     多出最高分和榜单两块，实测整屏溢出 67px，而故事那句正好被挤到看不见的
+     地方。它是这一屏最该被看到的一句，不能为一句他已经知道的操作说明让位。
+     想查规则的人旁边就有「玩法说明」。 */
+  const tip = document.querySelector ? document.querySelector('.start-tip') : null;
+  if (tip && tip.classList) tip.classList.toggle('hidden', played);
+}
+
+/** 开始页顶部那行最高纪录。没有记录时整行不出现，免得挂一个 0 在那儿。 */
 function renderBest(){
   const el = document.getElementById('bestLine');
   if (!el) return;
@@ -3497,9 +3652,21 @@ function renderBest(){
      纯文本，没有空格就会连成 "BEST128,650"。网页版这边是 flex + gap 布局，
      多几个空白文本节点没有任何影响。 */
   const c = bestCombo();
-  el.innerHTML = `<span class="best-k">BEST</span> <span class="best-v">${fmtNum(b)}</span>`
+  /* 「你的最高纪录」而不是 BEST：中文、而且带一个"你的" —— 这是他自己的成绩，
+     不是一块公共排行榜上的数字。街机感由「投币」和字体扛着，够了。 */
+  el.innerHTML = `<span class="best-k">你的最高纪录</span> <span class="best-v">${fmtNum(b)}</span>`
     + (c > 1 ? ` <span class="best-combo">最高连击 x${c}</span>` : '');
 }
+
+/* 榜单是不是展开着。放在模块级而不是 DOM 上：开始页和结算页共用这一个
+   渲染函数，两处该保持一致的展开状态。刷新归位到收起。 */
+let boardExpanded = false;
+/* 刚刚打出来的那条纪录的 id，用来给它挂一个「新」徽章。
+   只存在内存里 —— 刷新页面、开下一局都自动失效，旧纪录不会一直挂着"新"。 */
+let justAddedId = null;
+/* 哪些榜单容器已经挂过展开监听。记在这里而不是元素上：微信垫片的假元素
+   没有 dataset，往它上面记会直接抛。 */
+const boardWired = {};
 
 function renderScoreboard(elId, highlightId){
   const el = document.getElementById(elId);
@@ -3511,19 +3678,60 @@ function renderScoreboard(elId, highlightId){
      玩法说明 / 署名。 */
   if (!list.length){ el.innerHTML = ''; el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
+  /* 默认只露前三名。
+     六行纪录摆在开始页上，这一屏就变成了一块排行榜 —— 而这游戏最该被先看到的
+     不是"你排第几"。前三是够用的参照（最好成绩 + 上下文），剩下的想看再展开。
+     只有超过三条时才出现展开按钮：只有四条却摆个"查看全部"是徒增一次点击。 */
+  const TOP_N = 3;
+  const more = list.length > TOP_N;
+  const shown = boardExpanded ? list : list.slice(0, TOP_N);
+
+  const row = (r, i) =>
+    `<div class="board-row${i===0?' board-top':''}${r.id===highlightId?' board-mine':''}">` +
+      `<span class="board-rank">${i+1}</span>` +
+      `<span class="board-name">${r.name || DEFAULT_NAME}</span>` +
+      /* 「新」是**独立的徽章**，不是拼在名字后面的字。
+         拼上去的话读出来就是"超级奶爸新"，看着像名字的一部分或者程序出错。
+         只标刚刚打出来的那一条：justAddedId 存在内存里，刷新或开下一局就没了，
+         所以旧纪录永远不会挂着"新"。 */
+      (r.id === justAddedId ? '<span class="board-new">新</span>' : '') +
+      `<span class="board-score">${fmtNum(r.score)}</span>` +
+      `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
+    '</div>';
+
   el.innerHTML =
     /* 叫「本机纪录」不叫「排行榜」：数据只在 localStorage 里，
        换台电脑、清个缓存就没了。叫排行榜会让玩家以为是全网共用的在线榜单，
        进而以为自己在和别人比 —— 那是个不存在的承诺。 */
     '<div class="board-title">本机纪录</div>' +
-    list.map((r,i)=>
-      `<div class="board-row${i===0?' board-top':''}${r.id===highlightId?' board-mine':''}">` +
-        `<span class="board-rank">${i+1}</span>` +
-        `<span class="board-name">${r.name || DEFAULT_NAME}</span>` +
-        `<span class="board-score">${fmtNum(r.score)}</span>` +
-        `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
-      '</div>').join('') +
-    '<div class="board-note">纪录只保存在当前浏览器</div>';
+    /* 只有**行**这一段滚，标题和「查看全部纪录」固定在外面。
+       原来整块一起滚：屏幕一矮，榜单被压到 70px，那个展开按钮就跟着滚到看不见的
+       地方 —— 一个看不见的展开入口等于没有。 */
+    '<div class="board-list">' + shown.map(row).join('') + '</div>' +
+    (more ? `<button class="board-more" data-board="${elId}">`
+          + (boardExpanded ? '收起纪录' : `查看全部纪录（${list.length}）`)
+          + '</button>' : '') +
+    /* 「纪录只保存在当前浏览器」只在摊开时说。
+       收起时上面就写着「本机纪录」，已经说明了同一件事；而开始页的每一行都在
+       跟那句故事抢高度 —— 同一个意思占两行，让位的该是重复的那一行。 */
+    (boardExpanded || !more ? '<div class="board-note">纪录只保存在当前浏览器</div>' : '');
+
+  /* 展开/收起。用事件委托挂在容器上，因为这段 innerHTML 每次都整体重建，
+     直接给按钮挂监听会在下一次渲染时连按钮一起丢掉。
+     "挂过没有"记在模块级的 boardWired 里，**不能记在 el.dataset 上** ——
+     微信垫片造的假元素有 addEventListener 却没有 dataset，一读就抛，
+     而这一行在 endGame 里，抛出来的表现就是"死一条命之后直接黑屏"。
+     整个测试套件当场红了十条，这个坑之前踩过一模一样的一次。 */
+  if (typeof el.addEventListener === 'function' && !boardWired[elId]){
+    boardWired[elId] = true;
+    el.addEventListener('click', (e)=>{
+      const t = e.target;
+      if (!t || typeof t.closest !== 'function') return;
+      if (!t.closest('.board-more')) return;
+      boardExpanded = !boardExpanded;
+      renderScoreboard(elId, highlightId);
+    });
+  }
 
   /* 榜单最多只露五行左右（再高就把按钮挤出屏幕了），可名次是第几名不由我们说了算。
      结算页写着"本次排名第 5 名"，而那一行正好在可视区外边——最该看到的一行看不见，
@@ -3535,10 +3743,11 @@ function renderScoreboard(elId, highlightId){
      这里少一个判断，endGame 就会抛异常——而 endGame 抛异常的表现，正是玩家
      那次报的"死一条命后直接黑屏"。 */
   if (typeof el.querySelector !== 'function') return;
+  const rowsBox = el.querySelector('.board-list');
   const mine = el.querySelector('.board-mine');
-  if (mine && typeof mine.getBoundingClientRect === 'function'){
-    const r = mine.getBoundingClientRect(), c = el.getBoundingClientRect();
-    el.scrollTop += (r.top - c.top) - (c.height - r.height) / 2;
+  if (rowsBox && mine && typeof mine.getBoundingClientRect === 'function'){
+    const r = mine.getBoundingClientRect(), c = rowsBox.getBoundingClientRect();
+    rowsBox.scrollTop += (r.top - c.top) - (c.height - r.height) / 2;
   }
 }
 
@@ -3570,6 +3779,7 @@ function endGame(won){
   const { rank, id } = practice ? { rank: 0, id: null }
     : recordScore({ score, level, combo: maxComboSeen, won, name: remembered });
   lastRunId = id;
+  justAddedId = id;      // 给它挂一个「新」徽章，开下一局就取消
 
   if (won) Audio2.victory(); else if (isNewBest) Audio2.newBest(); else Audio2.gameOver();
   const practiceCleared = practice && pelletsLeft <= 0;
@@ -3762,7 +3972,7 @@ function buildSummary(won, rank, prevBest, isNewBest){
    *     这时候跟他讲游戏的来由，是在挡路。
    *   - 它得是**挣来**的。谁都能看到的话就不值钱；打穿六关的人看到，才会觉得
    *     这句是说给自己听的。
-   *   - 一句就够，不加感叹号。"一个爸爸做给儿子的游戏"这几个字本身分量就够，
+   *   - 一句就够，不加感叹号。"一个爸爸和儿子一起做的小游戏"这几个字本身分量就够，
    *     再堆形容词只会把它变轻。
    */
   if (won){
@@ -4139,8 +4349,13 @@ function closeAbout(){
   aboutOpener = null;
 }
 
-const aboutBtnEl = document.getElementById('aboutBtn');
-if (aboutBtnEl) aboutBtnEl.addEventListener('click', ()=>{ Audio2.unlock(); openAbout(); });
+/* 两个入口通到同一页：标题旁的「♡ 关于」，和开始页那句故事。
+   故事那句是情感入口（读到就想点），胶囊是功能入口（找得到）—— 它们出现在
+   同一屏但角色不同，不算重复。 */
+['aboutBtn', 'storyLine'].forEach(id=>{
+  const b = document.getElementById(id);
+  if (b) b.addEventListener('click', ()=>{ Audio2.unlock(); openAbout(); });
+});
 
 const aboutCloseBtn = document.getElementById('aboutCloseBtn');
 if (aboutCloseBtn) aboutCloseBtn.addEventListener('click', ()=>{ Audio2.unlock(); closeAbout(); });
@@ -4854,7 +5069,7 @@ function loop(t){
 
 fullNewGame();
 renderScoreboard('startBoard');
-renderBest();
+renderBest(); renderWelcome();
 renderLevelSelect();
 renderChallengeBanner();
 requestAnimationFrame(loop);

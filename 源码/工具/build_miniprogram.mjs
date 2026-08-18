@@ -89,7 +89,7 @@ ${body}
     startPractice, maxLevelReached, levelName,
     MAX_LEVEL,
     requestDir, togglePause, fullNewGame, render, update, Audio2,
-    renderScoreboard, loadScores, recordScore, renameScore, cleanName, renderBest, bestScore,
+    renderScoreboard, loadScores, recordScore, renameScore, cleanName, renderBest, renderWelcome, bestScore,
     commitName, openHelp, closeHelp, openAbout, closeAbout,
   };
 }
