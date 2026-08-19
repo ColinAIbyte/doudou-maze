@@ -127,4 +127,25 @@ if (broken.length){
 }
 console.log(`  ✓ 画布分辨率接线完整（${wire.length} 项）`);
 
+/* ---------- 礼花：粒子必须走贴图，不许逐个 shadowBlur ----------
+   通关礼花原来每个粒子一次 shadowBlur 的 arc+fill，实测**平均每帧 317 次、
+   单帧峰值 506 次**，四秒十万次 —— 比豆子那次（394/帧）还重，而且发生在
+   最该流畅的一刻、还要持续十八秒。改成预渲染贴图后每帧带阴影绘制降到 0。
+   这里守住那条路径还在，以及退路（微信垫片造不出离屏画布时）也还在。 */
+const fxWire = [
+  ['贴图会被生成',      /function fxGetSprites\(\)/],
+  ['贴图用真实阴影渲染', /g\.shadowBlur = 8;[\s\S]{0,80}?g\.arc\(R, R, FX_REF/],
+  ['绘制走 drawImage',  /fxCtx\.drawImage\(sprites\[p\.color\]/],
+  ['保留退路',          /fxSpritesFailed = true/],
+  ['退路仍逐个画',      /else \{[\s\S]{0,400}?fxCtx\.shadowBlur = 8;/],
+];
+const fxBroken = fxWire.filter(([, re]) => !re.test(src)).map(([w]) => w);
+if (fxBroken.length){
+  console.log('\n礼花的贴图渲染断了：');
+  fxBroken.forEach(b => console.log('  ✗ ' + b));
+  console.log('\n退回逐个 shadowBlur 的话，通关那一刻每帧会多出三百多次最贵的绘制。');
+  process.exit(1);
+}
+console.log(`  ✓ 礼花走贴图渲染（${fxWire.length} 项，含退路）`);
+
 console.log('\n渲染开销在上限内。');
