@@ -457,65 +457,152 @@ body{
    它比说明短得多，但小屏加上系统安全区仍然可能装不下，而"装不下就滚"是这里
    唯一不用按屏幕尺寸分情况讨论的做法。 */
 #aboutOverlay{
+  /* 遮罩：铺满整个可视区。
+     用 100dvh 而不是 100vh —— 手机浏览器地址栏收放时 vh 不变，会算多出一截，
+     底部的按钮就被顶到屏幕外面。 */
   position:fixed;
   inset:0;
-  border-radius:0;
-  background:#0a0614;
-  /* 居中，不像玩法说明那样从顶部排起。
-     说明有五六屏内容，必须顶部排、自己滚；这一页只有一段话，顶部排会把
-     「知道了」甩到屏幕最下沿、中间空出一大片，看起来像还没加载完。 */
-  justify-content:center;
-  /* 左右各 20px：手机上贴边的文字读起来很局促，而且靠边的字容易被曲面屏和
-     手掌握持挡住。上下各自加安全区，刘海和小白条都不压字。 */
-  padding:calc(env(safe-area-inset-top) + 18px) 20px
-          calc(env(safe-area-inset-bottom) + 16px);
-  z-index:80;   /* 同说明：要压在礼花之上 */
-  gap:0;        /* 间距全部由内部元素自己控制，避免和 .overlay 的 gap 叠加 */
-}
-/* 「知道了」和反馈内容之间的距离，单独给 —— 上面把 gap 归零了。 */
-#aboutOverlay > .btn{ margin-top:26px; flex-shrink:0; }
-/* 标题跟正文在同一个盒子里，所以它"居中"的范围和正文一样宽，
-   左右边缘天然对齐，不会像原来那样各居各的中。 */
-#aboutOverlay h2{
-  font-size:clamp(22px, 6vw, 26px);
-  text-align:center;
-  margin:0 0 22px;
-  align-self:stretch;
-}
-.about-doc{
   width:100%;
-  /* 460px：中文一行放得下约 30 个字，正好是一眼扫得完、又不用频繁回行的宽度。
-     原来是 420，而里面的 <p> 还被 .overlay p 的 max-width:340px 又卡了一道 ——
-     340px 一行只有二十来个字，于是出现"做了出 / 来"这种把词劈开的断行。 */
-  max-width:460px;
-  text-align:left;
-  /* 不撑高（flex 不 grow），但万一装不下（横屏、系统超大字号）还能自己滚。
-     min-height:0 不能省：flex 项默认不肯缩到内容以下，少了它 overflow 不生效，
-     而在居中布局里超出的部分会从**顶部**被切掉——最该先读到的那几行。 */
-  flex:0 1 auto;
-  min-height:0;
-  max-height:100%;
+  height:100dvh;
+  border-radius:0;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:0;                      /* 只有一个孩子（卡片），间距全交给卡片内部 */
+  text-align:left;            /* 盖掉 .overlay 的居中，卡片内部自己决定对齐 */
+  padding:16px;
+  /* 深黑紫半透明 + 轻微模糊。模糊压在 3px：再大就把底下的迷宫糊成一片色块，
+     那层"游戏还在后面"的感觉就没了。
+     这里可以放心用 backdrop-filter —— 它会创建层叠上下文，而这一层
+     z-index:80 本来就在礼花（60）之上，不存在被压住的问题。 */
+  background:rgba(8,4,18,.72);
+  -webkit-backdrop-filter:blur(3px);
+  backdrop-filter:blur(3px);
+  /* 内容超高时滚遮罩自己；contain 挡住滚动穿透到底层页面 */
   overflow-y:auto;
   overscroll-behavior:contain;
+  z-index:80;                 /* 要压在礼花之上 */
 }
-.about-feedback{
-  /* 署名与分隔线之间 20px（规格 18~22） */
-  margin-top:20px;
-  padding-top:18px;
-  /* 比 --panel-border 更弱：这条线只是分节，不该比它下面的「反馈与建议」还显眼。
-     线是背景，标题才是内容。 */
-  border-top:1px solid rgba(138,107,255,.16);
+
+/* 卡片。所有内容都在它里面，包括「知道了」—— 没有任何一处绝对定位。 */
+.about-card{
+  width:520px;
+  max-width:calc(100vw - 32px);
+  /* 不设固定高度：内容多高就多高，只给一个上限，超了自己滚。 */
+  max-height:calc(100dvh - 32px);
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding:28px 32px 24px;
+  text-align:left;
+  /* 比页面底色亮一点，才看得出这是"一张卡片"而不是一整块黑。
+     边框和外阴影都用低亮度紫，跟整体霓虹一致，但不做成金色大光晕 ——
+     那会把注意力从文字上抢走。 */
+  background:rgba(15,9,29,.96);
+  border:1px solid rgba(138,107,255,.28);
+  border-radius:15px;
+  box-shadow:0 18px 34px rgba(75,47,206,.24);
 }
-.about-feedback h3{
-  margin:0 0 8px;
-  font-family:var(--font-display);
-  /* 跟正文同字号：它是分节标题，靠颜色（金）和字重区分就够，
-     再加大就会盖过它要引出的那两行字。 */
-  font-size:14px;
-  letter-spacing:.1em;
-  color:var(--amber);
+
+/* 标题 */
+#aboutTitle{
+  margin:0 0 20px;
+  font-size:26px;
+  line-height:1.3;
   font-weight:700;
+  text-align:center;
+  /* 字距从 .1em 收到 .02em：原来那个间距让「关于」和「《」之间空出一块，
+     看着像多打了一个空格 —— 源码里并没有空格，是字距撑出来的。 */
+  letter-spacing:.02em;
+  color:var(--amber);
+  /* 发光从 12px 降到 10px（约 -20%）：26px 的字配大光晕会糊成一团。 */
+  text-shadow:0 0 10px var(--amber-glow);
 }
+
+/* 故事正文 */
+#aboutOverlay .about{
+  width:100%;
+  max-width:none;
+  margin:0;
+  text-align:left;
+  font-size:14px;
+  line-height:1.85;
+  color:var(--text-dim);
+}
+/* 下面几条都写成 #aboutOverlay xxx 的形式，不是图好看 —— 是**必须**。
+   基础样式里有 `.overlay p{margin:0;...}`，特指度 (0,1,1)；而 `.about-by`
+   只有 (0,1,0)，会被它压过去，边距全变成 0。上一版是靠一串 !important 硬顶，
+   结果 !important 又反过来盖住了媒体查询里的手机字号。
+   把选择器限定到 #aboutOverlay 里，特指度自然高过 .overlay p，
+   一个 !important 都不需要，媒体查询也照常生效。 */
+#aboutOverlay .about-story + .about-story{ margin-top:8px; }
+
+/* 落款：在正文这一栏里靠右 —— 卡片有内边距，所以它不会贴到卡片边上。 */
+#aboutOverlay .about-by{
+  width:100%;
+  max-width:none;
+  margin:12px 0 20px;
+  text-align:right;
+  font-size:13px;
+  line-height:1.6;
+  letter-spacing:.02em;
+  color:#cfc3e8;              /* 比正文亮一档的暖紫，不发光 */
+  text-shadow:none;
+}
+
+/* 分隔线：跟正文同宽，不缩进也不超出。上下边距只在这里给一次。 */
+.about-rule{
+  width:100%;
+  height:1px;
+  margin:0 0 18px;
+  border:0;
+  background:rgba(138,107,255,.18);
+}
+
+/* 反馈区 */
+.about-fb-title{
+  margin:0 0 10px;
+  font-family:var(--font-display);
+  font-size:14px;
+  font-weight:700;
+  letter-spacing:.06em;
+  text-align:left;
+  color:var(--amber);
+}
+#aboutOverlay .about-fb{ margin:0 0 10px; line-height:1.7; }
+/* 邮箱单独一行，和上面那句不挤在一起 */
+#aboutOverlay .about-mail{ margin:0 0 24px; line-height:1.7; }
+
+/* 「知道了」：正常文档流里居中，不浮在卡片外。 */
+.about-close{
+  display:block;
+  width:120px;
+  min-height:46px;
+  margin:0 auto;
+  /* 发光比「开始游戏」弱：那是主线上的按钮，这个只是关掉一张说明卡。
+     立体的那 4px 底边保留，按下去仍然有"按到了"的手感。 */
+  box-shadow:0 4px 0 #c99a2e, 0 6px 12px rgba(255,207,92,.14);
+  transition:transform .12s ease, box-shadow .12s ease;   /* 100~150ms */
+}
+
+/* ---------- 手机端 ---------- */
+@media (max-width:479px){
+  #aboutOverlay{
+    padding:12px;
+    /* iPhone 底部那条小白条会盖住按钮，安全区必须算进来 */
+    padding-bottom:calc(12px + env(safe-area-inset-bottom));
+  }
+  .about-card{
+    max-width:calc(100vw - 24px);
+    max-height:calc(100dvh - 24px);
+    padding:22px 18px;
+    border-radius:14px;
+  }
+  #aboutTitle{ font-size:22px; margin-bottom:18px; }
+  #aboutOverlay .about{ font-size:14px; }
+  #aboutOverlay .about-by{ font-size:12px; }
+  .about-close{ width:120px; }
+}
+
 /* 邮箱链接。用青色而不是琥珀：琥珀在这个界面里是"分数和奖励"的颜色，
    而这里既要看出可点、又不该比正文更抢眼 —— 一条下划线加一点青就够了。
    光晕故意压得很淡（3px），它不是霓虹招牌的一部分。 */
@@ -867,20 +954,12 @@ body{
   opacity:.75;
   letter-spacing:.08em;
 }
-/* 「关于」那段。行距放宽、字号比别处稍大一点点 —— 它是唯一一段需要"读"
-   而不是"查"的文字，其余全是词条。 */
-.about{
-  font-size:14px !important;
-  line-height:1.9 !important;
-  color:var(--text-dim) !important;
-  /* 解除 .overlay p 的 max-width:340px。正文的宽度该由 .about-doc 定，
-     被两道上限夹着的结果就是那种把词劈开的断行。 */
-  max-width:none !important;
-}
-/* 段与段之间留 10px：作者原文是分段的，挤成一坨就读不出那个停顿。
-   .overlay p 把 margin 归零了，这里补回来。 */
-.about + .about{margin-top:10px !important;}
-/* 书名号里的游戏名不许被拆开。中文本来可以在任意两字之间断行，所以
+/* 「关于」弹层里那几段文字的排版**全部在上面 #aboutOverlay 那一块**。
+   这里原先还有一份 .about / .about + .about / .about-by，带着一串 !important
+   跟上面那份对着干 —— 段间距被压成 10px（规格 8px）、手机上署名一直是 13px
+   （规格 12px），因为 !important 盖过了媒体查询。同一个元素两处定义、还都
+   加 !important，最后生效的是哪条只能靠数行号，已删。
+   书名号里的游戏名不许被拆开。中文本来可以在任意两字之间断行，所以
    "《豆豆 / 迷宫》"是合法的 —— 但一个专有名词被劈成两半读起来就是磕的，
    跟"做了出 / 来"是同一类问题。只圈住这一处，不影响其余正常断行。 */
 .nb{white-space:nowrap;}
@@ -890,25 +969,6 @@ body{
   color:var(--tang);
   font-size:12px;
   line-height:1.8;
-}
-/* 正文末尾那行署名，**右对齐** —— 落款靠右是中文书面惯例，而且靠右之后它
-   和正文的左边缘错开，一眼就分得出"这不是正文的最后一句"。
-   用琥珀色跟正文的暗色再拉开一层。
-   宽度**必须跟正文一样**（也就是继承 .overlay p 的 max-width:340px，不要覆盖）：
-   正文被那条规则限在 340 宽，而外层容器有 343 —— 一旦放开，署名就会比正文多出
-   3px，右边缘对不齐。实测过：放开是 359，正文右边缘 356。 */
-/* 落款：右对齐，跟正文右边缘齐平。
-   颜色用比正文亮一档的次级色，不用琥珀 —— 琥珀在这个界面里是分数和奖励的
-   颜色，用在这儿会让它跳成一个"重点"，而它只是一句落款。 */
-.about-by{
-  margin:14px 0 0 !important;
-  color:var(--text);
-  font-size:13px !important;
-  line-height:1.9 !important;
-  letter-spacing:.04em;
-  text-align:right;
-  max-width:none !important;
-  opacity:.82;
 }
 .credits{
   margin-top:14px;
@@ -1466,29 +1526,31 @@ body.in-game .marquee{
          作者的原话，不要替他改写或压缩。 -->
     <div class="overlay hidden" id="aboutOverlay" role="dialog" aria-modal="true"
          aria-labelledby="aboutTitle" tabindex="-1">
-      <!-- about-doc 是"弹层内部"，点它不关闭；点它外面（也就是 #aboutOverlay
+      <!-- about-card 是"弹层内部"，点它不关闭；点它外面（也就是 #aboutOverlay
            自己那片底）才关闭。少了这一层，点正文选个字都会把弹层关掉。
            标题也放进来：这样标题、正文、署名、反馈共用同一个盒子，也就共用
            同一条左边缘（标题自己居中，但它居中的范围和正文一样宽）。 -->
-      <div class="about-doc" id="aboutPanel">
+      <!-- 一张卡片装下全部内容，连「知道了」也在里面。
+           点卡片不关闭、点卡片外面（也就是 #aboutOverlay 那片底）才关闭 ——
+           少了这一层包裹，点正文选个字都会把弹层关掉。
+           九样东西按阅读顺序排在正常文档流里，没有一处绝对定位。 -->
+      <div class="about-card" id="aboutPanel">
         <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
-        <!-- 两段，中间留白。整段不写任何 <br>：中文该在哪儿断行由宽度决定，
+        <!-- 两段各自一个 <p>，不写任何 <br>：中文该在哪儿断行由宽度决定，
              手写的换行只在某一个屏幕宽度上好看，换台设备就断在奇怪的地方。 -->
-        <p class="about">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
-        <p class="about">他负责试玩和提意见，我负责一点点修改完善。后来，几个小朋友也加入了试玩，才有了现在的<span class="nb">《豆豆迷宫》</span>和六个关卡。</p>
-        <!-- 落款：靠右，紧跟故事，不居中。居中会让它看起来像新的一节，
-             把"读完一段话"的节奏打断。 -->
+        <p class="about about-story">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
+        <p class="about about-story">他负责试玩和提意见，我负责一点点修改完善。后来，几个小朋友也加入了试玩，才有了现在的<span class="nb">《豆豆迷宫》</span>和六个关卡。</p>
+        <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
         <p class="about-by">—— 超级奶爸</p>
+        <hr class="about-rule">
         <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
              链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时
              不看，微信不能。 -->
-        <div class="about-feedback">
-          <h3>反馈与建议</h3>
-          <p class="about">如果你有任何建议，或在游戏中发现了问题，欢迎来信告诉我。</p>
-          <p class="about">邮箱：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
-        </div>
+        <h3 class="about-fb-title">反馈与建议</h3>
+        <p class="about about-fb">如果你有任何建议，或在游戏中发现了问题，欢迎来信告诉我。</p>
+        <p class="about about-mail">邮箱：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
+        <button class="btn about-close" id="aboutCloseBtn">知道了</button>
       </div>
-      <button class="btn" id="aboutCloseBtn">知道了</button>
     </div>
 
     <div class="overlay hidden" id="overOverlay">

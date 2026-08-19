@@ -54,7 +54,7 @@ if (aboutStart < 0 || aboutEnd < 0){
      起点要取**第一个 <p class="about"> 标签本身**，不能用正文首句的位置 ——
      首句在标签内部，从它切会把第一段的开标签切掉，段落数永远少一个
      （第一版就是这样，在完全正确的页面上报"实得 1 段"）。 */
-  const iP1 = panel.indexOf('<p class="about">');
+  const iP1 = panel.indexOf('about-story');
   const story = panel.slice(iP1 < 0 ? iBody : iP1, iFb);
   /* 正文里不许再出现手动换行。<br> 只在某一个屏幕宽度上好看，换台设备就断在
      奇怪的地方 —— 作者报的"做了出 / 来"正是这一类。断行交给宽度决定。 */
@@ -68,7 +68,9 @@ if (aboutStart < 0 || aboutEnd < 0){
   /* 故事必须是**两段**，不是一整坨。
      只数 story 那一区间里的段落 —— 第一版数的是整页，而反馈区自己就有两段，
      把故事合并成一段照样能凑够数，测试就成了摆设。 */
-  const storyParas = (story.match(/<p class="about">/g) || []).length;
+  /* 数 about-story 而不是 <p class="about">：反馈区那两段也是 .about，
+     按类名前缀数会把它们算进来。about-story 是故事段落专有的标记。 */
+  const storyParas = (story.match(/about-story/g) || []).length;
   if (storyParas !== 2) fail.push(`故事应当正好分两段，实得 ${storyParas} 段`);
 }
 
