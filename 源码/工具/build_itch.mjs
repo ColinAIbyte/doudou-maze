@@ -46,13 +46,19 @@ if (shareUrl) {
   html = html.slice(0, at + 6) + '\n' + tag + html.slice(at + 6);
 }
 
-rmSync(OUT_DIR, { recursive: true, force: true });
+/* 只清理**自己产出的东西**，不要整目录 rm。
+   第一版写的是 rmSync(OUT_DIR)，结果重跑一次打包就把同目录下手写的
+   itch页面文案.md 一起删了 —— 输出目录不是这个脚本的私有领地，
+   用户完全可能往里放别的东西。 */
+rmSync(STAGE, { recursive: true, force: true });
+rmSync(ZIP, { force: true });
 mkdirSync(STAGE, { recursive: true });
 // index.html 必须在**根目录**
 writeFileSync(`${STAGE}/index.html`, html);
 
 // -j 把文件放到 zip 根目录，不带上 game/ 这一层
 execFileSync('zip', ['-j', '-q', ZIP, `${STAGE}/index.html`]);
+rmSync(STAGE, { recursive: true, force: true });   // 打完就收拾掉中间目录
 
 // 打完自己验一遍：解压清单里第一项就该是 index.html
 const listing = execFileSync('unzip', ['-Z1', ZIP], { encoding: 'utf8' }).trim().split('\n');
