@@ -4456,11 +4456,26 @@ if (aboutOverlay.addEventListener) aboutOverlay.addEventListener('click', (e)=>{
    Number("431,070") 是 NaN，链接会静悄悄地失效。 */
 let lastFinalScore = 0;
 
+/* 分享链接要落到哪个地址。
+ *
+ * 默认用当前地址，自己的网站上这是对的。但在 itch.io 这类**把游戏放进 iframe**
+ * 的平台上，location.href 是 CDN 上那个 html 文件的地址
+ * （html-classic.itch.zone/html/…/index.html）—— 把它分享出去，别人打开看到的
+ * 是一个没有介绍、没有作者、随时可能换地址的裸游戏页。
+ * 所以留一个口子：宿主页面可以用 window.DOUDOU_SHARE_URL 指定正式落地页。
+ * 没指定就是原来的行为，网页版一切照旧。 */
+function shareBase(){
+  try {
+    if (typeof window !== 'undefined' && window.DOUDOU_SHARE_URL) return window.DOUDOU_SHARE_URL;
+  } catch (e) {}
+  return location.href;
+}
+
 function challengeURL(){
   const s = lastFinalScore;
   let who = '';
   try { who = localStorage.getItem(NAME_KEY) || ''; } catch (e) {}
-  const u = new URL(location.href);
+  const u = new URL(shareBase());
   u.searchParams.set('c', s);
   if (who) u.searchParams.set('n', who);
   return u.toString();
