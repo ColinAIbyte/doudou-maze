@@ -36,6 +36,17 @@ window.__dbg = {
      豆子的呼吸、传送门的旋转都跟 elapsed 走，差一点点就分不清"这处不同是
      改动引起的，还是只是时刻不同"。 */
   draw(e){ if (e != null) elapsed = e; render(); return elapsed; },
+  /* 把小豆吃到只剩 n 颗（能量豆一颗不动），用来看"最后几颗"那个提示效果。
+     正常玩到这一步要几分钟，而这个状态恰恰是两种豆子最容易混淆的时刻 ——
+     没有它就只能靠肉眼盯着一局慢慢打，截不到图。 */
+  eatDownTo(n){
+    const dots = [];
+    for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++) if (grid[y][x]==='.') dots.push([x,y]);
+    for (let i=0;i<dots.length-n;i++){
+      const [x,y] = dots[i]; grid[y][x] = ' '; pelletsLeft--;
+    }
+    return { 剩余小豆: dots.length - Math.max(0, dots.length-n), pelletsLeft };
+  },
   snap(){ return ghosts.map(g=>({id:g.id, st:g.state, host:!!g.isFusionHost, linked:!!g.fusedWith})); },
   power(){ startPowerMode(); },
   forceFuse(){ const f=ghosts.filter(g=>g.state==='frightened'&&!g.fusedWith); if(f.length<2) return 'need 2';

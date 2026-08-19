@@ -2879,6 +2879,27 @@ function comboWindow(){
 }
 
 /** 剩几颗豆子开始呼吸闪烁 / 几颗开始明显跳动。见豆子的绘制。 */
+/* ---------- 两种豆子的尺寸与光晕 ----------
+ *
+ * 这几个数以前是散在 drawMaze 里的字面量，于是出过一次很难发现的事故：
+ * "剩最后几颗时让豆子喘气"这个效果，把小豆的半径从 2.6 一路胀到 5.1、光晕
+ * 涨到 24 —— 而大豆的半径最小才 3.2、光晕固定 12。结果是**反过来的**：
+ * 最该显眼的能量豆，被普通豆子在大小和亮度上同时盖过去，玩家分不出哪颗
+ * 是能量豆。
+ *
+ * 现在的规矩：小豆**只亮不胀**，半径恒定；能量豆永远更大、也永远更亮。
+ * 下面这条不变式由 test_pellet_contrast.mjs 守着：
+ *     小豆半径（恒定） <  能量豆最小半径
+ *     小豆最大光晕     <  能量豆光晕
+ */
+const PELLET_R          = 2.6;   // 小豆半径，恒定 —— 不许再随呼吸变化
+const PELLET_GLOW       = 4;     // 小豆平时的光晕
+const PELLET_GLOW_SWING = 8;     // 呼吸最猛时额外加的光晕（再乘 urgency）
+const PELLET_GLOW_BASE_SWING = 2;// 呼吸的固定部分
+const POWER_R           = 5.0;   // 能量豆半径中心值
+const POWER_R_SWING     = 0.7;   // 能量豆脉动幅度 → 4.3 ~ 5.7
+const POWER_GLOW        = 16;    // 能量豆光晕，恒定且高于小豆的最大值
+
 const LAST_PELLET_HINT = 10;
 // 剩三颗才转成明显跳动：那时候才真的开始「到底在哪」，五颗时一般还看得见
 const LAST_PELLET_LOUD = 3;
@@ -4840,20 +4861,23 @@ function drawMaze(){
      唯一的差别是光晕重叠处：分开画时两团光会叠加变亮，合成一条路径则不会。
      正常间距（26px）下光晕只有 4px，根本碰不到；只有剩最后几颗、光晕涨到
      20px 且刚好相邻时才可能有极轻微的差别，这个代价换 175 倍的绘制量值得。 */
-  let r = 2.6, glow = 4;
+  const r = PELLET_R;          // 恒定：大小是区分小豆和能量豆的第一条线索
+  let glow = PELLET_GLOW;
   if (pelletsLeft <= LAST_PELLET_HINT){
     /* 剩最后几颗时让豆子自己"喘气"。
        这是吃豆类通病：前 90% 一路吃得很爽，剩最后一两颗突然变成满地图找，
        节奏一下垮掉。目的不是降低难度 —— 豆子在哪儿本来就不是难点，
        **找它的那段时间纯粹是无聊**，把无聊删掉而已。
-       两档：10 颗以内轻微呼吸，5 颗以内明显跳动，越少越显眼。 */
+       两档：10 颗以内轻微呼吸，3 颗以内明显跳动，越少越显眼。
+
+       只让**光晕**跳，不动半径：半径一变就会撞上能量豆的尺寸区间，
+       而那正是之前那个 bug —— 详见文件上方 PELLET_R 那段。 */
     const urgency = pelletsLeft <= LAST_PELLET_LOUD ? 1 : 0.45;
     const beat = (Math.sin(elapsed * (5 + urgency*3)) + 1) / 2;   // 0..1
-    r    = 2.6 + beat * (1.8 * urgency + 0.7);
-    glow = 4   + beat * (16 * urgency + 4);
+    glow = PELLET_GLOW + beat * (PELLET_GLOW_SWING * urgency + PELLET_GLOW_BASE_SWING);
   }
   const amber = cssVar('--amber');
-  const pulse = 4.4+Math.sin(elapsed*6)*1.2;
+  const pulse = POWER_R + Math.sin(elapsed*6) * POWER_R_SWING;
   const TAU = Math.PI*2;
 
   let anyDot = false, anyPower = false;
@@ -4868,7 +4892,7 @@ function drawMaze(){
   }
   if (anyDot) ctx.fill();
 
-  ctx.shadowBlur = 12;
+  ctx.shadowBlur = POWER_GLOW;
   ctx.beginPath();
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
     if (grid[y][x] !== 'o') continue;
