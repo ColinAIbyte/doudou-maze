@@ -492,11 +492,15 @@ body{
    一个 !important 都不需要，媒体查询也照常生效。 */
 #aboutOverlay .about-story + .about-story{ margin-top:8px; }
 
-/* 落款：在正文这一栏里靠右 —— 卡片有内边距，所以它不会贴到卡片边上。 */
+/* 落款：在正文这一栏里靠右，再从右边缘往里空四个字。
+   四个字的留白让它明显是"落款"而不是正文的最后一行 —— 完全贴齐右边缘时，
+   它和上面那段的右边界连成一条线，反而看不出是另起的一句。
+   用 em 不用 px：em 就是一个字宽，字号一改它还是四个字。 */
 #aboutOverlay .about-by{
   width:100%;
   max-width:none;
   margin:12px 0 20px;
+  padding-right:4em;
   text-align:right;
   font-size:13px;
   line-height:1.6;
@@ -1497,7 +1501,7 @@ body.in-game .marquee{
         <p class="about about-story">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
         <p class="about about-story">他负责试玩和提意见，我负责一点点修改完善。后来，几个小朋友也加入了试玩，才有了现在的<span class="nb">《豆豆迷宫》</span>和六个关卡。</p>
         <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
-        <p class="about-by">—— 超级奶爸</p>
+        <p class="about-by">超级奶爸</p>
         <hr class="about-rule">
         <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
              链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时

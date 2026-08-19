@@ -35,7 +35,7 @@ if (aboutStart < 0 || aboutEnd < 0){
   // 作者原文，逐句核
   for (const line of ['儿子想玩一个简单又刺激的小游戏', '于是我们一起把它做了出来',
                       '他负责试玩和提意见', '几个小朋友也加入了试玩',
-                      '—— 超级奶爸',
+                      '超级奶爸',
                       '反馈与建议', '如果你有任何建议，或在游戏中发现了问题',
                       '邮箱']){
     if (!panel.includes(line)) fail.push(`关于页缺了原文里的「${line}」`);
@@ -45,10 +45,17 @@ if (aboutStart < 0 || aboutEnd < 0){
      指定的版式（中途还改错过一次：一度被放到标题下面当副标题）。 */
   const iTitle = panel.indexOf('关于《豆豆迷宫》');
   const iBody  = panel.indexOf('儿子想玩一个简单又刺激的小游戏');
-  const iBy    = panel.indexOf('—— 超级奶爸');
+  const iBy    = panel.indexOf('about-by');
   const iFb    = panel.indexOf('反馈与建议');
   if (!(iTitle < iBody && iBody < iBy && iBy < iFb))
     fail.push('顺序不是「标题 → 故事 → 落款 → 反馈」');
+  /* 落款不带破折号，而且从右边缘往里留四个字。
+     两条都是作者点名要的版式，也都是"改了照样能跑"的东西 —— 只能钉住。
+     破折号这条来回改过两次，所以按当前定论写死：不要。 */
+  if (/——\s*超级奶爸/.test(panel))
+    fail.push('落款前面又出现了破折号，当前定论是不要');
+  if (!/#aboutOverlay \.about-by\{[^}]*padding-right:4em/.test(src))
+    fail.push('落款没有从右边缘留出四个字的空');
 
   /* story = 故事那一段，下面两条检查都只看它。
      起点要取**第一个 <p class="about"> 标签本身**，不能用正文首句的位置 ——
