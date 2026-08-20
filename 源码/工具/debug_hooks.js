@@ -117,3 +117,74 @@ window.__dbg = {
              pctEaten: +(100*(1 - pelletsLeft/pelletsTotal)).toFixed(1) };
   },
 };
+
+/* ==== 真机帧率表 ====
+ * 只进测试版，不进正式文件。
+ *
+ * 存在的理由：「手机上流畅吗」这个问题，人给不出能用来做决定的答案。
+ * 「感觉还行」既分不出 60 帧和 45 帧，也说不清卡的是哪一下 —— 而恰恰是
+ * 「偶尔卡一下」最能毁掉这种要精确转向的游戏，平均帧率却完全看不出来。
+ *
+ * 所以这里量三样，都是平均值会藏起来的东西：
+ *   最低帧率  —— 最难受的那一秒有多难受
+ *   卡顿次数  —— 超过 50ms 的帧有几次（一次就是肉眼可见的一顿）
+ *   渲染耗时  —— 是画面画不动，还是逻辑算不动，两者的解法完全不同
+ */
+window.__perf = (function(){
+  const box = document.createElement('div');
+  box.style.cssText = 'position:fixed;left:6px;top:6px;z-index:99999;pointer-events:none;'
+    + 'font:11px/1.45 ui-monospace,Menlo,monospace;color:#8ef;background:rgba(8,4,18,.82);'
+    + 'padding:5px 8px;border-radius:6px;white-space:pre;letter-spacing:.02em';
+
+  let frames = 0, lastSec = performance.now(), fps = 0;
+  let minFps = Infinity, sumFps = 0, secs = 0;
+  let stutter = 0, dropped = 0;
+  let prev = performance.now();
+  let renderMs = 0, updateMs = 0, n = 0;
+  let running = false;
+
+  /* render 和 update 是同一个闭包里的函数声明，所以这里能直接换掉它们 ——
+     钩子是被注入到游戏脚本内部的，不是从外面 window 上挂的。 */
+  const origRender = render, origUpdate = update;
+  render = function(){ const t=performance.now(); origRender.apply(this, arguments);
+                       renderMs += performance.now()-t; n++; };
+  update = function(){ const t=performance.now(); origUpdate.apply(this, arguments);
+                       updateMs += performance.now()-t; };
+
+  function tick(){
+    if (!running) return;
+    const now = performance.now();
+    const dt = now - prev; prev = now;
+    // 60Hz 一帧 16.7ms。>33ms 是掉了至少一帧，>50ms 是肉眼能看出的一顿。
+    if (dt > 50) stutter++; else if (dt > 33) dropped++;
+    frames++;
+    if (now - lastSec >= 1000){
+      fps = Math.round(frames * 1000 / (now - lastSec));
+      frames = 0; lastSec = now;
+      if (secs > 1){ minFps = Math.min(minFps, fps); sumFps += fps; }  // 头两秒是加载抖动，不算
+      secs++;
+      const avg = secs > 2 ? (sumFps/(secs-2)) : fps;
+      box.textContent =
+        `${fps} fps   平均 ${avg.toFixed(1)}   最低 ${minFps===Infinity?'—':minFps}\n`
+      + `卡顿 ${stutter}   掉帧 ${dropped}   跑了 ${secs}s\n`
+      + `渲染 ${(renderMs/Math.max(1,n)).toFixed(2)}ms  逻辑 ${(updateMs/Math.max(1,n)).toFixed(2)}ms\n`
+      + `${innerWidth}×${innerHeight}  dpr${devicePixelRatio}`;
+      renderMs = 0; updateMs = 0; n = 0;
+    }
+    requestAnimationFrame(tick);
+  }
+
+  return {
+    on(){ if(running) return '已经在跑了';
+          running = true; document.body.appendChild(box);
+          prev = lastSec = performance.now(); requestAnimationFrame(tick); return '帧率表已打开'; },
+    off(){ running = false; box.remove(); return '已关闭'; },
+    reset(){ minFps=Infinity; sumFps=0; secs=0; stutter=0; dropped=0; return '已清零'; },
+    report(){ return { 最低帧率:minFps===Infinity?null:minFps,
+                       平均帧率:secs>2?+(sumFps/(secs-2)).toFixed(1):null,
+                       卡顿次数:stutter, 掉帧次数:dropped, 秒数:secs,
+                       屏幕:innerWidth+'×'+innerHeight, dpr:devicePixelRatio }; },
+  };
+})();
+// 测试版默认就打开 —— 手机上没有控制台可以敲命令
+window.__perf.on();

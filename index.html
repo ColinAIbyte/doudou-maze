@@ -1966,7 +1966,19 @@ const BONUS = { PERFECT_LEVEL: 1000, GHOST_SWEEP: 100000, LIFE_LEFT: 1500, FLAWL
  * The 85% cap below is a safety net, not a design knob: above it a ghost
  * catches a fleeing player in an open corridor and the run stops being winnable.
  */
-const GHOST_SPEED_BY_LEVEL = [2.35, 2.61, 2.90, 3.22, 3.40, 3.78];
+/* 第五、六关和第四关同速（3.22），是业主 2026-08-20 定的：这两关已经靠"多一只
+   幽灵"和"受惊时间更短"在加压了，速度不必再叠一层。
+
+   把第五关按下来的直接依据：机器人单关隔离测，第五关 20 局死 19 局、中位存活
+   14 秒，而**一半的死亡挤在同一个格子 (9,5)** —— 那里是鬼门正上方两格的四岔
+   路口，六只幽灵从唯一那扇门涌出来，中间 (9,6) 是条只有上下两个出口的直筒，
+   横向无处可躲。第六关虽然更快更多，死亡却完全分散（每点各一次），是"整体紧"
+   而不是"一个陷阱"。第五关的速度本来就是全程涨得最少的一关（+0.18），
+   问题从来不在速度 —— 降速是止血，那个路口本身仍然值得单独处理。
+
+   注意玩家速度还在逐关上涨（+0.2912/关），所以这两关的**相对**速度比是往下走的：
+   第四关 51.3% → 第五关 49.0% → 第六关 46.9%。 */
+const GHOST_SPEED_BY_LEVEL = [2.35, 2.61, 2.90, 3.22, 3.22, 3.22];
 let deathsThisLevel = 0, deathsThisRun = 0, sweepsThisRun = 0, ghostsEatenThisRun = 0;
 /* 无伤通过的关数。不能拿 MAX_LEVEL - deathsThisRun 去反推——一关里可能死好几次，
    那样算出来会偏低甚至变成负数。只能在过关那一刻按 deathsThisLevel 数。 */

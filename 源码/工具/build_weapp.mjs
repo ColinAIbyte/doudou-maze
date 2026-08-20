@@ -85,6 +85,10 @@ ${body}
     // 漏导出的话点下去就是 undefined is not a function，游戏直接崩。
     openHelp, closeHelp, openAbout, closeAbout,
     commitName,
+    // 练习模式。外壳自己画那排关卡按钮（小游戏没有 DOM，core 里 renderLevelSelect
+    // 挂的那些 click 监听在垫片上根本不会触发），所以点中之后要能直接调进来。
+    // maxLevelReached 一起导出：哪几关解锁了只有逻辑层知道。
+    startPractice, maxLevelReached,
   };
 }
 
