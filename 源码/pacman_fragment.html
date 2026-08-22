@@ -1222,26 +1222,62 @@ body.in-game .marquee{
 /* ---------- 桌面：去掉方向键 ----------
    有键盘的设备上方向键是纯浪费：既没人点，又占掉近 200px 的高度，而那正是
    棋盘最缺的。用 pointer:fine 判断（主指针是鼠标/触控板），触屏设备不受影响 ——
-   手机上滑动虽然是主操作，方向键仍是很多人习惯的备选，不该一起砍掉。
+   **方向键已经彻底去掉了**（2026-08-21，业主定的："感觉方向键是鸡肋"）。
 
-   暂停键原本嵌在方向键正中，跟着一起藏起来就没了，所以桌面版在 HUD 里另放
-   一个。反过来在手机上藏掉 HUD 那个，免得同时出现两个暂停。 */
-/* 默认藏起来，媒体查询里再打开。顺序不能反 —— 两条特指度一样，
-   后写的赢；把 display:none 放在媒体查询后面的话，桌面上那条永远不生效，
-   暂停键就彻底消失了。（.hidden 那次踩的是同一个坑。） */
-#hudPauseBtn{display:none;}
-@media (hover: hover) and (pointer: fine){
-  .pad-area{display:none;}
-  #hudPauseBtn{display:flex;}
+   原来留着它是有道理的：那时滑动要等抬手才判定，比按键慢将近一格，方向键
+   是唯一顺手的操作方式。等滑动改成滑过阈值即转向、还能按住连划之后，它存在
+   的理由就没了 —— 而它在 375×812 上要吃掉 191px，占屏高 23.5%，是全屏第二大
+   的一块，仅次于棋盘本身。
+
+   连带必须做的一件事：暂停键原本嵌在方向键正中，方向键一走它就没了。所以
+   HUD 里那个暂停不再是桌面专属，改成一直显示。漏掉这一步的话，手机上除了
+   打完一局，没有任何办法暂停。 */
+.pad-area{display:none;}
+#hudPauseBtn{display:flex;}
+
+/* ---- 手机上的点击热区 ----
+ * 苹果和微信的建议都是 44×44pt。实测 375×812 上有六个可点元素不达标，最小的
+ * 是「玩法」「关于」这两个胶囊：56×22，只有建议值的一半，而它们恰恰是最常点的。
+ *
+ * 做法是**只撑热区、不动外观**：用一个负 inset 的伪元素把可点范围铺开，
+ * 视觉尺寸一点不变 —— 把按钮本身改大会把标题那一行撑散。
+ *
+ * 撑多少是按实测间隙算的，不是拍脑袋：
+ *   两个胶囊之间只有 9px，所以左右各只敢撑 4px（吃掉 8px，留 1px）；
+ *   竖直方向没有邻居，撑满 ±11 到 44。
+ *   HUD 两个图标键之间有 19px，左右各撑 7px（吃掉 14px，留 5px）。
+ * 撑过头会让相邻两个热区叠在一起，点哪个都是同一个 —— 那比太小更糟，
+ * 因为它看起来完全正常。 */
+@media (hover: none), (pointer: coarse){
+  .help-pill, .icon-btn, .story-line, .lv, .mail-link{ position:relative; }
+  .help-pill::after{ content:''; position:absolute; inset:-11px -4px; }
+  .icon-btn::after{  content:''; position:absolute; inset:-7px; }
+  .story-line::after{content:''; position:absolute; inset:-10px 0; }
+  /* 邮箱链接自己占一行，下面到「知道了」还有 24px，撑 ±11 不会碰到它 */
+  .mail-link::after{ content:''; position:absolute; inset:-11px -6px; }
+  .lv::after{        content:''; position:absolute; inset:-8px -4px; }
+  /* 兜底：真正的按钮直接给 min-height，不用伪元素 —— 它们本来就在自己一行上，
+     长高不会挤到别人。开始页那个「玩法说明」实测只有 42，差 2px。 */
+  .btn{ min-height:44px; }
 }
 
 @media (max-width:420px){
   /* 手机上寸土寸金：body 两侧 12px + 棋盘自身 10px，一共吃掉 44px，
      在 375 的屏幕上就是 12% 的宽度。棋盘是这个游戏唯一重要的东西，
      这些边距该让位。 */
-  body{padding:10px 5px;}
+  body{padding:8px 3px;}
   .cabinet{gap:8px;}
-  .stage{padding:6px;}
+  .stage{padding:4px;}
+  /* 棋盘是 19:21，而手机屏是 375:812 —— **卡住棋盘的是宽度，不是高度**。
+     去掉方向键腾出的 191px 一分也变不成棋盘面积（宽度不变，高度就不能涨）。
+     所以这里给一条比桌面宽松得多的高度预算：手机上标题 73 + HUD 54 +
+     stage 内边距 8 + body 内边距 16 + 栅格间距 16 = 167，留 10px 余量。
+     竖屏时它根本不会生效（宽度先卡住），但横屏和矮屏上它就是那道真正的限制，
+     沿用桌面的 245 会白白少掉几十像素。 */
+  #mazeCanvas{ max-width: calc((100dvh - 177px) * 19 / 21); }
+  /* 方向键走了以后底下空出一大块。让机身在竖直方向居中，空白上下平分 ——
+     否则整个游戏贴在屏幕顶上，下面吊着 190px 的黑，像是没加载完。 */
+  body{ display:flex; align-items:center; justify-content:center; min-height:100dvh; }
   .marquee{padding:0 0 2px;}
   /* HUD 现在只剩静音一个按钮，宽松了不少，仍略收一点 */
   .hud{padding:9px 11px;gap:8px;}
@@ -2199,7 +2235,7 @@ function resetLevel(fullReset){
     // odometer driving the distance-based turn buffer (see player control)
     distTravelled:0, wantAtDist:0,
     // tiles run without changing direction, and the fading motion trail it drives
-    straightTiles:0, trail:[],
+    straightTiles:0, trail:[], trailAt:0,
   };
   const ghostSpeed = Math.min(GHOST_SPEED_BY_LEVEL[level-1] ?? GHOST_SPEED_BY_LEVEL[MAX_LEVEL-1],
                               playerSpeed * 0.85);
@@ -2407,7 +2443,7 @@ function rescueFromWall(){
       if (walkableFor(tileAt(nx,ny), 'player')){
         player.x = nx; player.y = ny;
         player.dir = {x:0,y:0}; player.want = {x:0,y:0};
-        player.straightTiles = 0; player.trail.length = 0;
+        player.straightTiles = 0; player.trail.length = 0; player.trailAt = player.distTravelled;
         return;
       }
       q.push([nx,ny]);
@@ -2459,7 +2495,7 @@ const PORTAL_COOLDOWN_SECONDS = 0;
 function orientAfterWarp(ent){
   ent.want = {x:0, y:0};        // 过期的转向指令不跨传送门
   ent.straightTiles = 0;        // 换地方了，冲刺从零重新起
-  if (ent.trail) ent.trail.length = 0;
+  if (ent.trail){ ent.trail.length = 0; ent.trailAt = ent.distTravelled || 0; }
 
   const cx = Math.round(ent.x), cy = Math.round(ent.y);
   const can = d => canEnter(ent, cx + d.x, cy + d.y);
@@ -3235,6 +3271,10 @@ function endPowerMode(){
  */
 const MOMENTUM_RAMP_TILES = 5;
 const MOMENTUM_MAX = 1.22;
+/* 尾迹：间距和点数。压到这一档是业主看过三档对比之后选的（方案 B）——
+   最大的一个只有本体 60%、最亮 0.18，速度感留着，但不再和角色抢。 */
+const TRAIL_SPACING = 0.34;   // 每隔多少格留一个点
+const TRAIL_MAX = 5;          // 最多留几个
 
 function momentumMult(){
   const t = Math.min(1, player.straightTiles / MOMENTUM_RAMP_TILES);
@@ -3431,7 +3471,7 @@ function loseLife(){
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
   player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0; player.warpStandingOn=null;
-  player.straightTiles=0; player.trail.length=0; // respawn at a standstill, no leftover wind-up
+  player.straightTiles=0; player.trail.length=0; player.trailAt=player.distTravelled; // respawn at a standstill, no leftover wind-up
   frightTimer = 0; // dying cancels the power pellet outright
   ghostEatChain = 0;
   ghosts.forEach((g,i)=>{
@@ -4362,19 +4402,42 @@ stage.addEventListener('touchstart', (e)=>{
   swipeFrom = { x: t.clientX, y: t.clientY };
 }, { passive: true });
 
+/* 滑过阈值就立刻转向，**不等抬手**。
+
+   原来是在 touchend 里判定的，也就是手指抬起来之前一个转向都不会发生。
+   一次滑动手势 100~250ms，而玩家速度是 5.4~6.9 格/秒 —— 手还没离开屏幕，
+   人已经越过路口 0.8~1.0 格，可转角辅助只救得了 0.45 格以内。于是每次转弯
+   都在跟这个延迟赛跑，手感自然不如方向键（方向键走的是 touchstart，
+   按下即响应）。这一条不是"触屏天生不如按键"，只是判定时机放错了地方。
+
+   判定之后把起点挪到当前手指位置，所以按着不放一路划就能连续拐弯，
+   不必抬手再划一次。 */
+function swipeDir(dx, dy){
+  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left')
+                                     : (dy > 0 ? 'down'  : 'up');
+}
+
 stage.addEventListener('touchmove', (e)=>{
   // 手指在画布上划动时阻止页面跟着滚 —— 否则一边玩一边整页上下弹，没法玩。
-  if (swipeFrom) e.preventDefault();
+  if (!swipeFrom) return;
+  e.preventDefault();
+  const t = e.changedTouches[0];
+  const dx = t.clientX - swipeFrom.x, dy = t.clientY - swipeFrom.y;
+  if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return;
+  requestDir(swipeDir(dx, dy));
+  swipeFrom = { x: t.clientX, y: t.clientY };   // 重置起点，支持一路连划
 }, { passive: false });
 
 stage.addEventListener('touchend', (e)=>{
+  /* 兜底：极短的一甩可能整个手势里一个 touchmove 都没触发过（或者都没过阈值），
+     那样上面那段不会发火，这里补一次。已经在 touchmove 里转过向的手势，
+     起点已被重置，剩下的位移通常不到阈值，不会重复触发。 */
   if (!swipeFrom) return;
   const t = e.changedTouches[0];
   const dx = t.clientX - swipeFrom.x, dy = t.clientY - swipeFrom.y;
   swipeFrom = null;
   if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return;  // 是点击，不是滑动
-  requestDir(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left')
-                                         : (dy > 0 ? 'down'  : 'up'));
+  requestDir(swipeDir(dx, dy));
 }, { passive: true });
 document.getElementById('pauseBtn').addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
 /* 静音图标是一个 SVG 里的两组线条，切换的是显隐而不是重画整段 markup ——
@@ -4809,12 +4872,23 @@ function update(dt){
      没人会把它和"直着走别拐弯"联系起来。等他第一次真的冲到满速，再告诉他这是
      怎么来的 —— 那时候屏幕上正好有他自己造出来的证据。 */
   if (wind >= 0.999) hintOnce('dash', '冲刺：直线连走不拐弯会越跑越快', 0);
+  /* 尾迹按**距离**采样，不按帧。
+     原来是每帧存一个点，最多 7 个 —— 第六关满冲刺是 8.37 格/秒，60 帧下相邻两点
+     只差 0.14 格，七个点总共铺开 0.84 格，正好等于吃豆人自己的直径。那不是一条
+     尾巴，是七个几乎完全叠在角色身上的半透明圆盘，手机上棋盘再一缩就糊成一团，
+     业主的原话是"看起来有点晕"。而且按帧采样意味着 120Hz 手机上间距再减半，
+     同一份代码在不同手机上观感不一样。
+     按距离采之后，间距恒定 0.34 格、五个点铺开 1.4 格，是看得出方向的一条尾巴，
+     且和帧率无关。 */
   if (wind > 0.15 && moved < 1.5){
-    player.trail.push({ x: beforeX, y: beforeY });
-    const maxLen = Math.round(2 + wind * 5);
-    while (player.trail.length > maxLen) player.trail.shift();
+    if (player.distTravelled - player.trailAt >= TRAIL_SPACING){
+      player.trail.push({ x: beforeX, y: beforeY });
+      player.trailAt = player.distTravelled;
+      while (player.trail.length > TRAIL_MAX) player.trail.shift();
+    }
   } else if (player.trail.length){
     player.trail.shift();
+    player.trailAt = player.distTravelled;
   }
 
   ghosts.forEach((g,i)=>{
@@ -5040,10 +5114,10 @@ function drawPlayer(){
     const col = player.phase>0 ? cssVar('--cyan') : cssVar('--amber');
     player.trail.forEach((p, i)=>{
       const k = (i + 1) / player.trail.length;      // oldest -> newest
-      ctx.globalAlpha = 0.05 + k * 0.22 * wind;
+      ctx.globalAlpha = (0.04 + k * 0.14) * wind;
       ctx.fillStyle = col;
       ctx.beginPath();
-      ctx.arc(p.x*TILE+TILE/2, p.y*TILE+TILE/2, TILE*0.42*(0.45 + k*0.4), 0, Math.PI*2);
+      ctx.arc(p.x*TILE+TILE/2, p.y*TILE+TILE/2, TILE*0.42*(0.30 + k*0.30), 0, Math.PI*2);
       ctx.fill();
     });
     ctx.restore();
