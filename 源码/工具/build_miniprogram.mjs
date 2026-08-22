@@ -9,11 +9,18 @@
 // 与小游戏版唯一的区别是模块格式：小程序对 ES module 的支持随基础库版本而变，
 // 而 CommonJS 从第一天起就稳。差一个 export 关键字换来的兼容性，值。
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
 const OUT_DIR = here('../../微信小程序版/utils');
 const src = readFileSync(here('../pacman_fragment.html'), 'utf8');
+
+/* 用内容指纹而不是生成时间。
+   带时间戳的话，每重跑一次生成脚本都会产生一处 diff，哪怕逻辑一个字没改 ——
+   于是"这次提交到底动了逻辑没有"从 diff 上看不出来，久了就没人看了。
+   指纹只跟源码内容走：内容没变，生成出来的文件逐字节相同。 */
+const srcHash = createHash('sha1').update(src).digest('hex').slice(0, 12);
 
 if (src.includes('__dbg')) {
   console.error('网页版里有调试钩子，先清干净再生成小程序版。');
@@ -46,7 +53,7 @@ body = body.replace(HEAD, '').replace(TAIL, '').trim();
 const out = `/* 自动生成，请勿手改。
  * 由 v1-发布版/工具/build_miniprogram.mjs 从 v1-发布版/pacman_fragment.html 提取。
  * 要改游戏逻辑，改网页版那一份，然后重新跑一次生成脚本。
- * 生成时间: ${new Date().toISOString().slice(0,19).replace('T',' ')}
+ * 源码指纹: ${srcHash}   （只跟 pacman_fragment.html 的内容走）
  */
 function createGame(env){
   /* 浏览器全局一律从 env 取，声明成局部变量把宿主那份遮蔽掉。
@@ -90,7 +97,9 @@ ${body}
     MAX_LEVEL,
     requestDir, togglePause, fullNewGame, render, update, Audio2,
     renderScoreboard, loadScores, recordScore, renameScore, cleanName, renderBest, renderWelcome, bestScore,
-    commitName, openHelp, closeHelp, openAbout, closeAbout,
+    commitName,
+    // 挑战：微信两版没有 URL，只能由外壳从启动参数传进来
+    setChallenge, openHelp, closeHelp, openAbout, closeAbout,
   };
 }
 

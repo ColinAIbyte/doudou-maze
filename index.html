@@ -838,14 +838,6 @@ body{
   -webkit-tap-highlight-color:transparent;
 }
 .story-line:hover, .story-line:focus-visible{ opacity:1; }
-.story-heart{
-  /* 小、静、不闪。会动的心会变成一个"提示"，而这只是一句署名。 */
-  font-size:11px;
-  color:#ff8fd0;
-  opacity:.85;
-  line-height:1;
-}
-
 /* 「新」徽章。独立成块，不拼在名字后面 ——
    拼上去读出来就是"超级奶爸新"，看着像名字的一部分或者程序出错。 */
 .board-new{
@@ -1449,12 +1441,11 @@ body.in-game .marquee{
         <button class="btn btn-hero" id="startBtn">开始游戏</button>
         <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
       </div>
-      <!-- 这一句是开始页最主要的情感表达，所以它紧跟在「开始游戏」下面 ——
-           视线离开按钮的第一站。点它直接打开「关于」，不用再去找标题旁的图标。
-           心是静的，不闪：闪烁会把它变成一个"提示"，而它不是提示。 -->
-      <button class="story-line" id="storyLine">
-        <span class="story-heart" aria-hidden="true">♥</span>一个爸爸和儿子一起做的小游戏
-      </button>
+      <!-- 紧跟在「开始游戏」下面 —— 视线离开按钮的第一站。点它直接打开「关于」，
+           不用再去找标题旁的图标。
+           2026-08-21 业主把这句从"♥ 一个爸爸和儿子一起做的小游戏"改成「怀旧游戏」，
+           心也一并去掉。那段自述没有丢，它完整地留在「关于」里。 -->
+      <button class="story-line" id="storyLine">怀旧游戏</button>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1576,10 +1567,10 @@ body.in-game .marquee{
            九样东西按阅读顺序排在正常文档流里，没有一处绝对定位。 -->
       <div class="about-card" id="aboutPanel">
         <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
-        <!-- 两段各自一个 <p>，不写任何 <br>：中文该在哪儿断行由宽度决定，
-             手写的换行只在某一个屏幕宽度上好看，换台设备就断在奇怪的地方。 -->
-        <p class="about about-story">儿子想玩一个简单又刺激的小游戏，于是我们一起把它做了出来。</p>
-        <p class="about about-story">他负责试玩和提意见，我负责一点点修改完善。后来，几个小朋友也加入了试玩，才有了现在的<span class="nb">《豆豆迷宫》</span>和六个关卡。</p>
+        <!-- 业主 2026-08-21 定的：**一整段，不分段**，也不写任何 <br> ——
+             中文该在哪儿断行由宽度决定，手写的换行只在某一个屏幕宽度上好看，
+             换台设备就断在奇怪的地方。原文照抄，不要替他改写或压缩。 -->
+        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的<span class="nb">《豆豆迷宫》</span>及其6个关卡。</p>
         <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
         <p class="about-by">超级奶爸</p>
         <hr class="about-rule">
@@ -3315,6 +3306,10 @@ function endPowerMode(){
  */
 const MOMENTUM_RAMP_TILES = 5;
 const MOMENTUM_MAX = 1.22;
+/* 闪烁频率。WCAG 2.1 的通用闪烁阈值是每秒 3 次，这两个都压在下面。
+   穿墙比无敌更慢，因为它持续 10 秒而无敌只有 1.6~2.4 秒 —— 越长越要温和。 */
+const PHASE_PULSE_HZ = 2;
+const INVULN_PULSE_HZ = 3;
 /* 尾迹：间距和点数。压到这一档是业主看过三档对比之后选的（方案 B）——
    最大的一个只有本体 60%、最亮 0.18，速度感留着，但不再和角色抢。 */
 const TRAIL_SPACING = 0.34;   // 每隔多少格留一个点
@@ -4700,6 +4695,18 @@ let challenge = null;
   } catch (e) { /* 链接畸形就当没有挑战 */ }
 })();
 
+/* 挑战的来源在网页版是 URL 查询串，可微信那两版**根本没有 URL** —— 小程序的
+   启动参数在 onLoad(options) 里，小游戏在 wx.getLaunchOptionsSync()。所以这里
+   开一个口子让外壳把它传进来，而不是让核心去猜自己跑在什么环境里。
+   传进来之后一切照旧：开始页的横幅、结算页那句"超过谁多少分"都是现成的。 */
+function setChallenge(score, name){
+  const sc = Number(score);
+  if (!Number.isFinite(sc) || sc <= 0){ challenge = null; return null; }
+  challenge = { score: sc, name: cleanName(name || '') || '一位朋友' };
+  renderChallengeBanner();
+  return challenge;
+}
+
 function renderChallengeBanner(){
   if (!challenge) return;
   const box = document.getElementById('challengeBox');
@@ -5186,8 +5193,18 @@ function drawPlayer(){
   else if (player.dir.y===1) ang=Math.PI/2; else if (player.dir.y===-1) ang=-Math.PI/2;
   ctx.save();
   ctx.translate(cxp,cyp); ctx.rotate(ang);
-  const flashing = player.phase>0 && Math.floor(elapsed*10)%2===0;
-  ctx.globalAlpha = flashing ? 0.4 : (invuln>0 ? (Math.floor(elapsed*14)%2===0?0.4:1) : 1);
+  /* 无敌和穿墙都靠"闪"来表示，但原来两处都是**硬切**：穿墙 5Hz、无敌 7Hz，
+     在 0.4 和 1 之间跳。WCAG 给的上限是每秒 3 次，而穿墙状态一持续就是 10 秒 ——
+     十秒钟的 5Hz 频闪盯着看，人是会不舒服的（业主说"看起来有点晕"，当时我
+     只归因到尾迹，其实这里更严重）。
+     改成正弦脉动：频率压到 3Hz 以内，下限抬高，信息一点没少 —— 穿墙本来就已经
+     整个换成青色了，闪只是补充；无敌那 2.4 秒仍然明显在呼吸。
+     用 sin 而不是方波，是因为方波的边沿本身就是刺激源，同样频率下方波比正弦
+     难受得多。 */
+  const pulse = (hz, lo) => lo + (1 - lo) * (0.5 + 0.5 * Math.sin(elapsed * hz * 2 * Math.PI));
+  ctx.globalAlpha = player.phase > 0 ? pulse(PHASE_PULSE_HZ, 0.62)
+                  : invuln > 0       ? pulse(INVULN_PULSE_HZ, 0.45)
+                  : 1;
   ctx.fillStyle = player.phase>0 ? cssVar('--cyan') : cssVar('--amber');
   ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14 + wind*16; // hotter at full momentum
   ctx.beginPath();

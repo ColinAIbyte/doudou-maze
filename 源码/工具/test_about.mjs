@@ -33,8 +33,9 @@ if (aboutStart < 0 || aboutEnd < 0){
     if (!panel.includes(pat)) fail.push(`关于页缺少：${what}（找不到 ${pat}）`);
   }
   // 作者原文，逐句核
-  for (const line of ['儿子想玩一个简单又刺激的小游戏', '于是我们一起把它做了出来',
-                      '他负责试玩和提意见', '几个小朋友也加入了试玩',
+  for (const line of ['暑期，儿子想玩一款简单刺激的小游戏', '于是我们一起把它做出来',
+                      '他负责试玩和提意见', '其它小朋友也加入试玩队伍',
+                      '及其6个关卡',
                       '超级奶爸',
                       '反馈与建议', '如果你有任何建议，或在游戏中发现了问题',
                       '邮箱']){
@@ -44,7 +45,7 @@ if (aboutStart < 0 || aboutEnd < 0){
      这条得单独钉住 —— 顺序是"改了也照样能跑"的东西，而它恰恰是作者亲自
      指定的版式（中途还改错过一次：一度被放到标题下面当副标题）。 */
   const iTitle = panel.indexOf('关于《豆豆迷宫》');
-  const iBody  = panel.indexOf('儿子想玩一个简单又刺激的小游戏');
+  const iBody  = panel.indexOf('暑期，儿子想玩一款简单刺激的小游戏');
   const iBy    = panel.indexOf('about-by');
   const iFb    = panel.indexOf('反馈与建议');
   if (!(iTitle < iBody && iBody < iBy && iBy < iFb))
@@ -77,8 +78,12 @@ if (aboutStart < 0 || aboutEnd < 0){
      把故事合并成一段照样能凑够数，测试就成了摆设。 */
   /* 数 about-story 而不是 <p class="about">：反馈区那两段也是 .about，
      按类名前缀数会把它们算进来。about-story 是故事段落专有的标记。 */
+  /* 业主 2026-08-21 明确要求这段**连在一起、不要分段**。所以这里从"必须两段"
+     反过来钉成"必须正好一段" —— 不钉的话，哪天有人觉得"太长了断一下更好看"
+     就又拆回去了，而这是作者对自己那段话的排版决定，不是审美问题。 */
   const storyParas = (story.match(/about-story/g) || []).length;
-  if (storyParas !== 2) fail.push(`故事应当正好分两段，实得 ${storyParas} 段`);
+  if (storyParas !== 1) fail.push(`故事应当连成一整段，实得 ${storyParas} 段`);
+
 }
 
 // 入口：标题旁边那个「关于」胶囊，和「玩法」并排

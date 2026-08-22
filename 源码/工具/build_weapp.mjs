@@ -10,11 +10,18 @@
 // 所以核心逻辑永远从 pacman_fragment.html 机械提取，js/shim.js 负责把它缺的
 // 那一小片 DOM 补出来。改游戏只改网页版，跑一次这个脚本，小游戏版就跟上了。
 import { fileURLToPath } from 'node:url';
+import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
 const OUT_DIR = here('../../微信小游戏版/js');
 const src = readFileSync(here('../pacman_fragment.html'), 'utf8');
+
+/* 用内容指纹而不是生成时间。
+   带时间戳的话，每重跑一次生成脚本都会产生一处 diff，哪怕逻辑一个字没改 ——
+   于是"这次提交到底动了逻辑没有"从 diff 上看不出来，久了就没人看了。
+   指纹只跟源码内容走：内容没变，生成出来的文件逐字节相同。 */
+const srcHash = createHash('sha1').update(src).digest('hex').slice(0, 12);
 
 if (src.includes('__dbg')) {
   console.error('网页版里有调试钩子，先清干净再生成小游戏版。');
@@ -45,7 +52,7 @@ body = body.replace(HEAD, '').replace(TAIL, '').trim();
 const out = `/* 自动生成，请勿手改。
  * 由 v1-发布版/工具/build_weapp.mjs 从 v1-发布版/pacman_fragment.html 提取。
  * 要改游戏逻辑，改网页版那一份，然后重新跑一次生成脚本。
- * 生成时间: ${new Date().toISOString().slice(0,19).replace('T',' ')}
+ * 源码指纹: ${srcHash}   （只跟 pacman_fragment.html 的内容走）
  */
 function createGame(env){
   /* 浏览器全局一律从 env 取，声明成局部变量把宿主那份遮蔽掉。
@@ -85,6 +92,8 @@ ${body}
     // 漏导出的话点下去就是 undefined is not a function，游戏直接崩。
     openHelp, closeHelp, openAbout, closeAbout,
     commitName,
+    // 挑战：微信两版没有 URL，只能由外壳从启动参数传进来
+    setChallenge,
     // 练习模式。外壳自己画那排关卡按钮（小游戏没有 DOM，core 里 renderLevelSelect
     // 挂的那些 click 监听在垫片上根本不会触发），所以点中之后要能直接调进来。
     // maxLevelReached 一起导出：哪几关解锁了只有逻辑层知道。

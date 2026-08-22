@@ -77,6 +77,39 @@ if (!fail.length){
   }
 }
 
+/* —— 三、闪烁频率 ——
+   无敌和穿墙都靠"闪"表示状态。WCAG 2.1 的通用闪烁阈值是每秒 3 次，而原来两处
+   都是硬切方波：穿墙 5Hz、无敌 7Hz，在 0.4 和 1 之间跳，穿墙还一持续就是 10 秒。
+   业主说"看起来有点晕"时我先归因到尾迹，其实这里更严重。
+   钉住三件事：频率不超过 3Hz、下限不许再压到 0.5 以下、必须是正弦不是方波
+   （同样频率下方波的边沿更刺激）。 */
+const hz = (name) => {
+  const m = src.match(new RegExp('const\\s+' + name + '\\s*=\\s*([\\d.]+)'));
+  if (!m) { fail.push(`源码里找不到常量 ${name}`); return NaN; }
+  return Number(m[1]);
+};
+const PHASE_HZ = hz('PHASE_PULSE_HZ');
+const INVULN_HZ = hz('INVULN_PULSE_HZ');
+if (Number.isFinite(PHASE_HZ) && PHASE_HZ > 3)
+  fail.push(`穿墙闪烁 ${PHASE_HZ}Hz 超过 WCAG 的每秒 3 次，而它一持续就是 10 秒`);
+if (Number.isFinite(INVULN_HZ) && INVULN_HZ > 3)
+  fail.push(`无敌闪烁 ${INVULN_HZ}Hz 超过 WCAG 的每秒 3 次`);
+
+const alphaLine = src.match(/ctx\.globalAlpha = player\.phase > 0[\s\S]{0,220}?;/);
+if (!alphaLine) {
+  fail.push('定位不到玩家的透明度那几行（写法变了，去 test_touch_feel 里改）');
+} else {
+  if (/Math\.floor\(elapsed\s*\*\s*\d+\)\s*%\s*2/.test(alphaLine[0]))
+    fail.push('玩家的闪烁又变回方波硬切了 —— 同样频率下方波比正弦难受得多');
+  const los = [...alphaLine[0].matchAll(/pulse\([A-Z_]+,\s*([\d.]+)\)/g)].map(m=>Number(m[1]));
+  if (!los.length) fail.push('读不出闪烁的下限');
+  else {
+    const worst = Math.min(...los);
+    if (worst < 0.4) fail.push(`闪烁最暗到 ${worst}，太接近消失；下限不该低于 0.4`);
+    else console.log(`闪烁：穿墙 ${PHASE_HZ}Hz、无敌 ${INVULN_HZ}Hz，正弦，最暗 ${worst}`);
+  }
+}
+
 console.log('\n' + (fail.length
   ? '触屏手感有问题：\n  ✗ ' + fail.join('\n  ✗ ')
   : '触屏手感的两条底线都守住了。'));

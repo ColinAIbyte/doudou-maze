@@ -120,7 +120,7 @@ if (!/128,650/.test(best)) fail.push('最高分数字没了或没加千分位');
 // ---------- 五、开始页那句故事（源码级接线）----------
 const src = html;
 const wire = [
-  ['故事那句在开始页',   /id="storyLine"[\s\S]{0,200}?一个爸爸和儿子一起做的小游戏/],
+  ['关于入口在开始页',   /id="storyLine"[^>]*>\s*怀旧游戏/],
   ['故事那句可点开关于', /\['aboutBtn', 'storyLine'\]/],
   ['欢迎语在投币下面',   /<h2>投币<\/h2>[\s\S]{0,600}?id="welcomeLine"/],
   ['故事在按钮下面',     /id="startBtn"[\s\S]{0,800}?id="storyLine"/],
@@ -128,10 +128,16 @@ const wire = [
 for (const [what, re] of wire){
   if (!re.test(src)) fail.push(`接线断了：${what}`);
 }
-/* 旧文案不许再出现在任何地方。改文案最容易漏的就是"还有一处也写着同样的话"，
-   而两处不一致比两处都是旧的更糟 —— 玩家会以为自己看花了眼。 */
+/* 旧文案不许再出现在开始页那一行。改文案最容易漏的就是"还有一处也写着同样的话"，
+   而两处不一致比两处都是旧的更糟 —— 玩家会以为自己看花了眼。
+   注意结算页的 .credits 仍然写着"一个爸爸和儿子一起做的小游戏"，那是业主留下的，
+   不在这条的管辖范围内 —— 所以这里只检查 storyLine 那个按钮里面。 */
 if (src.includes('一个爸爸做给儿子的游戏'))
-  fail.push('还残留着旧文案「一个爸爸做给儿子的游戏」，应当全部换成「一个爸爸和儿子一起做的小游戏」');
+  fail.push('还残留着更早的旧文案「一个爸爸做给儿子的游戏」');
+const storyBtn = /id="storyLine"[^>]*>([\s\S]{0,120}?)<\/button>/.exec(src);
+if (!storyBtn) fail.push('找不到 storyLine 按钮');
+else if (/♥|一个爸爸/.test(storyBtn[1]))
+  fail.push(`开始页那一行还留着心或旧文案：${storyBtn[1].trim().slice(0,40)}`);
 
 console.log(fail.length
   ? '开始页的"温度"有问题：\n  ✗ ' + fail.join('\n  ✗ ')
