@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>豆豆迷宫</title>
-<meta name="description" content="霓虹迷宫吃豆游戏，六关递进。连吃 · 闪避 · 穿越。">
-<meta name="author" content="超级奶爸">
+<title>Doudou Maze</title>
+<meta name="description" content="A neon maze arcade game. Six escalating levels. Chain · Dodge · Phase.">
+<meta name="author" content="Super Dad">
 <link rel="alternate" hreflang="zh-Hans" href="https://colinaibyte.github.io/doudou-maze/">
 <link rel="alternate" hreflang="en" href="https://colinaibyte.github.io/doudou-maze/en/">
 <link rel="alternate" hreflang="x-default" href="https://colinaibyte.github.io/doudou-maze/">
@@ -18,8 +18,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <!-- 分享到微信/群里时的卡片。缺了这些，别人看到的只有一条光秃秃的网址 -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="豆豆迷宫">
-<meta property="og:description" content="霓虹迷宫吃豆游戏，六关递进。连吃 · 闪避 · 穿越。">
+<meta property="og:title" content="Doudou Maze">
+<meta property="og:description" content="A neon maze arcade game. Six escalating levels. Chain · Dodge · Phase.">
 <meta name="twitter:card" content="summary">
 <style>
 /* 整页锁死不滚动。手机上边玩边让页面上下弹是最影响手感的一件事，
@@ -46,7 +46,7 @@ body {
 </head>
 <body>
 <meta charset="utf-8">
-<title>豆豆迷宫</title>
+<title>Doudou Maze</title>
 <style>
 :root{
   --void:#0a0612;
@@ -1358,44 +1358,44 @@ body.in-game .marquee{
 
 <div class="cabinet">
   <div class="marquee">
-    <h1>豆豆迷宫</h1>
+    <h1>Doudou Maze</h1>
     <!-- 「?」跟在副标题后面。原来它和另外两个按钮全塞在 HUD 里，那一行还要
          放分数、连击、关卡、生命，挤得数值都快贴到一起了。副标题这行本来就
          空着半行。 -->
     <p class="tagline">
-      <span class="tag-words">连吃<i></i>闪避<i></i>穿越</span>
-      <button class="help-pill" id="helpBtn" title="玩法说明" aria-label="玩法说明">
+      <span class="tag-words">Chain<i></i>Dodge<i></i>Phase</span>
+      <button class="help-pill" id="helpBtn" title="How to Play" aria-label="How to Play">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
           <path d="M9.2 9.3a2.9 2.9 0 1 1 3.6 3.4c-.6.2-.9.7-.9 1.3v.6"/>
           <circle cx="12" cy="17.6" r="1.15" class="solid"/>
-        </svg>玩法
+        </svg>How to Play
       </button>
       <!-- 「关于」跟「玩法」并排，同一种胶囊。图标用心形而不是问号：这一页讲的
            不是规则，是这游戏怎么来的，图标先把这件事说清楚。 -->
-      <button class="help-pill" id="aboutBtn" title="关于《豆豆迷宫》" aria-label="关于《豆豆迷宫》">
+      <button class="help-pill" id="aboutBtn" title="About Doudou Maze" aria-label="About Doudou Maze">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path class="solid" d="M12 20.3s-7.4-4.7-7.4-9.7a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 5-7.4 9.7-7.4 9.7z"/>
-        </svg>关于
+        </svg>About
       </button>
     </p>
   </div>
 
   <div class="hud">
     <div class="stat">
-      <span class="k">分数</span>
+      <span class="k">SCORE</span>
       <span class="v" id="scoreVal">0</span>
     </div>
     <div class="combo-wrap">
-      <span class="k" id="comboLabel" style="font-size:9px;letter-spacing:.14em;color:var(--text-dim);">连击 x1</span>
+      <span class="k" id="comboLabel" style="font-size:9px;letter-spacing:.14em;color:var(--text-dim);">Combo x1</span>
       <div class="combo-bar"><div class="combo-fill" id="comboFill"></div></div>
     </div>
     <div class="stat">
-      <span class="k">关卡</span>
+      <span class="k">LEVEL</span>
       <span class="v" id="levelVal">1</span>
     </div>
     <div class="stat">
-      <span class="k">生命</span>
+      <span class="k">LIVES</span>
       <span class="v lives" id="livesVal"></span>
     </div>
     <!-- HUD 只留静音。方向键开关挪到了上方向键旁边，「?」挪到了副标题那行 ——
@@ -1404,12 +1404,12 @@ body.in-game .marquee{
          偏灰，和旁边的线条图标凑不到一起，尺寸也不受控。 -->
     <!-- 桌面专用的暂停键。方向键在桌面被隐藏了，而暂停原本就嵌在方向键正中，
          不在这儿补一个，桌面玩家就只剩 P 键 —— 而没人知道有 P 键。 -->
-    <button class="icon-btn" id="hudPauseBtn" title="暂停" aria-label="暂停">
+    <button class="icon-btn" id="hudPauseBtn" title="Pause" aria-label="Pause">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M9 6.5v11M15 6.5v11"/>
       </svg>
     </button>
-    <button class="icon-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">
+    <button class="icon-btn" id="muteBtn" title="Mute / Unmute" aria-label="Mute toggle">
       <svg viewBox="0 0 24 24" aria-hidden="true">
         <path d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" class="solid"/>
         <g id="soundWaves"><path d="M15.4 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M18 7a7.3 7.3 0 0 1 0 10"/></g>
@@ -1426,7 +1426,7 @@ body.in-game .marquee{
     <canvas id="fxCanvas" class="fx"></canvas>
 
     <div class="overlay" id="startOverlay">
-      <h2>投币</h2>
+      <h2>INSERT COIN</h2>
       <!-- 开始页只留一句。原来这里是六行说明，加上榜单和署名之后总高超出
            弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
@@ -1442,8 +1442,8 @@ body.in-game .marquee{
            撞见的东西，写在这儿只是提高了开始前的阅读量。按设备分文案，用 CSS
            切换而不是 JS：JS 判断要等脚本跑完，会先闪一下错的那句。 -->
       <p class="start-tip">
-        <span class="tip-key">方向键 / WASD 移动</span><span class="tip-touch">滑动转向</span>
-        　·　吃光豆子即可过关
+        <span class="tip-key">Arrow keys / WASD</span><span class="tip-touch">Swipe to turn</span>
+        　·　Clear all dots to finish
       </p>
       <div class="challenge hidden" id="challengeBox"></div>
       <!-- 关卡选择。只列已经打到过的关；没到过的显示锁。
@@ -1459,28 +1459,28 @@ body.in-game .marquee{
       <!-- 主次要拉得更开：原来两个按钮边框粗细相近、间距也小，看着像
            一组并列选项。开始是主线，玩法是备选，第一眼不该需要挑。 -->
       <div class="over-actions start-actions">
-        <button class="btn btn-hero" id="startBtn">开始游戏</button>
-        <button class="btn btn-quiet" id="startHelpBtn">玩法说明</button>
+        <button class="btn btn-hero" id="startBtn">START GAME</button>
+        <button class="btn btn-quiet" id="startHelpBtn">How to Play</button>
       </div>
       <!-- 紧跟在「开始游戏」下面 —— 视线离开按钮的第一站。点它直接打开「关于」，
            不用再去找标题旁的图标。
            2026-08-21 业主把这句从"♥ 一个爸爸和儿子一起做的小游戏"改成「怀旧游戏」，
            心也一并去掉。那段自述没有丢，它完整地留在「关于」里。 -->
-      <button class="story-line" id="storyLine">怀旧游戏</button>
-      <a class="lang-link" href="en/" hreflang="en">English</a>
+      <button class="story-line" id="storyLine">A retro game</button>
+      <a class="lang-link" href="../" hreflang="zh-Hans">中文</a>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
          跟着一起没了 —— 也就是说玩到一半想不起规则的人，全程无处可查，而这
          正是最想查的时刻。暂停是他唯一会主动打开的界面，说明就该放在这儿。 -->
     <div class="overlay hidden" id="pauseOverlay">
-      <h2 id="pauseTitle">已暂停</h2>
+      <h2 id="pauseTitle">PAUSED</h2>
       <!-- 切走标签页会自动暂停，回来时这一行会换成说明原因的话 —— 否则玩家
            只看到一个暂停页，不知道是自己按的还是游戏出了什么事。 -->
-      <p id="pauseWhy" class="bonus-hint">按 P、Enter 或点「继续游戏」回到游戏</p>
+      <p id="pauseWhy" class="bonus-hint">Press P, Enter, or tap Resume to get back in</p>
       <div class="over-actions">
-        <button class="btn btn-hero" id="resumeBtn">继续游戏</button>
-        <button class="btn ghost btn-share" id="pauseHelpBtn">玩法说明</button>
+        <button class="btn btn-hero" id="resumeBtn">Resume</button>
+        <button class="btn ghost btn-share" id="pauseHelpBtn">How to Play</button>
       </div>
     </div>
 
@@ -1488,7 +1488,7 @@ body.in-game .marquee{
          而这些信息只在头几局有用，之后一直杵在那里挤压手机上的可视空间。
          收进这里，想看再点。 -->
     <div class="overlay hidden" id="helpOverlay">
-      <h2>玩法说明</h2>
+      <h2>How to Play</h2>
       <!-- 内容与 微信小游戏版/js/ui.js 里那份 HELP 保持一致。两处是分开写的
            （一边 HTML、一边 canvas 逐行画），改一处务必改另一处 —— 说明对不上
            比没有说明更糟，玩家会照着做然后发现不是那么回事。 -->
@@ -1496,13 +1496,13 @@ body.in-game .marquee{
            看完前三行就能开打，剩下的往下滚就是。滚动是零成本的，点开不是。 -->
       <div class="help-doc">
         <div class="help-sec">
-          <h3>怎么玩</h3>
+          <h3>The basics</h3>
           <dl class="kv">
-            <dt>移动</dt><dd>手机在迷宫上<b>滑动</b>　电脑<b>方向键 / WASD</b></dd>
-            <dt>吃豆</dt><dd>吃光豆子就过关；<b>连着吃</b>，倍率越叠越高</dd>
-            <dt>躲幽灵</dt><dd>碰到少一条命；吃下<b>能量豆</b>就能反过来吃它们</dd>
-            <dt>还有</dt><dd>传送门 · 冲刺 · 穿墙 · 幽灵融合
-              <br><span class="dim">不用背，玩着就会</span></dd>
+            <dt>Move</dt><dd>Phone: <b>swipe</b> on the maze　Desktop: <b>arrows / WASD</b></dd>
+            <dt>Eat</dt><dd>Clear every dot to finish the level.<br><b>Keep eating</b> and the multiplier keeps climbing</dd>
+            <dt>Ghosts</dt><dd>Touching one costs a life. Eat a <b>Power Pellet</b> and you can eat them instead</dd>
+            <dt>Also</dt><dd>Portal · Dash · Phasing · Ghost Fusion
+              <br><span class="dim">No need to memorize — you pick it up as you play</span></dd>
           </dl>
         </div>
 
@@ -1514,52 +1514,52 @@ body.in-game .marquee{
              所以恢复成一份从头读到尾的文档，只保留顺序上的分层：
              「怎么玩」在最前面，看完前三行就能开打，剩下的往下滚就是。 -->
           <div class="help-sec">
-            <h3>连击</h3>
-            <p>每吃一颗涨一级，<b>上不封顶</b>；吃幽灵、吃水果同样算。<br>
-              一边跑一边吃约 <b>1.6 秒</b>没吃到才断，停下不动约 <b>0.5 秒</b>就断。</p>
+            <h3>Combo</h3>
+            <p>Every pickup adds a level, <b>no cap</b>. Ghosts and fruit count too.<br>
+              While moving, it breaks after about <b>1.6s</b> without a pickup; standing still, about <b>0.5s</b> is enough to break it.</p>
           </div>
           <div class="help-sec">
-            <h3>四种幽灵</h3>
+            <h3>The four ghosts</h3>
             <ul class="ghost-list">
-              <li><i style="color:var(--danger);background:var(--danger)"></i><b>追击者</b>　直线朝你追过来</li>
-              <li><i style="color:var(--pink);background:var(--pink)"></i><b>伏击者</b>　预判你的去向，提前拦截</li>
-              <li><i style="color:var(--tang);background:var(--tang)"></i><b>怕生鬼</b>　你一靠近它就跑</li>
-              <li><i style="color:var(--cyan);background:var(--cyan)"></i><b>巡逻者</b>　沿固定路线绕，不理你</li>
+              <li><i style="color:var(--danger);background:var(--danger)"></i><b>Chaser</b>　comes straight at you</li>
+              <li><i style="color:var(--pink);background:var(--pink)"></i><b>Ambusher</b>　predicts where you are going and cuts you off</li>
+              <li><i style="color:var(--tang);background:var(--tang)"></i><b>Shy One</b>　runs the moment you get close</li>
+              <li><i style="color:var(--cyan);background:var(--cyan)"></i><b>Patroller</b>　walks a fixed loop and ignores you</li>
             </ul>
           </div>
           <div class="help-sec">
-            <h3>特殊机关</h3>
+            <h3>Special mechanics</h3>
             <dl class="kv">
-              <dt>能量豆</dt><dd>短时间内幽灵可以反吃</dd>
-              <dt>传送门</dt><dd>地图四角成对，颜色相同的两个互通</dd>
-              <dt>冲刺</dt><dd>直线一直跑会越跑越快，一转弯就归零</dd>
-              <dt>神秘水果</dt><dd>十秒之内可以穿墙走</dd>
-              <dt>幽灵融合</dt><dd>两只蓝幽灵相撞会合成「超级幽灵」</dd>
+              <dt>Power Pellet</dt><dd>ghosts become edible for a short time</dd>
+              <dt>Portal</dt><dd>paired at the four corners; matching colors link up</dd>
+              <dt>Dash</dt><dd>run straight to build speed; any turn resets it</dd>
+              <dt>Mystery Fruit</dt><dd>walk through walls for ten seconds</dd>
+              <dt>Ghost Fusion</dt><dd>two blue ghosts colliding merge into a Super Ghost</dd>
             </dl>
           </div>
           <div class="help-sec">
-            <h3>能拿多少分</h3>
+            <h3>Scoring</h3>
             <dl class="kv">
-              <dt>豆子</dt><dd><b>15</b> × 连击</dd>
-              <dt>能量豆</dt><dd><b>75</b> × 连击</dd>
-              <dt>神秘水果</dt><dd><b>450</b> × 连击</dd>
-              <dt>幽灵</dt><dd><b>1万 → 2万 → 3万…</b><span class="dim">同一颗能量豆内第几只就是几万</span></dd>
+              <dt>Dot</dt><dd><b>15</b> × Combo</dd>
+              <dt>Power Pellet</dt><dd><b>75</b> × Combo</dd>
+              <dt>Mystery Fruit</dt><dd><b>450</b> × Combo</dd>
+              <dt>Ghost</dt><dd><b>10k → 20k → 30k…</b><span class="dim">the nth ghost inside one pellet is worth n × 10k</span></dd>
             </dl>
           </div>
           <div class="help-sec">
-            <h3>完整计分与参数</h3>
+            <h3>Full scoring & parameters</h3>
             <dl class="kv">
-              <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
-              <dt>全灭幽灵</dt><dd><b>10万</b>　一次能量豆内吃光全场</dd>
-              <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
-              <dt>全程无伤</dt><dd><b>15000</b></dd>
-              <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
-                <span class="dim">期间你快 15%，幽灵慢 15%</span></dd>
-              <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b></dd>
-              <dt>传送门</dt><dd>冷却 <b>0 秒</b>，落地会停一下等你选方向</dd>
-              <dt>穿墙</dt><dd><b>10 秒</b>；期间移动放慢，转向随按随到</dd>
-              <dt>幽灵融合</dt><dd>吃掉超级幽灵会放出里面那只，两只各算一档悬赏</dd>
-              <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（幽灵悬赏除外）</dd>
+              <dt>Perfect level</dt><dd><b>1500</b> × level number (9000 on Level 6)</dd>
+              <dt>Ghost sweep</dt><dd><b>100k</b>　clear every ghost within a single pellet</dd>
+              <dt>Lives left at clear</dt><dd><b>2250</b> × lives</dd>
+              <dt>Flawless run</dt><dd><b>15000</b></dd>
+              <dt>Pellet duration</dt><dd><b>9s</b> to start, shorter each level, down to <b>5s</b><br>
+                <span class="dim">you move 15% faster, ghosts 15% slower</span></dd>
+              <dt>Dash</dt><dd>5 straight tiles speeds you up to <b>1.22×</b></dd>
+              <dt>Portal</dt><dd><b>0s</b> cooldown; you pause on arrival to pick a direction</dd>
+              <dt>Phasing</dt><dd><b>10s</b>; movement slows, but turns register instantly</dd>
+              <dt>Ghost Fusion</dt><dd>eating a Super Ghost releases the one inside; both pay a bounty</dd>
+              <dt>Combo multiplier</dt><dd>multiplies everything you eat (ghost bounties excluded)</dd>
             </dl>
           </div>
 
@@ -1569,8 +1569,8 @@ body.in-game .marquee{
              自己的页面，不该当成规则的第八节。 -->
       </div>
       <!-- 渐隐影子对成年人够用，但小朋友需要一句明说的。滚到底自动消失。 -->
-      <div class="help-more" id="helpMore">↓ 下面还有</div>
-      <button class="btn" id="helpCloseBtn">知道了</button>
+      <div class="help-more" id="helpMore">↓ more below</div>
+      <button class="btn" id="helpCloseBtn">Got it</button>
     </div>
 
     <!-- 关于这个游戏。自己一个页面，从开始页那行署名点进来。
@@ -1588,43 +1588,43 @@ body.in-game .marquee{
            少了这一层包裹，点正文选个字都会把弹层关掉。
            九样东西按阅读顺序排在正常文档流里，没有一处绝对定位。 -->
       <div class="about-card" id="aboutPanel">
-        <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
+        <h2 id="aboutTitle">About Doudou Maze</h2>
         <!-- 业主 2026-08-21 定的：**一整段，不分段**，也不写任何 <br> ——
              中文该在哪儿断行由宽度决定，手写的换行只在某一个屏幕宽度上好看，
              换台设备就断在奇怪的地方。原文照抄，不要替他改写或压缩。 -->
-        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的<span class="nb">《豆豆迷宫》</span>及其6个关卡。</p>
+        <p class="about about-story">One summer my son wanted a simple, exciting game to play, so we built one together. He playtested and gave notes; I made the changes. Later his friends joined the testing, and that is how <span class="nb">Doudou Maze</span> and its six levels came to be.</p>
         <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
-        <p class="about-by">超级奶爸</p>
+        <p class="about-by">Super Dad</p>
         <hr class="about-rule">
         <!-- 只留邮箱。微信号是能直接找到本人的实名社交账号，而这个游戏是公开
              链接、还打算给小朋友传 —— 联系方式留一个够用的就行，邮箱可以随时
              不看，微信不能。 -->
-        <h3 class="about-fb-title">反馈与建议</h3>
-        <p class="about about-fb">如果你有任何建议，或在游戏中发现了问题，欢迎来信告诉我。</p>
-        <p class="about about-mail">邮箱：<a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
-        <button class="btn about-close" id="aboutCloseBtn">知道了</button>
+        <h3 class="about-fb-title">Feedback</h3>
+        <p class="about about-fb">If you have suggestions, or run into a problem, I would love to hear from you.</p>
+        <p class="about about-mail">Email: <a class="mail-link" href="mailto:2685897@qq.com">2685897@qq.com</a></p>
+        <button class="btn about-close" id="aboutCloseBtn">Got it</button>
       </div>
     </div>
 
     <div class="overlay hidden" id="overOverlay">
-      <h2 id="overTitle">游戏结束</h2>
+      <h2 id="overTitle">GAME OVER</h2>
       <div class="big-score" id="finalScore">0</div>
       <!-- 内容由 endGame 填充；这里留空，免得占位文本被误当成线上文案 -->
       <p id="overSub"></p>
       <div class="name-row hidden" id="nameRow">
         <input id="nameInput" class="name-input" type="text" maxlength="8"
-               placeholder="留下名字" autocomplete="off" spellcheck="false">
-        <button class="btn btn-sm" id="nameSaveBtn">记录</button>
+               placeholder="Your name" autocomplete="off" spellcheck="false">
+        <button class="btn btn-sm" id="nameSaveBtn">Save</button>
       </div>
       <div class="board" id="overBoard"></div>
       <div class="over-actions">
-        <button class="btn" id="restartBtn">再来一局</button>
+        <button class="btn" id="restartBtn">Play again</button>
         <!-- 小玩家的原话是"能不能从失败的那关开始"。那这个入口就该出现在她
              失败的那一刻、那一屏上，而不是让她回开始页自己找。 -->
-        <button class="btn ghost btn-share hidden" id="practiceBtn">练习这一关</button>
-        <button class="btn ghost btn-share" id="shareBtn">分享成绩</button>
+        <button class="btn ghost btn-share hidden" id="practiceBtn">Practice this level</button>
+        <button class="btn ghost btn-share" id="shareBtn">Share score</button>
       </div>
-      <div class="credits">一个爸爸和儿子一起做的小游戏</div>
+      <div class="credits">A little game made by a dad and his son</div>
     </div>
   </div>
 
@@ -1636,16 +1636,16 @@ body.in-game .marquee{
        右边那个角，并且排除在"隐藏"之外 —— 否则一按连它自己都没了，开不回来。 -->
   <div class="pad-area">
     <div class="pad-grid">
-      <button class="pad up"    data-dir="up"    aria-label="上">▲</button>
-      <button class="pad left"  data-dir="left"  aria-label="左">◀</button>
-      <button class="pad pause" id="pauseBtn" title="暂停" aria-label="暂停">
+      <button class="pad up"    data-dir="up"    aria-label="Up">▲</button>
+      <button class="pad left"  data-dir="left"  aria-label="Left">◀</button>
+      <button class="pad pause" id="pauseBtn" title="Pause" aria-label="Pause">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 6.5v11M15 6.5v11"/>
         </svg>
       </button>
-      <button class="pad right" data-dir="right" aria-label="右">▶</button>
-      <button class="pad down"  data-dir="down"  aria-label="下">▼</button>
-      <button class="pad-toggle" id="padBtn" title="隐藏方向键" aria-label="显示或隐藏方向键">
+      <button class="pad right" data-dir="right" aria-label="Right">▶</button>
+      <button class="pad down"  data-dir="down"  aria-label="Down">▼</button>
+      <button class="pad-toggle" id="padBtn" title="Hide D-pad" aria-label="Show or hide the D-pad">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path d="M9 4h6v5h5v6h-5v5H9v-5H4V9h5V4z"/>
         </svg>
@@ -1822,7 +1822,7 @@ const MAX_LEVEL = 6;
    六关本来只有"比上一关难一点"的区别，玩家记不住任何一关。名字挑的是**这一关
    真正新增的那件事**，不是形容词：第 2 关多一只追击者、第 3 关满图传送门、
    第 6 关七只幽灵且恐惧只剩 5 秒。这样名字就是提示，不是装饰。 */
-const LEVEL_NAMES = ['初入迷宫', '猎手苏醒', '虫洞交错', '四面围猎', '极速追击', '终极迷宫'];
+const LEVEL_NAMES = ['First Steps', 'Hunters Awake', 'Wormholes', 'Surrounded', 'Full Speed', 'Final Maze'];
 function levelName(lvl){ return LEVEL_NAMES[(Math.max(1,lvl)-1) % LEVEL_NAMES.length]; }
 
 /* ---------- 开关前的关卡卡片 ----------
@@ -2084,24 +2084,24 @@ const HOUSE_DOOR = {x:9, y:8};
 const HOUSE_EXIT_TILE = {x:9, y:7};
 
 const GHOST_DEFS = [
-  {id:'chaser',  color:'--danger', label:'追击者'},
-  {id:'ambush',  color:'--pink',   label:'伏击者'},
-  {id:'shy',     color:'--tang',   label:'怕生鬼'},
-  {id:'patrol',  color:'--cyan',   label:'巡逻者'},
+  {id:'chaser',  color:'--danger', label:'Chaser'},
+  {id:'ambush',  color:'--pink',   label:'Ambusher'},
+  {id:'shy',     color:'--tang',   label:'Shy One'},
+  {id:'patrol',  color:'--cyan',   label:'Patroller'},
 ];
 
 // 5th ghost, joins from level 2 on: a second chaser. Same id so every
 // id-keyed lookup (targeting AI, color) treats it exactly like the first,
 // but flagged `flank` so it aims beside the player instead of at them.
-const EXTRA_CHASER_DEF = {id:'chaser', color:'--danger', label:'追击者', flank:true};
+const EXTRA_CHASER_DEF = {id:'chaser', color:'--danger', label:'Chaser', flank:true};
 const FLANK_OFFSET_TILES = 4;
 
 // 6th ghost (level 3+): an ambusher that reads much further ahead, so it cuts
 // you off well before the regular ambusher would.
-const EXTRA_AMBUSH_DEF = {id:'ambush', color:'--pink', label:'伏击者', lookahead:7};
+const EXTRA_AMBUSH_DEF = {id:'ambush', color:'--pink', label:'Ambusher', lookahead:7};
 // 7th ghost (final level only): a patroller running the loop backwards, so the
 // two patrollers sweep opposite halves instead of trailing each other.
-const EXTRA_PATROL_DEF = {id:'patrol', color:'--cyan', label:'巡逻者', reverseRoute:true};
+const EXTRA_PATROL_DEF = {id:'patrol', color:'--cyan', label:'Patroller', reverseRoute:true};
 
 /** Roster grows with the level: 4 -> 5 (L2) -> 6 (L3) -> 7 (final). */
 function ghostDefsForLevel(lvl){
@@ -2637,7 +2637,7 @@ function checkPortal(ent){
         Audio2.warp();
         // 第一次用到才讲。写在说明里没人看，而这一刻他刚被传走，正想知道
         // 发生了什么 —— 同一句话在这个时候的效果，比放在文档里高得多。
-        hintOnce('portal', '传送门：四角成对，颜色相同的两个互通', 500);
+        hintOnce('portal', 'Portals: paired at the four corners — matching colors link up', 500);
       }
       return;
     }
@@ -3035,7 +3035,7 @@ function addPelletScore(base){
      它在动，不知道它值钱。等第一次真的连起来（x5）再说，比开局塞一行字有用：
      这时候他刚做出这个行为，一句话就能把"我刚才干了什么"和"为什么加分多"
      对上号。 */
-  if (combo === 5) hintOnce('combo', '连击 x5！不停嘴，所有得分都乘这个倍率', 0);
+  if (combo === 5) hintOnce('combo', 'Combo x5! Keep eating — every point is multiplied', 0);
   checkComboMilestone();
   updateHud();
 }
@@ -3060,7 +3060,7 @@ function checkComboMilestone(){
       comboMilestoneHit = m;
       Audio2.comboMilestone(m);
       // 只在够高的两档给一句话，x10/x25 光靠声音就够了，不打扰
-      if (m >= 50) toast(`连击 x${m}！`);
+      if (m >= 50) toast(`Combo x${m}!`);
     }
   }
 }
@@ -3109,7 +3109,7 @@ function checkPowerPelletNearby(){
     for (let x = px-r; x <= px+r; x++){
       if (tileAt(x, y) !== 'o') continue;
       if (Math.hypot(x-player.x, y-player.y) <= POWER_HINT_TILES){
-        hintOnce('power', '大颗的能量豆：吃掉它，就能反过来吃幽灵', 0);
+        hintOnce('power', 'The big power pellet: eat it and you can eat the ghosts instead', 0);
         return;
       }
     }
@@ -3233,7 +3233,7 @@ function eatPelletAt(x,y){
     triggerChomp();
     startPowerMode();
     ghostEatChain = 0;
-    toast('能量豆！幽灵受惊 ×' + combo);
+    toast('Power pellet! Ghosts scared ×' + combo);
     Audio2.power();
   }
 }
@@ -3415,11 +3415,11 @@ function handleGhostCollisions(){
       g.eatenThisFright = true;   // 这轮不能再吃第二次，见 isEdible
       ghostsEatenThisRun++;       // 结算页要报这一局吃了几只
       applySpeedModifiers();
-      toast((wasHost?'超级幽灵! +':'幽灵! +') + fmtNum(pts));
+      toast((wasHost?'Super Ghost! +':'Ghost! +') + fmtNum(pts));
       /* 悬赏是阶梯式的，可玩家第一次只看到"+10,000"这一个数，没法知道它会往上
          涨 —— 而"要不要冒险再追一只"正是这套设计想让他做的决定。晚 1.4 秒发，
          让上面那条加分先显示完，别把两条消息挤成一条。 */
-      hintOnce('bounty', '同一颗能量豆里：第 2 只 2 万，第 3 只 3 万，越吃越值钱', 1400);
+      hintOnce('bounty', 'Within one pellet: the 2nd ghost is 20k, the 3rd is 30k — they keep getting richer', 1400);
       updateHud();
       Audio2.eatGhost(ghostEatChain);
 
@@ -3433,7 +3433,7 @@ function handleGhostCollisions(){
       if (ghostEatChain >= ghosts.length){
         sweepsThisRun++;
         Audio2.sweep();
-        toast('全灭幽灵！+' + fmtNum(awardBonus('全灭幽灵', BONUS.GHOST_SWEEP, true)));
+        toast('Ghost sweep! +' + fmtNum(awardBonus('Ghost sweep', BONUS.GHOST_SWEEP, true)));
       }
     } else if (invuln<=0){
       loseLife();
@@ -3456,7 +3456,7 @@ function handleFusion(){
          记一个时间戳，让 drawGhost 在接下来半秒里自己放大、闪一下白光；
          游戏一帧都不停，孩子却看得见"咦，它俩合体了"。 */
       a.fuseFlashUntil = elapsed + 0.5;
-      toast('幽灵融合！超级幽灵出现');
+      toast('Ghost fusion! A Super Ghost appears');
       Audio2.fusion();
       return;
     }
@@ -3528,7 +3528,7 @@ function loseLife(){
   deathFlash = DEATH_FLASH_SECONDS;
   deathPause = DEATH_PAUSE_SECONDS;
   // 第一次死掉的那一刻，正是最想知道"还能怎么办"的时候
-  hintOnce('power', '吃大颗的能量豆，可以反过来吃幽灵！', 900);
+  hintOnce('power', 'Eat the big power pellet and you can eat the ghosts!', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
   player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0; player.warpStandingOn=null;
@@ -3738,7 +3738,7 @@ const LEGACY_SCORE_KEY = 'doudou.scores.v1';
 const NAME_KEY = 'doudou.name';
 const BOARD_SIZE = 8;
 const NAME_MAX = 8;
-const DEFAULT_NAME = '无名豆豆';
+const DEFAULT_NAME = 'Anonymous';
 
 /**
  * v1 rows were earned before SCORE_MULT existed, so ranking them against new
@@ -3861,10 +3861,10 @@ function renderLevelSelect(){
   const top = maxLevelReached();
   if (top < 2){ el.classList.add('hidden'); return; }
   el.classList.remove('hidden');
-  let html = '<span class="levelsel-k">练习</span>';
+  let html = '<span class="levelsel-k">Practice</span>';
   for (let i = 1; i <= MAX_LEVEL; i++){
     const locked = i > top;
-    html += `<button class="lv" data-lv="${i}"${locked ? ' disabled aria-label="未解锁"' : ` title="练习第 ${i} 关 · ${levelName(i)}"`}>`
+    html += `<button class="lv" data-lv="${i}"${locked ? ' disabled aria-label="Locked"' : ` title="PracticeLv.${i} · ${levelName(i)}"`}>`
           + (locked ? '🔒' : i) + '</button>';
   }
   el.innerHTML = html;
@@ -3889,7 +3889,7 @@ function renderWelcome(){
   if (!el) return;
   let played = false;
   try { played = loadScores().length > 0; } catch (e) {}
-  el.textContent = played ? '欢迎回来，再闯一次迷宫吧。' : '准备好了吗？一起出发吧。';
+  el.textContent = played ? 'Welcome back. One more run?' : 'Ready? Let us go.';
 
   /* 老玩家不再显示"滑动转向 · 吃光豆子即可过关"。
      他早就会走了，而这一行占掉的高度，正是那句故事需要的 —— 有纪录的人屏幕上
@@ -3913,8 +3913,8 @@ function renderBest(){
   const c = bestCombo();
   /* 「你的最高纪录」而不是 BEST：中文、而且带一个"你的" —— 这是他自己的成绩，
      不是一块公共排行榜上的数字。街机感由「投币」和字体扛着，够了。 */
-  el.innerHTML = `<span class="best-k">你的最高纪录</span> <span class="best-v">${fmtNum(b)}</span>`
-    + (c > 1 ? ` <span class="best-combo">最高连击 x${c}</span>` : '');
+  el.innerHTML = `<span class="best-k">YOUR BEST</span> <span class="best-v">${fmtNum(b)}</span>`
+    + (c > 1 ? ` <span class="best-combo">Best combo x${c}</span>` : '');
 }
 
 /* 榜单是不是展开着。放在模块级而不是 DOM 上：开始页和结算页共用这一个
@@ -3953,27 +3953,27 @@ function renderScoreboard(elId, highlightId){
          拼上去的话读出来就是"超级奶爸新"，看着像名字的一部分或者程序出错。
          只标刚刚打出来的那一条：justAddedId 存在内存里，刷新或开下一局就没了，
          所以旧纪录永远不会挂着"新"。 */
-      (r.id === justAddedId ? '<span class="board-new">新</span>' : '') +
+      (r.id === justAddedId ? '<span class="board-new">NEW</span>' : '') +
       `<span class="board-score">${fmtNum(r.score)}</span>` +
-      `<span class="board-meta">${r.won ? '通关' : '第'+r.level+'关'} · x${r.combo}</span>` +
+      `<span class="board-meta">${r.won ? 'Clear' : 'Lv.'+r.level} · x${r.combo}</span>` +
     '</div>';
 
   el.innerHTML =
     /* 叫「本机纪录」不叫「排行榜」：数据只在 localStorage 里，
        换台电脑、清个缓存就没了。叫排行榜会让玩家以为是全网共用的在线榜单，
        进而以为自己在和别人比 —— 那是个不存在的承诺。 */
-    '<div class="board-title">本机纪录</div>' +
+    '<div class="board-title">LOCAL SCORES</div>' +
     /* 只有**行**这一段滚，标题和「查看全部纪录」固定在外面。
        原来整块一起滚：屏幕一矮，榜单被压到 70px，那个展开按钮就跟着滚到看不见的
        地方 —— 一个看不见的展开入口等于没有。 */
     '<div class="board-list">' + shown.map(row).join('') + '</div>' +
     (more ? `<button class="board-more" data-board="${elId}">`
-          + (boardExpanded ? '收起纪录' : `查看全部纪录（${list.length}）`)
+          + (boardExpanded ? 'Collapse' : `View all (${list.length})`)
           + '</button>' : '') +
     /* 「纪录只保存在当前浏览器」只在摊开时说。
        收起时上面就写着「本机纪录」，已经说明了同一件事；而开始页的每一行都在
        跟那句故事抢高度 —— 同一个意思占两行，让位的该是重复的那一行。 */
-    (boardExpanded || !more ? '<div class="board-note">纪录只保存在当前浏览器</div>' : '');
+    (boardExpanded || !more ? '<div class="board-note">Scores are saved in this browser only</div>' : '');
 
   /* 展开/收起。用事件委托挂在容器上，因为这段 innerHTML 每次都整体重建，
      直接给按钮挂监听会在下一次渲染时连按钮一起丢掉。
@@ -4017,8 +4017,8 @@ function endGame(won){
     // The per-level "no damage" bonus is deliberately NOT awarded here: the
     // level-clear path already grants it before calling endGame, and doing it
     // again paid the final level twice.
-    if (lives > 0) awardBonus(`剩余生命 ×${lives}`, BONUS.LIFE_LEFT * lives);
-    if (deathsThisRun === 0) awardBonus('全程无伤通关', BONUS.FLAWLESS_RUN);
+    if (lives > 0) awardBonus(`Lives left ×${lives}`, BONUS.LIFE_LEFT * lives);
+    if (deathsThisRun === 0) awardBonus('Flawless run', BONUS.FLAWLESS_RUN);
   }
 
   /* 练习整局不计分：不入榜、不动最高分、不评级、不放礼花。
@@ -4043,10 +4043,10 @@ function endGame(won){
   if (won) Audio2.victory(); else if (isNewBest) Audio2.newBest(); else Audio2.gameOver();
   const practiceCleared = practice && pelletsLeft <= 0;
   document.getElementById('overTitle').textContent =
-      practiceCleared ? ('练习完成 · 第 ' + level + ' 关')
-    : practice        ? ('练习结束 · 第 ' + level + ' 关')
-    : won             ? ('通关！全 ' + MAX_LEVEL + ' 关')
-    :                   '游戏结束';
+      practiceCleared ? ('Practice complete · Level ' + level)
+    : practice        ? ('Practice over · Level ' + level)
+    : won             ? ('CLEARED! All ' + MAX_LEVEL + ' levels')
+    :                   'GAME OVER';
   lastFinalScore = score;
   document.getElementById('finalScore').textContent = fmtNum(score);
   document.getElementById('overSub').innerHTML =
@@ -4076,7 +4076,7 @@ function endGame(won){
   if (pb){
     const offer = !practice && !won && level > 1;
     pb.classList.toggle('hidden', !offer);
-    pb.textContent = offer ? `练习第 ${level} 关` : '练习这一关';
+    pb.textContent = offer ? `Practice Lv.${level}` : 'Practice this level';
     /* 关卡号存在变量里，不写 dataset —— 微信两个版本的元素是垫片造的假节点，
        上面**没有 dataset**，赋值会直接抛异常。而这行在 endGame 里，一抛就是
        "死一条命后黑屏"那种表现。同样的坑之前踩过一次（roundRect）。 */
@@ -4091,8 +4091,8 @@ function endGame(won){
 let lastRunId = null;
 const NAME_ROW_HTML =
   '<input id="nameInput" class="name-input" type="text" maxlength="8" ' +
-  'placeholder="留下名字" autocomplete="off" spellcheck="false">' +
-  '<button class="btn btn-sm" id="nameSaveBtn">记录</button>';
+  'placeholder="Your name" autocomplete="off" spellcheck="false">' +
+  '<button class="btn btn-sm" id="nameSaveBtn">Save</button>';
 
 function commitName(){
   const input = document.getElementById('nameInput');
@@ -4103,7 +4103,7 @@ function commitName(){
   renameScore(lastRunId, name);
   renderScoreboard('overBoard', lastRunId);
   document.getElementById('nameRow').innerHTML =
-    `<div class="name-done">已记录为 ${name}</div>`;
+    `<div class="name-done">Saved as ${name}</div>`;
 }
 
 function bindNameRow(){
@@ -4159,14 +4159,14 @@ function gradeRun(){
 function buildPracticeSummary(cleared){
   const lines = [];
   lines.push('<div class="sum-grid">'
-    + `<div class="sum-row"><span class="sum-k">关卡</span> <span class="sum-v">第 ${level} 关 · ${levelName(level)}</span></div>`
-    + `<div class="sum-row"><span class="sum-k">最高连击</span> <span class="sum-v">x${maxComboSeen}</span></div>`
-    + `<div class="sum-row"><span class="sum-k">幽灵击杀</span> <span class="sum-v">${ghostsEatenThisRun} 只</span></div>`
+    + `<div class="sum-row"><span class="sum-k">LEVEL</span> <span class="sum-v">Lv.${level} · ${levelName(level)}</span></div>`
+    + `<div class="sum-row"><span class="sum-k">Best combo</span> <span class="sum-v">x${maxComboSeen}</span></div>`
+    + `<div class="sum-row"><span class="sum-k">Ghosts eaten</span> <span class="sum-v">${ghostsEatenThisRun}</span></div>`
     + '</div>');
   lines.push(cleared
-    ? '<span style="color:var(--cyan)">这一关拿下了，回去正式挑战试试</span>'
-    : '<span style="color:var(--amber)">再练一次，或者回去正式挑战</span>');
-  lines.push('<span class="bonus-hint">练习不计分，也不进本机纪录</span>');
+    ? '<span style="color:var(--cyan)">Level cleared — now try it in a real run</span>'
+    : '<span style="color:var(--amber)">Practice again, or go for a real run</span>');
+  lines.push('<span class="bonus-hint">Practice runs are not scored and never enter the leaderboard</span>');
   return lines.join('<br>');
 }
 
@@ -4179,18 +4179,18 @@ function buildSummary(won, rank, prevBest, isNewBest){
   // 通关才评级：半路死掉评个 C 只是补一刀，没有任何用处
   if (won){
     const gd = gradeRun();
-    lines.push(`<div class="grade grade-${gd}"><span class="grade-k">评级</span>`
+    lines.push(`<div class="grade grade-${gd}"><span class="grade-k">GRADE</span>`
              + `<span class="grade-v">${gd}</span></div>`);
   }
 
   const stats = [
-    ['到达关卡', won ? `全 ${MAX_LEVEL} 关通关` : `第 ${level} 关 · ${levelName(level)}`],
-    ['最高连击', `x${maxComboSeen}`],
-    ['幽灵击杀', `${ghostsEatenThisRun} 只`],
+    ['Reached', won ? `All ${MAX_LEVEL} levels cleared` : `Lv.${level} · ${levelName(level)}`],
+    ['Best combo', `x${maxComboSeen}`],
+    ['Ghosts eaten', `${ghostsEatenThisRun}`],
   ];
-  if (won) stats.push(['无伤关卡', `${perfectLevelsThisRun} / ${MAX_LEVEL}`]);
-  if (sweepsThisRun) stats.push(['全灭幽灵', `${sweepsThisRun} 次`]);
-  if (prevBest > 0)  stats.push(['最高纪录', fmtNum(prevBest)]);
+  if (won) stats.push(['Perfect levels', `${perfectLevelsThisRun} / ${MAX_LEVEL}`]);
+  if (sweepsThisRun) stats.push(['Ghost sweep', `${sweepsThisRun}`]);
+  if (prevBest > 0)  stats.push(['Best', fmtNum(prevBest)]);
   /* 每一行**必须**自己包一个 div，不能把 span 直接摊在网格里。
      微信那两个版本读的是 stripTags 之后的纯文本，而 stripTags 只把 <br> 和
      </div> 换成换行，<span> 是直接删掉的 —— 摊着写出来就是
@@ -4205,24 +4205,24 @@ function buildSummary(won, rank, prevBest, isNewBest){
   if (runBonuses.length){
     const total = runBonuses.reduce((s,b)=>s+b.points, 0);
     const detail = runBonuses.map(b=>`${b.label} +${fmtNum(b.points)}`).join('　');
-    lines.push(`<span style="color:var(--amber)">奖励分 +${fmtNum(total)}</span><br>${detail}`);
+    lines.push(`<span style="color:var(--amber)">Bonus +${fmtNum(total)}</span><br>${detail}`);
   }
   /* 结算页最后必须留下一个**再来一局的理由**。
      "没能进前 8 名，再来一局"是句空话——它没告诉玩家差多少、也没给目标。
      换成跟自己纪录的距离：破了就大声说，没破就报差额。差额是个具体的、
      看得见够得着的数，比名次更能让人手指头再点一次「再来一局」。 */
   if (isNewBest && prevBest > 0){
-    lines.push(`<span class="new-best">🎉 新纪录！比上次高 ${fmtNum(score - prevBest)} 分</span>`);
+    lines.push(`<span class="new-best">🎉 New best! ${fmtNum(score - prevBest)} higher than before</span>`);
   } else if (isNewBest){
-    lines.push(`<span class="new-best">🎉 第一条纪录，就是它了</span>`);
+    lines.push(`<span class="new-best">🎉 First score on the board</span>`);
   } else if (score === prevBest){
     // 打平要单独说：写成"差 0 分打破自己的纪录"读着像出了 bug。
     // 挑战那边早先修过一模一样的问题，这是同一类。
-    lines.push('<span style="color:var(--amber)">和自己的纪录打平，一分不差</span>');
+    lines.push('<span style="color:var(--amber)">Tied your own best, exactly</span>');
   } else {
-    lines.push(`<span style="color:var(--amber)">差 ${fmtNum(prevBest - score)} 分打破自己的纪录</span>`);
+    lines.push(`<span style="color:var(--amber)">${fmtNum(prevBest - score)} short of your own best</span>`);
   }
-  if (rank > 0) lines.push(`<span class="bonus-hint">本机纪录第 ${rank} 名，留下你的名字</span>`);
+  if (rank > 0) lines.push(`<span class="bonus-hint">#${rank} on this device — leave your name</span>`);
 
   /* 六关全通才出现的一句话。
    *
@@ -4235,7 +4235,7 @@ function buildSummary(won, rank, prevBest, isNewBest){
    *     再堆形容词只会把它变轻。
    */
   if (won){
-    lines.push('<span class="warm">这游戏最早只是儿子的一个念头，谢谢你把它玩到最后。</span>');
+    lines.push('<span class="warm">This game began as an idea my son had. Thank you for playing it all the way through.</span>');
   }
 
   /* 收到挑战时，结算页第一件事就是回答"我超了没" —— 这是对方发链接给你的
@@ -4243,9 +4243,9 @@ function buildSummary(won, rank, prevBest, isNewBest){
   if (challenge){
     const diff = score - challenge.score;
     // 平局单独说一句：写成"超过 0 分"读着像出了 bug
-    const line = diff > 0 ? `<span style="color:var(--cyan)">超过${challenge.name} ${fmtNum(diff)} 分，赢了！</span>`
-               : diff === 0 ? `<span style="color:var(--amber)">和${challenge.name}打平，一分不差</span>`
-               : `<span style="color:var(--danger)">离${challenge.name}还差 ${fmtNum(-diff)} 分</span>`;
+    const line = diff > 0 ? `<span style="color:var(--cyan)">Beat ${challenge.name} by ${fmtNum(diff)} — you win!</span>`
+               : diff === 0 ? `<span style="color:var(--amber)">Tied ${challenge.name} exactly</span>`
+               : `<span style="color:var(--danger)">${fmtNum(-diff)} behind ${challenge.name}</span>`;
     lines.unshift(line);
   }
   return lines.join('<br>');
@@ -4292,7 +4292,7 @@ function updateHud(){
     '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 3 A7 7 0 1 1 3 12 L10 17 L17 12 A7 7 0 0 1 10 3 Z" fill="'+cssVar('--amber')+'"/></svg>'
   ).join('');
   const cl = document.getElementById('comboLabel');
-  cl.textContent = '连击 x' + combo;
+  cl.textContent = 'Combo x' + combo;
   /* 连击的画面反馈**只在 HUD 上**：玩家这时候正贴着幽灵跑，在迷宫上糊特效
      等于害他送命。一行字变个色，看得见又挡不着。 */
   /* 连击涨一级就轻轻弹一下。只加一个 class，动画交给 CSS：
@@ -4327,7 +4327,7 @@ function updateFruit(dt){
     addScore(300*combo);
     sustainCombo();   // 水果原先只拿 combo 当倍率却不续期，等于只吃不喂
     player.phase = FRUIT_PHASE_SECONDS;
-    toast('神秘水果！' + FRUIT_PHASE_SECONDS + ' 秒穿墙');
+    toast('Mystery fruit! ' + FRUIT_PHASE_SECONDS + 's of wall phasing');
     Audio2.fruit();
   }
 }
@@ -4509,7 +4509,7 @@ function paintMute(){
   document.getElementById('soundWaves').toggleAttribute('hidden', muted);
   document.getElementById('soundCross').toggleAttribute('hidden', !muted);
   muteBtn.classList.toggle('off', muted);
-  muteBtn.title = muted ? '取消静音' : '静音';
+  muteBtn.title = muted ? 'Unmute' : 'Mute';
 }
 muteBtn.addEventListener('click', ()=>{
   Audio2.unlock();
@@ -4529,7 +4529,7 @@ const padBtn = document.getElementById('padBtn');
 function setPadHidden(hidden){
   cabinet.classList.toggle('pad-hidden', hidden);
   padBtn.classList.toggle('off', hidden);
-  padBtn.title = hidden ? '显示方向键' : '隐藏方向键';
+  padBtn.title = hidden ? 'Show D-pad' : 'Hide D-pad';
   try { localStorage.setItem(PAD_KEY, hidden ? '1' : '0'); } catch {}
 }
 padBtn.addEventListener('click', ()=>{
@@ -4698,10 +4698,10 @@ function challengeURL(){
 }
 
 function shareText(){
-  const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
+  const won = document.getElementById('overTitle').textContent.indexOf('CLEARED') >= 0;
   const s = fmtNum(lastFinalScore);
-  const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！敢不敢来超？`
-                   : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
+  const head = won ? `I cleared all 6 levels of Doudou Maze with ${s} points! Think you can beat that?`
+                   : `I scored ${s} in Doudou Maze. Want to try?`;
   return head + '\n' + challengeURL();
 }
 
@@ -4712,7 +4712,7 @@ let challenge = null;
     const q = new URL(location.href).searchParams;
     const sc = Number(q.get('c'));
     if (Number.isFinite(sc) && sc > 0){
-      challenge = { score: sc, name: cleanName(q.get('n') || '') || '一位朋友' };
+      challenge = { score: sc, name: cleanName(q.get('n') || '') || 'A friend' };
     }
   } catch (e) { /* 链接畸形就当没有挑战 */ }
 })();
@@ -4724,7 +4724,7 @@ let challenge = null;
 function setChallenge(score, name){
   const sc = Number(score);
   if (!Number.isFinite(sc) || sc <= 0){ challenge = null; return null; }
-  challenge = { score: sc, name: cleanName(name || '') || '一位朋友' };
+  challenge = { score: sc, name: cleanName(name || '') || 'A friend' };
   renderChallengeBanner();
   return challenge;
 }
@@ -4734,22 +4734,22 @@ function renderChallengeBanner(){
   const box = document.getElementById('challengeBox');
   if (!box) return;
   box.classList.remove('hidden');
-  box.innerHTML = `<b>${challenge.name}</b> 向你挑战`
-    + `<span class="ch-score">${fmtNum(challenge.score)}</span>分`;
+  box.innerHTML = `<b>${challenge.name}</b>  challenges you with `
+    + `<span class="ch-score">${fmtNum(challenge.score)}</span>`;
 }
 
 document.getElementById('shareBtn').addEventListener('click', async ()=>{
   const btn = document.getElementById('shareBtn');
   const text = shareText();
-  const done = (msg)=>{ btn.textContent = msg; setTimeout(()=>btn.textContent='分享成绩', 1800); };
+  const done = (msg)=>{ btn.textContent = msg; setTimeout(()=>btn.textContent='Share score', 1800); };
   try {
     if (navigator.share){ await navigator.share({ text }); return; }
-    if (navigator.clipboard){ await navigator.clipboard.writeText(text); done('已复制'); return; }
+    if (navigator.clipboard){ await navigator.clipboard.writeText(text); done('Copied'); return; }
     throw new Error('no share api');
   } catch (e) {
     // 用户自己取消分享也会走到这里，那种情况什么都不该提示
     if (e && e.name === 'AbortError') return;
-    done('请手动复制');
+    done('Copy manually');
   }
 });
 (function(){
@@ -4830,7 +4830,7 @@ function autoPause(){
   gameState = 'paused';
   document.getElementById('pauseOverlay').classList.remove('hidden');
   const why = document.getElementById('pauseWhy');
-  if (why) why.textContent = '你切走了，游戏替你按了暂停　按 P / Enter 或点「继续游戏」';
+  if (why) why.textContent = 'You switched away, so we paused for you.　Press P / Enter or tap Resume';
 }
 
 document.addEventListener('visibilitychange', ()=>{ if (document.hidden) autoPause(); });
@@ -4850,7 +4850,7 @@ function togglePause(){
     if (pausedByBlur){
       pausedByBlur = false;
       const why = document.getElementById('pauseWhy');
-      if (why) why.textContent = '按 P、Enter 或点「继续游戏」回到游戏';
+      if (why) why.textContent = 'Press P, Enter, or tap Resume to get back in';
     }
   }
 }
@@ -4944,7 +4944,7 @@ function update(dt){
   /* 冲刺是全场最隐形的一条规则：速度确实在涨，但玩家只看到自己身后多了道尾巴，
      没人会把它和"直着走别拐弯"联系起来。等他第一次真的冲到满速，再告诉他这是
      怎么来的 —— 那时候屏幕上正好有他自己造出来的证据。 */
-  if (wind >= 0.999) hintOnce('dash', '冲刺：直线连走不拐弯会越跑越快', 0);
+  if (wind >= 0.999) hintOnce('dash', 'Dash: run straight without turning and you keep speeding up', 0);
   /* 尾迹按**距离**采样，不按帧。
      原来是每帧存一个点，最多 7 个 —— 第六关满冲刺是 8.37 格/秒，60 帧下相邻两点
      只差 0.14 格，七个点总共铺开 0.84 格，正好等于吃豆人自己的直径。那不是一条
@@ -5002,7 +5002,7 @@ function update(dt){
   if (pelletsLeft<=0){
     // Award before resetLevel(), which clears the per-level counters this reads.
     const perfect = deathsThisLevel === 0;
-    if (perfect){ perfectLevelsThisRun++; awardBonus(`第 ${level} 关无伤`, BONUS.PERFECT_LEVEL * level); }
+    if (perfect){ perfectLevelsThisRun++; awardBonus(`Lv.${level} perfect`, BONUS.PERFECT_LEVEL * level); }
     const earned = levelBonuses.slice();
 
     /* 练习只打这一关。清掉之后直接进结算，**不推进到下一关**——
@@ -5019,7 +5019,7 @@ function update(dt){
     /* 卡片报"是哪一关"，toast 报"拿到了什么"，两者不重复。
        关名已经在卡片上大字写着了，toast 里就不再念一遍。 */
     const extra = earned.length ? '　' + earned.map(b=>b.label+' +'+fmtNum(b.points)).join('　') : '';
-    toast('生命 +1' + extra);
+    toast('Life +1' + extra);
     Audio2.levelUp();
   }
 }
