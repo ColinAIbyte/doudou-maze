@@ -1,4 +1,4 @@
-// 「关于《豆豆迷宫》」这一页的行为。
+// 「关于 Neon Maze」这一页的行为。
 //   用法: node test_about.mjs
 //
 // 这一页的规矩里有一条**和玩法说明相反**：说明关掉会接着打，关于关掉停在暂停、
@@ -22,7 +22,7 @@ if (aboutStart < 0 || aboutEnd < 0){
 } else {
   const panel = src.slice(aboutStart - 200, aboutEnd);
   const need = [
-    ['标题是「关于《豆豆迷宫》」', '关于《豆豆迷宫》'],
+    ['标题是「关于 Neon Maze」',   '关于 Neon Maze'],
     ['无障碍：role=dialog',        'role="dialog"'],
     ['无障碍：aria-modal',         'aria-modal="true"'],
     // tabindex="-1" 是"焦点能移进来"的前提：没有它 focus() 对 div 无效
@@ -35,7 +35,7 @@ if (aboutStart < 0 || aboutEnd < 0){
   // 作者原文，逐句核
   for (const line of ['暑期，儿子想玩一款简单刺激的小游戏', '于是我们一起把它做出来',
                       '他负责试玩和提意见', '其它小朋友也加入试玩队伍',
-                      '及其6个关卡',
+                      '这 6 个关卡',
                       '超级奶爸',
                       '反馈与建议', '如果你有任何建议，或在游戏中发现了问题',
                       '邮箱']){
@@ -44,7 +44,7 @@ if (aboutStart < 0 || aboutEnd < 0){
   /* 阅读顺序：标题 → 故事 → 落款 → 反馈。
      这条得单独钉住 —— 顺序是"改了也照样能跑"的东西，而它恰恰是作者亲自
      指定的版式（中途还改错过一次：一度被放到标题下面当副标题）。 */
-  const iTitle = panel.indexOf('关于《豆豆迷宫》');
+  const iTitle = panel.indexOf('关于 Neon Maze');
   const iBody  = panel.indexOf('暑期，儿子想玩一款简单刺激的小游戏');
   const iBy    = panel.indexOf('about-by');
   const iFb    = panel.indexOf('反馈与建议');
@@ -133,7 +133,7 @@ ${body}
    get gameState(){return gameState;}, set gameState(v){gameState=v;},
    get player(){return player;} };\n}\n`);
 
-const { installShim } = await import(new URL('../../微信小游戏版/js/shim.js', import.meta.url));
+const { installShim } = await import(new URL('../微信小游戏版/js/shim.js', import.meta.url));
 const shim = installShim({ maze:fakeCanvas(), fx:fakeCanvas(1,1) });
 const { createGame } = await import(mp);
 const g = createGame(shim.env);

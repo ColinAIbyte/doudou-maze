@@ -43,7 +43,7 @@ ${body}
    set score(v){score=v;}, set level(v){level=v;}, set lives(v){lives=v;},
    set gameState(v){gameState=v;} };\n}\n`);
 
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);
@@ -53,7 +53,7 @@ const el=shim.el; const fail=[];
 store.clear();
 g.renderWelcome();
 const first = el('welcomeLine').textContent;
-if (!/准备好了吗/.test(first)) fail.push(`第一次打开该说"准备好了吗"，实得「${first}」`);
+if (!/豆豆已就位/.test(first)) fail.push(`第一次打开该说"豆豆已就位"，实得「${first}」`);
 
 g.recordScore({ score:1000, level:1, combo:3, won:false, name:'豆豆' });
 g.renderWelcome();
@@ -120,9 +120,9 @@ if (!/128,650/.test(best)) fail.push('最高分数字没了或没加千分位');
 // ---------- 五、开始页那句故事（源码级接线）----------
 const src = html;
 const wire = [
-  ['关于入口在开始页',   /id="storyLine"[^>]*>\s*怀旧游戏/],
+  ['关于入口在开始页',   /id="storyLine"[^>]*>\s*原创霓虹迷宫/],
   ['故事那句可点开关于', /\['aboutBtn', 'storyLine'\]/],
-  ['欢迎语在投币下面',   /<h2>投币<\/h2>[\s\S]{0,600}?id="welcomeLine"/],
+  ['欢迎语在标题下面',   /<h2>NEON READY<\/h2>[\s\S]{0,900}?id="welcomeLine"/],
   ['故事在按钮下面',     /id="startBtn"[\s\S]{0,800}?id="storyLine"/],
 ];
 for (const [what, re] of wire){

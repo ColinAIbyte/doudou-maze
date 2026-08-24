@@ -66,7 +66,7 @@ writeFileSync(modPath, `export function createGame(){\n${bodyJs}\n
            get pelletsLeft(){return pelletsLeft;}, get frightTimer(){return frightTimer;},
            get combo(){return combo;} };\n}\n`);
 
-const { installShim } = await import(here('../../微信小游戏版/js/shim.js'));
+const { installShim } = await import(here('../微信小游戏版/js/shim.js'));
 installShim({ maze: fakeCanvas(), fx: fakeCanvas(1,1) });
 const { createGame } = await import(modPath);
 const g = createGame();

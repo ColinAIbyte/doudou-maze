@@ -12,11 +12,13 @@
 // 四节、参数全是旧值 —— 没有传送门冷却、没有连击断线时间、能量豆还写着"自己还
 // 会加速"。而三份说明的注释里都写着"改一处记得改另一处"。被测到的两份一直对得
 // 上，没被测的那份烂掉了：靠注释提醒自己不管用，这就是证据。
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const src  = readFileSync(new URL('../pacman_fragment.html', import.meta.url), 'utf8');
-const ui   = readFileSync(new URL('../../微信小游戏版/js/ui.js', import.meta.url), 'utf8');
-const wxml = readFileSync(new URL('../../微信小程序版/pages/game/game.wxml', import.meta.url), 'utf8');
+const ui   = readFileSync(new URL('../微信小游戏版/js/ui.js', import.meta.url), 'utf8');
+const wxmlUrl = new URL('../../微信小程序版/pages/game/game.wxml', import.meta.url);
+const hasWxml = existsSync(wxmlUrl);
+const wxml = hasWxml ? readFileSync(wxmlUrl, 'utf8') : '';
 
 /* 只在**说明那一段**里找，不能在整个文件里找。
    第一版就是拿整个文件搜的，结果 `const COMBO_WINDOW = 2.4;` 这行常量声明
@@ -60,22 +62,22 @@ const expect = [
   // 词条和数值之间隔着 </dt><dd> 之类的标签，所以用有界的任意字符，
   // 不能用 [^<]*（跨不过标签），也不能用 [\\s\\S]*（会一路匹配到别人家去）
   ['豆子',       `豆子[\\s\\S]{0,20}?<b>\uFFFF</b>`,     10 * MULT],
-  ['能量豆分数', `能量豆[\\s\\S]{0,20}?<b>\uFFFF</b>`,    50 * MULT],
-  ['水果',       `神秘水果[\\s\\S]{0,40}?<b>\uFFFF</b>`, 300 * MULT],
+  ['能量星分数', `能量星[\\s\\S]{0,20}?<b>\uFFFF</b>`,    50 * MULT],
+  ['相位晶石',   `相位晶石[\\s\\S]{0,40}?<b>\uFFFF</b>`, 300 * MULT],
   ['整关无伤',   `整关无伤[\\s\\S]{0,20}?<b>\uFFFF</b>`, bonus('PERFECT_LEVEL') * MULT],
   /* 全灭是**最终分**，不乘 SCORE_MULT（awardBonus 的 raw），所以这里不能
      跟着乘 —— 乘了会去找 150000，而说明里写的是 10 万。
      写成「10万」而不是「100,000」：招牌数字要读得出口。 */
-  ['全灭幽灵',   `全灭幽灵[\\s\\S]{0,20}?<b>\uFFFF万</b>`, bonus('GHOST_SWEEP') / 10000],
+  ['全灭对手',   `全灭对手[\\s\\S]{0,20}?<b>\uFFFF万</b>`, bonus('GHOST_SWEEP') / 10000],
   ['通关剩余命', `通关剩余命[\\s\\S]{0,20}?<b>\uFFFF</b>`, bonus('LIFE_LEFT')    * MULT],
   ['全程无伤',   `全程无伤[\\s\\S]{0,20}?<b>\uFFFF</b>`, bonus('FLAWLESS_RUN')  * MULT],
-  // 说明改成分层结构后这两句重写过，模式跟着改；仍然要求数字和"能量豆时长"
+  // 说明改成分层结构后这两句重写过，模式跟着改；仍然要求数字和"能量星时长"
   // 出现在同一句里，不是满篇找一个孤零零的 9
-  ['恐惧起始秒', `能量豆时长[\\s\\S]{0,30}?<b>\uFFFF 秒</b>`, fright[0]],
+  ['恐惧起始秒', `能量星时长[\\s\\S]{0,30}?<b>\uFFFF 秒</b>`, fright[0]],
   ['恐惧末关秒', `第 6 关只剩 <b>\uFFFF 秒</b>`,       fright[fright.length-1]],
   ['冲刺倍率',   `提速到 <b>\uFFFF 倍</b>`,            dash],
   ['玩家加速%',  `你快 \uFFFF%`,                       Math.round((pSpeed-1)*100)],
-  ['幽灵减速%',  `幽灵慢 \uFFFF%`,                     Math.round((1-gSpeed)*100)],
+  ['敌人减速%',  `敌人慢 \uFFFF%`,                     Math.round((1-gSpeed)*100)],
   ['连击窗口',   `约 <b>\uFFFF 秒</b>没吃到才断`,      comboWin],
   ['传送门冷却', `冷却 <b>\uFFFF 秒</b>`,              portalCd],
 ];
@@ -98,11 +100,11 @@ for (const [what, pat] of uiChecks){
 }
 /* 小程序那份是 WXML，数字包在 <text class="b"> 里，所以模式跟网页那份不一样，
    但要核的是同一批数。只截说明那一段，别拿整个文件搜 —— 这个坑前面踩过两次。 */
-const wxHelpStart = wxml.indexOf('<scroll-view class="help-doc"');
-const wxHelpEnd   = wxml.indexOf('</scroll-view>', wxHelpStart);
-if (wxHelpStart < 0 || wxHelpEnd < 0){
+const wxHelpStart = hasWxml ? wxml.indexOf('<scroll-view class="help-doc"') : -1;
+const wxHelpEnd   = hasWxml ? wxml.indexOf('</scroll-view>', wxHelpStart) : -1;
+if (hasWxml && (wxHelpStart < 0 || wxHelpEnd < 0)){
   fail.push('定位不到小程序版的说明段落');
-} else {
+} else if (hasWxml) {
   const wxHelp = wxml.slice(wxHelpStart, wxHelpEnd);
   const wxChecks = [
     ['豆子',       `豆子</text>[\\s\\S]{0,12}?${num2(10*MULT)} × 连击`],
@@ -131,7 +133,7 @@ if (wxHelpStart < 0 || wxHelpEnd < 0){
    在某次"统一措辞"里被改掉，或者在整理说明时被顺手挪回规则堆里。
    所以两头都查：在该在的地方、且不在不该在的地方。 */
 const ABOUT_LINES = ['暑期，儿子想玩一款简单刺激的小游戏', '他负责试玩和提意见',
-                     '其它小朋友也加入试玩队伍', '及其6个关卡',
+                     '其它小朋友也加入试玩队伍',
                      '超级奶爸', '2685897@qq.com'];
 
 /** 从一份文本里切出某一段；切不出来返回 null（而不是悄悄拿整份文件去搜）。 */
@@ -142,23 +144,29 @@ function section(text, startPat, endPat){
   return text.slice(a, b > a ? b : undefined);
 }
 
-for (const [name, part] of [
+const aboutTargets = [
   ['网页',   section(src,  'id="aboutOverlay"',    'id="aboutCloseBtn"')],
   ['小游戏', section(ui,   'const ABOUT = [',      '\n  ];')],
-  ['小程序', section(wxml, "overlay === 'about'",  'onAboutClose')],
-]){
+];
+if (hasWxml) aboutTargets.push(['小程序', section(wxml, "overlay === 'about'", 'onAboutClose')]);
+for (const [name, part] of aboutTargets){
   if (!part){ fail.push(`${name}版找不到「关于这个游戏」那一页`); continue; }
   for (const line of ABOUT_LINES){
     if (!part.includes(line)) fail.push(`${name}版「关于」页里缺了「${line}」`);
   }
 }
+const webAbout = aboutTargets[0][1] || '';
+if (!webAbout.includes('Neon Maze') || !webAbout.includes('这 6 个关卡')){
+  fail.push('网页版「关于」页没有说明 Neon Maze 与六关的创作背景');
+}
 
 // 反过来：玩法说明里不许再出现作者那段话
-for (const [name, part] of [
+const helpTargets = [
   ['网页',   helpHtml],
   ['小游戏', section(ui, 'const HELP = [', '\n  ];')],
-  ['小程序', wxHelpStart >= 0 ? wxml.slice(wxHelpStart, wxHelpEnd) : null],
-]){
+];
+if (hasWxml) helpTargets.push(['小程序', wxHelpStart >= 0 ? wxml.slice(wxHelpStart, wxHelpEnd) : null]);
+for (const [name, part] of helpTargets){
   if (!part) continue;
   for (const line of ABOUT_LINES){
     if (part.includes(line)) fail.push(`${name}版玩法说明里混进了「${line}」—— 它该只在「关于」页`);
@@ -166,8 +174,9 @@ for (const [name, part] of [
 }
 
 console.log('从代码读到的真值：');
-console.log(`  倍率 ${MULT}　豆子 ${10*MULT}　能量豆 ${50*MULT}　水果 ${300*MULT}`);
-console.log(`  奖励 无伤${bonus('PERFECT_LEVEL')*MULT} 全灭${bonus('GHOST_SWEEP')*MULT} 剩命${bonus('LIFE_LEFT')*MULT} 全程${bonus('FLAWLESS_RUN')*MULT}`);
+console.log(`  倍率 ${MULT}　豆子 ${10*MULT}　能量星 ${50*MULT}　相位晶石 ${300*MULT}`);
+console.log(`  奖励 无伤${bonus('PERFECT_LEVEL')*MULT} 全灭${bonus('GHOST_SWEEP')} 剩命${bonus('LIFE_LEFT')*MULT} 全程${bonus('FLAWLESS_RUN')*MULT}`);
 console.log(`  恐惧 ${fright[0]}→${fright[fright.length-1]} 秒　冲刺 ${dash}x　连击 ${comboWin}s（停下 ${comboIdle}x）　传送门冷却 ${portalCd}s`);
-console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : '三份说明的数字都和代码一致；作者那段话三处都在「关于」页，且没混进玩法说明。'));
+const targetLabel = hasWxml ? '三份说明' : '网页与小游戏说明';
+console.log('\n' + (fail.length ? '说明与代码对不上:\n  ' + fail.join('\n  ') : `${targetLabel}的数字都和代码一致；作者文字也只出现在「关于」页。`));
 process.exit(fail.length ? 1 : 0);

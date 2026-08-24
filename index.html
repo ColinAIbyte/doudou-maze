@@ -3,25 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>豆豆迷宫</title>
-<meta name="description" content="霓虹迷宫吃豆游戏，六关递进。连吃 · 闪避 · 穿越。">
+<title>Neon Maze · 豆豆</title>
+<meta name="description" content="原创霓虹迷宫游戏，六关递进。收集 · 强化 · 智取。">
 <meta name="author" content="超级奶爸">
-<meta name="theme-color" content="#0a0612">
-<!-- 告诉搜索引擎这是同一个游戏的两种语言，而不是两个互相抄袭的页面。
-     写死绝对地址：hreflang 不接受相对路径。 -->
-<link rel="alternate" hreflang="zh-Hans" href="https://colinaibyte.github.io/doudou-maze/">
-<link rel="alternate" hreflang="en" href="https://colinaibyte.github.io/doudou-maze/en/">
-<link rel="alternate" hreflang="x-default" href="https://colinaibyte.github.io/doudou-maze/">
-<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%230a0612%22%2F%3E%3Cpath%20d%3D%22M16%206a10%2010%200%201%200%208.66%2015L16%2016l8.66-5A10%2010%200%200%200%2016%206z%22%20fill%3D%22%23ffcf5c%22%2F%3E%3C%2Fsvg%3E">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%226%22%20fill%3D%22%230a0612%22%2F%3E%3Cpath%20d%3D%22M16%206a10%2010%200%201%200%208.66%2015L16%2016l8.66-5A10%2010%200%200%200%2016%206z%22%20fill%3D%22%23ffcf5c%22%2F%3E%3C%2Fsvg%3E">
+<meta name="theme-color" content="#020218">
+<link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%2303031a%22%2F%3E%3Cellipse%20cx%3D%2216%22%20cy%3D%2218%22%20rx%3D%2210%22%20ry%3D%229%22%20fill%3D%22%2335e3d1%22%2F%3E%3Cellipse%20cx%3D%2212.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cellipse%20cx%3D%2219.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cpath%20d%3D%22M12.5%2021q3.5%203%207%200%22%20fill%3D%22none%22%20stroke%3D%22%2307152b%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M12%208q1-5%204%200q3-5%204%201q-2%203-4%203q-3%200-4-4%22%20fill%3D%22%2378f3bc%22%2F%3E%3Cpath%20d%3D%22M16%2020l2%202-2%203-2-3z%22%20fill%3D%22%23dffcff%22%2F%3E%3C%2Fsvg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%2303031a%22%2F%3E%3Cellipse%20cx%3D%2216%22%20cy%3D%2218%22%20rx%3D%2210%22%20ry%3D%229%22%20fill%3D%22%2335e3d1%22%2F%3E%3Cellipse%20cx%3D%2212.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cellipse%20cx%3D%2219.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cpath%20d%3D%22M12.5%2021q3.5%203%207%200%22%20fill%3D%22none%22%20stroke%3D%22%2307152b%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M12%208q1-5%204%200q3-5%204%201q-2%203-4%203q-3%200-4-4%22%20fill%3D%22%2378f3bc%22%2F%3E%3Cpath%20d%3D%22M16%2020l2%202-2%203-2-3z%22%20fill%3D%22%23dffcff%22%2F%3E%3C%2Fsvg%3E">
 <!-- 加到手机主屏后按全屏应用打开，而不是套一层浏览器地址栏 -->
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- 分享到微信/群里时的卡片。缺了这些，别人看到的只有一条光秃秃的网址 -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="豆豆迷宫">
-<meta property="og:description" content="霓虹迷宫吃豆游戏，六关递进。连吃 · 闪避 · 穿越。">
+<meta property="og:title" content="Neon Maze · 豆豆">
+<meta property="og:description" content="原创霓虹迷宫游戏，六关递进。收集 · 强化 · 智取。">
 <meta name="twitter:card" content="summary">
 <style>
 /* 整页锁死不滚动。手机上边玩边让页面上下弹是最影响手感的一件事，
@@ -31,7 +26,7 @@
 html, body {
   margin:0; padding:0;
   width:100%; height:100%;
-  background:#0a0612;
+  background:#020218;
   overscroll-behavior:none;
   -webkit-text-size-adjust:100%;
   touch-action:manipulation;
@@ -47,32 +42,32 @@ body {
 </style>
 </head>
 <body>
-<meta charset="utf-8">
-<title>豆豆迷宫</title>
 <style>
 :root{
-  --void:#0a0612;
-  --void-deep:#050308;
-  --panel:#130b26;
-  --panel-border:#2f2058;
-  --wall:#8a6bff;
-  --wall-core:#4b2fce;
-  /* 「森林夜巡」主题：主角是提灯小刺猬（暖黄灯光），四只幽灵是四只小夜枭。
-     --lantern 是 --amber 的别名，专为提灯那团暖光留的名字；
-     --doze 是受惊奶白（打瞌睡的小夜枭），--phase 是穿墙紫（不再复用 --cyan）。 */
-  --amber:#ffd166;
-  --lantern:#ffd166;
-  --amber-glow:rgba(255,209,102,.55);
-  --danger:#ff5a6e;
-  --pink:#ff9ad5;
-  --tang:#ffb26b;
-  --cyan:#7ee0c9;
-  --doze:#f5efe0;
-  --phase:#9b8cff;
-  --text:#ece7fb;
-  --text-dim:#9c8fc9;
+  --void:#060624;
+  --void-deep:#010119;
+  --panel:#090a27;
+  --panel-2:#0d1034;
+  --panel-border:#343b70;
+  --wall:#7b35ef;
+  --wall-core:#351096;
+  --wall-hi:#d39aff;
+  --wall-cyan:#168cff;
+  --amber:#ffd447;
+  --lantern:#35e3d1;
+  --amber-hot:#ffac24;
+  --amber-glow:rgba(255,212,71,.55);
+  --danger:#ff5277;
+  --pink:#ff5eae;
+  --tang:#ff9f43;
+  --cyan:#31e7ff;
+  --lime:#8cdf3f;
+  --doze:#a7ecff;
+  --phase:#55e8ff;
+  --text:#f7f4ff;
+  --text-dim:#9ca2c7;
   --mega:#ffffff;
-  --font-display: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  --font-display: ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", "PingFang SC", system-ui, sans-serif;
   --font-body: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
 }
 *{box-sizing:border-box;}
@@ -1339,16 +1334,188 @@ body.in-game .marquee{
   .help-doc{gap:11px;}
   .help-sec p, .ghost-list li{font-size:11.5px;}
 }
+
+/* ---------- Neon Maze · Phase 1 visual system ----------
+   桌面复刻参考图的三栏街机感；棋盘仍是原生 19:21，不拉伸、不改碰撞。 */
+body{
+  background:
+    radial-gradient(circle at 18% 18%, rgba(77,39,190,.18), transparent 28%),
+    radial-gradient(circle at 82% 76%, rgba(0,188,255,.11), transparent 30%),
+    radial-gradient(ellipse at 50% -10%, #17104d 0%, var(--void) 44%, var(--void-deep) 100%);
+}
+body::before{
+  content:'';
+  position:fixed;inset:0;pointer-events:none;opacity:.55;
+  background-image:
+    radial-gradient(circle at 8% 20%, rgba(255,94,174,.9) 0 1px, transparent 2px),
+    radial-gradient(circle at 17% 64%, rgba(255,212,71,.9) 0 1.4px, transparent 2.4px),
+    radial-gradient(circle at 72% 12%, rgba(49,231,255,.8) 0 1.2px, transparent 2px),
+    radial-gradient(circle at 91% 38%, rgba(145,91,255,.9) 0 1px, transparent 2px);
+}
+.brand-lockup{
+  display:inline-flex;flex-direction:column;align-items:center;
+  margin:0;font-family:var(--font-display);font-weight:900;
+  line-height:.76;letter-spacing:-.055em;text-indent:0;
+  transform:rotate(-1deg);
+}
+.brand-lockup::after{display:none !important;}
+.brand-neon{
+  font-size:clamp(25px,6.2vw,38px);
+  color:#ffe67c;
+  -webkit-text-stroke:1px #ff9b19;
+  text-shadow:0 3px 0 #bd4c12, 0 0 12px rgba(255,201,54,.75), 0 0 28px rgba(255,88,49,.35);
+}
+.brand-maze{
+  margin-top:8px;font-size:clamp(31px,7.6vw,48px);
+  color:#55eeff;
+  -webkit-text-stroke:1px #168cff;
+  text-shadow:0 4px 0 #134ab7, 0 0 14px rgba(49,231,255,.9), 0 0 30px rgba(63,69,255,.55);
+}
+.brand-sub{
+  margin-top:14px;font-size:9px;line-height:1;letter-spacing:.32em;
+  color:#d8c8ff;text-shadow:0 0 9px rgba(180,115,255,.65);
+}
+.mission-strip{
+  display:none;
+  align-items:center;justify-content:center;gap:13px;
+  min-height:52px;padding:10px 24px;
+  border:2px solid rgba(132,69,238,.72);border-radius:999px;
+  background:linear-gradient(180deg,rgba(19,17,65,.92),rgba(8,8,35,.92));
+  box-shadow:0 0 0 1px rgba(92,171,255,.18) inset,0 0 22px rgba(108,49,226,.22);
+  font-family:var(--font-display);font-size:13px;font-weight:900;letter-spacing:.1em;
+  color:var(--text);text-transform:uppercase;
+}
+.mission-strip .collect{color:var(--amber);}
+.mission-strip .power{color:var(--pink);}
+.mission-strip .outsmart{color:var(--cyan);}
+.mission-strip i{width:5px;height:5px;border-radius:50%;background:#d5b5ff;box-shadow:0 0 8px #9f64ff;}
+.power-card,.mascot-stage,.howto-card,.high-score-stat{display:none;}
+.power-card{
+  width:100%;padding:16px;border:1px solid rgba(80,94,153,.72);border-radius:20px;
+  background:linear-gradient(180deg,rgba(12,15,53,.88),rgba(5,7,27,.9));
+  box-shadow:0 18px 40px rgba(0,0,0,.28),0 0 0 1px rgba(49,231,255,.04) inset;
+  text-align:left;
+}
+.rail-title{
+  margin:0 0 13px;padding-bottom:10px;border-bottom:1px solid rgba(96,112,178,.45);
+  font-family:var(--font-display);font-size:11px;letter-spacing:.18em;color:var(--cyan);text-align:center;
+}
+.power-item{display:grid;grid-template-columns:38px 1fr;gap:10px;align-items:center;margin-top:12px;}
+.power-icon{
+  width:36px;height:36px;display:grid;place-items:center;border-radius:13px;
+  font-size:20px;font-style:normal;background:rgba(13,20,63,.92);border:1px solid currentColor;
+  box-shadow:0 0 13px currentColor;
+}
+.power-icon.star{color:#53dfff}.power-icon.gem{color:#c065ff}.power-icon.portal{color:#ff69bd}
+.power-copy b{display:block;font-size:11px;color:var(--text);letter-spacing:.04em;}
+.power-copy span{display:block;margin-top:3px;font-size:10px;line-height:1.45;color:var(--text-dim);}
+.mascot-stage{
+  position:relative;width:100%;aspect-ratio:1/1;margin-top:auto;border-radius:50%;overflow:hidden;
+  border:1px solid rgba(49,231,255,.35);background:#03031a;
+  box-shadow:inset 0 0 34px rgba(34,94,255,.22),0 0 26px rgba(49,231,255,.12);
+}
+.mascot-stage img{display:block;width:100%;height:100%;object-fit:cover;}
+.mascot-label{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  padding:5px 12px;border-radius:999px;background:rgba(3,3,26,.72);border:1px solid rgba(49,231,255,.35);
+  font-family:var(--font-display);font-size:9px;letter-spacing:.2em;color:#dffcff;
+}
+.hud-controls{display:flex;align-items:center;gap:10px;}
+.howto-card{margin-top:auto;padding-top:16px;border-top:1px solid rgba(70,79,132,.55);}
+.howto-card ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:11px;}
+.howto-card li{display:grid;grid-template-columns:25px 1fr;gap:9px;align-items:center;color:var(--text-dim);font-size:10.5px;line-height:1.35;}
+.howto-card i{font-size:17px;font-style:normal;text-align:center;filter:drop-shadow(0 0 6px currentColor);}
+.stage{
+  border-color:rgba(65,118,255,.82);
+  background:linear-gradient(180deg,#0b0d34,#05051d);
+  box-shadow:0 0 0 2px rgba(49,231,255,.16) inset,0 0 22px rgba(38,119,255,.28),0 22px 54px rgba(0,0,0,.62);
+}
+#mazeCanvas{
+  background-color:#03031a;
+  background-image:
+    linear-gradient(rgba(86,71,156,.09) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(86,71,156,.09) 1px,transparent 1px),
+    radial-gradient(circle at 50% 45%,rgba(26,20,79,.68),rgba(2,2,19,.96) 70%);
+  background-size:26px 26px,26px 26px,100% 100%;
+}
+.scanlines{opacity:.22;}
+.btn{
+  border-radius:13px;background:linear-gradient(180deg,#ffe991,var(--amber) 58%,#ffad22);
+  box-shadow:0 4px 0 #c66d13,0 0 24px rgba(255,212,71,.28);
+}
+.hud .high-score-stat{display:none;}
+
+@media (max-width:1119px){
+  /* 用宽度而不是 pointer 判定移动布局：平板接鼠标后仍然需要给棋盘腾空间。 */
+  body.in-game .marquee{max-height:0 !important;opacity:0 !important;margin:0 !important;padding:0 !important;}
+}
+
+@media (min-width:1120px) and (min-height:720px){
+  body{padding:18px;overflow:hidden;}
+  .cabinet{
+    width:min(1400px,calc(100vw - 36px));height:min(900px,calc(100dvh - 36px));
+    display:grid;grid-template-columns:240px minmax(470px,620px) 230px;
+    grid-template-rows:58px minmax(0,1fr) 36px;
+    gap:16px 20px;justify-content:center;align-items:center;
+  }
+  .marquee{
+    grid-column:1;grid-row:1/4;width:100%;height:100%;max-height:none !important;
+    display:flex;flex-direction:column;align-items:center;gap:22px;
+    padding:24px 16px !important;margin:0 !important;opacity:1 !important;overflow:hidden;
+    border:1px solid rgba(63,72,124,.7);border-radius:24px;
+    background:linear-gradient(180deg,rgba(8,10,38,.72),rgba(3,4,22,.82));
+    box-shadow:0 22px 52px rgba(0,0,0,.32);
+  }
+  .marquee .tagline{margin:0;flex-wrap:wrap;}
+  .marquee .tag-words{display:none;}
+  .power-card,.mascot-stage,.howto-card,.high-score-stat{display:block;}
+  .hud .high-score-stat{display:flex;}
+  .mission-strip{display:flex;grid-column:2;grid-row:1;width:min(100%,600px);justify-self:center;}
+  .stage{grid-column:2;grid-row:2;width:100%;align-self:center;padding:9px;border-radius:21px;}
+  #mazeCanvas{width:min(100%,calc((100dvh - 155px)*19/21));max-width:600px;border-radius:14px;}
+  .scanlines{inset:9px;border-radius:14px;}
+  .pad-area{grid-column:2;grid-row:3;display:flex;height:100%;}
+  .pad-grid{display:none;}
+  .pad-area::before{
+    content:'TIP  ·  能量有时限，看准时机再出手';
+    width:min(100%,520px);padding:8px 18px;border:1px solid rgba(71,82,137,.58);border-radius:999px;
+    background:rgba(6,8,31,.72);font-family:var(--font-display);font-size:10px;letter-spacing:.11em;
+    color:var(--text-dim);text-align:center;
+  }
+  .hud{
+    grid-column:3;grid-row:1/4;width:100%;height:100%;display:flex;flex-direction:column;
+    align-items:stretch;justify-content:flex-start;gap:0;padding:18px;border-radius:24px;
+    background:linear-gradient(180deg,rgba(10,13,48,.92),rgba(4,6,25,.94));
+  }
+  .hud-controls{order:-2;justify-content:center;gap:14px;margin-bottom:16px;}
+  .hud .icon-btn{width:42px;height:42px;border-radius:50%;color:#cbbaff;background:rgba(20,16,68,.72);}
+  .hud .icon-btn:hover{color:var(--cyan);border-color:var(--cyan);box-shadow:0 0 14px rgba(49,231,255,.2);}
+  .hud .stat{width:100%;align-items:center;gap:6px;padding:14px 0;border-bottom:1px dashed rgba(83,92,153,.52);}
+  .hud .stat .k{font-size:10px;letter-spacing:.16em;color:var(--cyan);}
+  .hud .stat .v{font-size:27px;line-height:1;color:var(--text);}
+  .hud .score-stat .v{font-size:32px;}
+  .hud .lives-stat .k{color:var(--pink);}
+  .hud .lives{justify-content:center;min-height:24px;}
+  .hud .lives svg{width:19px;height:19px;filter:drop-shadow(0 0 6px rgba(255,82,119,.7));}
+  .combo-wrap{width:100%;max-width:none;flex:none;padding:11px 0 15px;border-bottom:1px dashed rgba(83,92,153,.52);}
+  #comboLabel{text-align:center;transform-origin:center;}
+  .high-score-stat .k{color:#73c9ff !important;}
+  .howto-card .rail-title{margin-bottom:13px;}
+}
 </style>
 
 <div class="cabinet">
   <div class="marquee">
-    <h1>豆豆迷宫</h1>
+    <h1 class="brand-lockup" aria-label="Neon Maze · 豆豆">
+      <span class="brand-neon">NEON</span>
+      <span class="brand-maze">MAZE</span>
+      <span class="brand-sub">DOUDOU · 豆豆</span>
+    </h1>
     <!-- 「?」跟在副标题后面。原来它和另外两个按钮全塞在 HUD 里，那一行还要
          放分数、连击、关卡、生命，挤得数值都快贴到一起了。副标题这行本来就
          空着半行。 -->
     <p class="tagline">
-      <span class="tag-words">连吃<i></i>闪避<i></i>穿越</span>
+      <span class="tag-words">收集<i></i>强化<i></i>智取</span>
       <button class="help-pill" id="helpBtn" title="玩法说明" aria-label="玩法说明">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <circle cx="12" cy="12" r="9"/>
@@ -1358,16 +1525,43 @@ body.in-game .marquee{
       </button>
       <!-- 「关于」跟「玩法」并排，同一种胶囊。图标用心形而不是问号：这一页讲的
            不是规则，是这游戏怎么来的，图标先把这件事说清楚。 -->
-      <button class="help-pill" id="aboutBtn" title="关于《豆豆迷宫》" aria-label="关于《豆豆迷宫》">
+      <button class="help-pill" id="aboutBtn" title="关于 Neon Maze" aria-label="关于 Neon Maze">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path class="solid" d="M12 20.3s-7.4-4.7-7.4-9.7a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 5-7.4 9.7-7.4 9.7z"/>
         </svg>关于
       </button>
     </p>
+
+    <section class="power-card" aria-label="能量机制">
+      <h2 class="rail-title">POWER UPS</h2>
+      <div class="power-item">
+        <i class="power-icon star" aria-hidden="true">★</i>
+        <div class="power-copy"><b>能量星</b><span>短时间反击敌人</span></div>
+      </div>
+      <div class="power-item">
+        <i class="power-icon gem" aria-hidden="true">◆</i>
+        <div class="power-copy"><b>相位晶石</b><span>10 秒内穿越墙体</span></div>
+      </div>
+      <div class="power-item">
+        <i class="power-icon portal" aria-hidden="true">◎</i>
+        <div class="power-copy"><b>霓虹传送门</b><span>同色门之间瞬间跃迁</span></div>
+      </div>
+    </section>
+
+    <div class="mascot-stage" aria-label="豆豆角色展示">
+      <img src="assets/doudou-hero.png" alt="原创主角豆豆 Doudou" width="768" height="768">
+      <span class="mascot-label">MEET DOUDOU</span>
+    </div>
+  </div>
+
+  <div class="mission-strip" aria-hidden="true">
+    <span class="collect">收集 COLLECT</span><i></i>
+    <span class="power">强化 POWER UP</span><i></i>
+    <span class="outsmart">智取 OUTSMART</span>
   </div>
 
   <div class="hud">
-    <div class="stat">
+    <div class="stat score-stat">
       <span class="k">分数</span>
       <span class="v" id="scoreVal">0</span>
     </div>
@@ -1375,11 +1569,11 @@ body.in-game .marquee{
       <span class="k" id="comboLabel" style="font-size:9px;letter-spacing:.14em;color:var(--text-dim);">连击 x1</span>
       <div class="combo-bar"><div class="combo-fill" id="comboFill"></div></div>
     </div>
-    <div class="stat">
+    <div class="stat level-stat">
       <span class="k">关卡</span>
       <span class="v" id="levelVal">1</span>
     </div>
-    <div class="stat">
+    <div class="stat lives-stat">
       <span class="k">生命</span>
       <span class="v lives" id="livesVal"></span>
     </div>
@@ -1389,18 +1583,33 @@ body.in-game .marquee{
          偏灰，和旁边的线条图标凑不到一起，尺寸也不受控。 -->
     <!-- 桌面专用的暂停键。方向键在桌面被隐藏了，而暂停原本就嵌在方向键正中，
          不在这儿补一个，桌面玩家就只剩 P 键 —— 而没人知道有 P 键。 -->
-    <button class="icon-btn" id="hudPauseBtn" title="暂停" aria-label="暂停">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M9 6.5v11M15 6.5v11"/>
-      </svg>
-    </button>
-    <button class="icon-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">
-      <svg viewBox="0 0 24 24" aria-hidden="true">
-        <path d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" class="solid"/>
-        <g id="soundWaves"><path d="M15.4 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M18 7a7.3 7.3 0 0 1 0 10"/></g>
-        <g id="soundCross" hidden><path d="M16 9.6l4.6 4.8M20.6 9.6L16 14.4"/></g>
-      </svg>
-    </button>
+    <div class="hud-controls">
+      <button class="icon-btn" id="hudPauseBtn" title="暂停" aria-label="暂停">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M9 6.5v11M15 6.5v11"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="muteBtn" title="静音/取消静音" aria-label="静音开关">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M4 9.5h3.6L12 5.6v12.8L7.6 14.5H4z" class="solid"/>
+          <g id="soundWaves"><path d="M15.4 9.4a3.7 3.7 0 0 1 0 5.2"/><path d="M18 7a7.3 7.3 0 0 1 0 10"/></g>
+          <g id="soundCross" hidden><path d="M16 9.6l4.6 4.8M20.6 9.6L16 14.4"/></g>
+        </svg>
+      </button>
+    </div>
+    <div class="stat high-score-stat">
+      <span class="k">最高分</span>
+      <span class="v" id="highScoreVal">0</span>
+    </div>
+    <section class="howto-card" aria-label="玩法速览">
+      <h2 class="rail-title">HOW TO PLAY</h2>
+      <ul>
+        <li><i aria-hidden="true">↔</i><span>方向键 / WASD<br>手机滑动转向</span></li>
+        <li><i aria-hidden="true" style="color:var(--amber)">●</i><span>收集全部能量点</span></li>
+        <li><i aria-hidden="true" style="color:var(--cyan)">★</i><span>掌握能量，反击敌人</span></li>
+        <li><i aria-hidden="true" style="color:var(--pink)">◉</i><span>读懂四种敌人路线</span></li>
+      </ul>
+    </section>
   </div>
 
   <div class="stage">
@@ -1411,7 +1620,7 @@ body.in-game .marquee{
     <canvas id="fxCanvas" class="fx"></canvas>
 
     <div class="overlay" id="startOverlay">
-      <h2>投币</h2>
+      <h2>NEON READY</h2>
       <!-- 开始页只留一句。原来这里是六行说明，加上榜单和署名之后总高超出
            弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
@@ -1451,8 +1660,7 @@ body.in-game .marquee{
            不用再去找标题旁的图标。
            2026-08-21 业主把这句从"♥ 一个爸爸和儿子一起做的小游戏"改成「怀旧游戏」，
            心也一并去掉。那段自述没有丢，它完整地留在「关于」里。 -->
-      <button class="story-line" id="storyLine">怀旧游戏</button>
-      <a class="lang-link" href="en/" hreflang="en">English</a>
+      <button class="story-line" id="storyLine">原创霓虹迷宫 · 和豆豆一起出发</button>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1485,8 +1693,8 @@ body.in-game .marquee{
           <dl class="kv">
             <dt>移动</dt><dd>手机在迷宫上<b>滑动</b>　电脑<b>方向键 / WASD</b></dd>
             <dt>吃豆</dt><dd>吃光豆子就过关；<b>连着吃</b>，倍率越叠越高</dd>
-            <dt>躲小夜枭</dt><dd>碰到少一条命；吃下<b>能量豆</b>就能反过来吃它们</dd>
-            <dt>还有</dt><dd>传送门 · 冲刺 · 穿墙 · 夜枭融合
+            <dt>躲开敌人</dt><dd>碰到少一条命；收集<b>能量星</b>就能反过来吃它们</dd>
+            <dt>还有</dt><dd>传送门 · 冲刺 · 穿墙 · 能量融合
               <br><span class="dim">不用背，玩着就会</span></dd>
           </dl>
         </div>
@@ -1500,51 +1708,51 @@ body.in-game .marquee{
              「怎么玩」在最前面，看完前三行就能开打，剩下的往下滚就是。 -->
           <div class="help-sec">
             <h3>连击</h3>
-            <p>每吃一颗涨一级，<b>上不封顶</b>；吃小夜枭、吃水果同样算。<br>
+            <p>每吃一颗涨一级，<b>上不封顶</b>；吃敌人、拿晶石同样算。<br>
               一边跑一边吃约 <b>1.6 秒</b>没吃到才断，停下不动约 <b>0.5 秒</b>就断。</p>
           </div>
           <div class="help-sec">
-            <h3>四只小夜枭</h3>
+            <h3>四位霓虹对手</h3>
             <ul class="ghost-list">
-              <li><i style="color:var(--danger);background:var(--danger)"></i><b>冲冲</b>　直线朝你追过来</li>
-              <li><i style="color:var(--pink);background:var(--pink)"></i><b>拦拦</b>　预判你的去向，提前拦截</li>
-              <li><i style="color:var(--tang);background:var(--tang)"></i><b>躲躲</b>　你一靠近它就跑</li>
-              <li><i style="color:var(--cyan);background:var(--cyan)"></i><b>绕绕</b>　沿固定路线绕，不理你</li>
+              <li><i style="color:var(--danger);background:var(--danger)"></i><b>闪闪</b>　锁定你的位置直接追踪</li>
+              <li><i style="color:var(--tang);background:var(--tang)"></i><b>狐狐</b>　预判你的去向，提前拦截</li>
+              <li><i style="color:var(--lime);background:var(--lime)"></i><b>软软</b>　你一靠近它就跑</li>
+              <li><i style="color:var(--wall);background:var(--wall)"></i><b>慢慢</b>　沿固定路线循环巡逻</li>
             </ul>
           </div>
           <div class="help-sec">
             <h3>特殊机关</h3>
             <dl class="kv">
-              <dt>能量豆</dt><dd>短时间内小夜枭可以反吃</dd>
+              <dt>能量星</dt><dd>短时间内可以反击敌人</dd>
               <dt>传送门</dt><dd>地图四角成对，颜色相同的两个互通</dd>
               <dt>冲刺</dt><dd>直线一直跑会越跑越快，一转弯就归零</dd>
-              <dt>神秘水果</dt><dd>十秒之内可以穿墙走</dd>
-              <dt>夜枭融合</dt><dd>两只打瞌睡的小夜枭相撞会合成「超级夜枭」</dd>
+              <dt>相位晶石</dt><dd>十秒之内可以穿墙走</dd>
+              <dt>能量融合</dt><dd>两只晕晕的敌人相撞会合成「超级能量体」</dd>
             </dl>
           </div>
           <div class="help-sec">
             <h3>能拿多少分</h3>
             <dl class="kv">
               <dt>豆子</dt><dd><b>15</b> × 连击</dd>
-              <dt>能量豆</dt><dd><b>75</b> × 连击</dd>
-              <dt>神秘水果</dt><dd><b>450</b> × 连击</dd>
-              <dt>小夜枭</dt><dd><b>1万 → 2万 → 3万…</b><span class="dim">同一颗能量豆内第几只就是几万</span></dd>
+              <dt>能量星</dt><dd><b>75</b> × 连击</dd>
+              <dt>相位晶石</dt><dd><b>450</b> × 连击</dd>
+              <dt>敌人</dt><dd><b>1万 → 2万 → 3万…</b><span class="dim">同一颗能量星内第几只就是几万</span></dd>
             </dl>
           </div>
           <div class="help-sec">
             <h3>完整计分与参数</h3>
             <dl class="kv">
               <dt>整关无伤</dt><dd><b>1500</b> × 关卡号（第 6 关就是 9000）</dd>
-              <dt>全灭夜枭</dt><dd><b>10万</b>　一次能量豆内吃光全场</dd>
+              <dt>全灭对手</dt><dd><b>10万</b>　一次能量星内吃光全场</dd>
               <dt>通关剩余命</dt><dd><b>2250</b> × 条数</dd>
               <dt>全程无伤</dt><dd><b>15000</b></dd>
-              <dt>能量豆时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
-                <span class="dim">期间你快 15%，小夜枭慢 15%</span></dd>
+              <dt>能量星时长</dt><dd><b>9 秒</b>起，每过一关缩短，第 6 关只剩 <b>5 秒</b><br>
+                <span class="dim">期间你快 15%，敌人慢 15%</span></dd>
               <dt>冲刺</dt><dd>直线连走 5 格提速到 <b>1.22 倍</b></dd>
               <dt>传送门</dt><dd>冷却 <b>0 秒</b>，落地会停一下等你选方向</dd>
               <dt>穿墙</dt><dd><b>10 秒</b>；期间移动放慢，转向随按随到</dd>
-              <dt>夜枭融合</dt><dd>吃掉超级夜枭会放出里面那只，两只各算一档悬赏</dd>
-              <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（夜枭悬赏除外）</dd>
+              <dt>能量融合</dt><dd>吃掉超级能量体会放出里面那只，两只各算一档悬赏</dd>
+              <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（敌人悬赏除外）</dd>
             </dl>
           </div>
 
@@ -1573,11 +1781,11 @@ body.in-game .marquee{
            少了这一层包裹，点正文选个字都会把弹层关掉。
            九样东西按阅读顺序排在正常文档流里，没有一处绝对定位。 -->
       <div class="about-card" id="aboutPanel">
-        <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
+        <h2 id="aboutTitle">关于 Neon Maze</h2>
         <!-- 业主 2026-08-21 定的：**一整段，不分段**，也不写任何 <br> ——
              中文该在哪儿断行由宽度决定，手写的换行只在某一个屏幕宽度上好看，
              换台设备就断在奇怪的地方。原文照抄，不要替他改写或压缩。 -->
-        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的<span class="nb">《豆豆迷宫》</span>及其6个关卡。</p>
+        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的 <span class="nb">Neon Maze</span> 和原创主角豆豆，以及这 6 个关卡。</p>
         <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
         <p class="about-by">超级奶爸</p>
         <hr class="about-rule">
@@ -2081,24 +2289,24 @@ const HOUSE_DOOR = {x:9, y:8};
 const HOUSE_EXIT_TILE = {x:9, y:7};
 
 const GHOST_DEFS = [
-  {id:'chaser',  color:'--danger', label:'冲冲'},
-  {id:'ambush',  color:'--pink',   label:'拦拦'},
-  {id:'shy',     color:'--tang',   label:'躲躲'},
-  {id:'patrol',  color:'--cyan',   label:'绕绕'},
+  {id:'chaser',  color:'--danger', label:'闪闪'},
+  {id:'ambush',  color:'--tang',   label:'狐狐'},
+  {id:'shy',     color:'--lime',   label:'软软'},
+  {id:'patrol',  color:'--wall',   label:'慢慢'},
 ];
 
 // 5th ghost, joins from level 2 on: a second chaser. Same id so every
 // id-keyed lookup (targeting AI, color) treats it exactly like the first,
 // but flagged `flank` so it aims beside the player instead of at them.
-const EXTRA_CHASER_DEF = {id:'chaser', color:'--danger', label:'冲冲', flank:true};
+const EXTRA_CHASER_DEF = {id:'chaser', color:'--danger', label:'闪闪', flank:true};
 const FLANK_OFFSET_TILES = 4;
 
 // 6th ghost (level 3+): an ambusher that reads much further ahead, so it cuts
 // you off well before the regular ambusher would.
-const EXTRA_AMBUSH_DEF = {id:'ambush', color:'--pink', label:'拦拦', lookahead:7};
+const EXTRA_AMBUSH_DEF = {id:'ambush', color:'--tang', label:'狐狐', lookahead:7};
 // 7th ghost (final level only): a patroller running the loop backwards, so the
 // two patrollers sweep opposite halves instead of trailing each other.
-const EXTRA_PATROL_DEF = {id:'patrol', color:'--cyan', label:'绕绕', reverseRoute:true};
+const EXTRA_PATROL_DEF = {id:'patrol', color:'--wall', label:'慢慢', reverseRoute:true};
 
 /** Roster grows with the level: 4 -> 5 (L2) -> 6 (L3) -> 7 (final). */
 function ghostDefsForLevel(lvl){
@@ -2941,10 +3149,6 @@ function buildPortals(){
    穿墙期间不走缓存：那时墙要变淡变虚线，是每帧都在变的少数时刻。 */
 function drawWallsNormal(c2){
   c2.save();
-  c2.strokeStyle = cssVar('--wall');
-  c2.lineWidth = 3;
-  c2.shadowColor = cssVar('--wall');
-  c2.shadowBlur = 8;
   c2.lineCap = 'round';
   /* 一条路径画完整张墙。原来是每个墙格 beginPath + stroke，第一关就是 200 次
      带阴影的描边 —— 而墙一整关都不动，每帧重算邻居、重描一遍纯属白干。 */
@@ -2953,6 +3157,25 @@ function drawWallsNormal(c2){
     c2.moveTo(wallEdges[i], wallEdges[i+1]);
     c2.lineTo(wallEdges[i+2], wallEdges[i+3]);
   }
+  /* 同一条聚合路径分三层描边：暗紫管身、主色霓虹、细高光。
+     正常状态会缓存成离屏贴图，每帧仍只是一次 drawImage。 */
+  c2.strokeStyle = cssVar('--wall-core');
+  c2.lineWidth = 9;
+  c2.shadowColor = cssVar('--wall-cyan');
+  c2.shadowBlur = 14;
+  c2.globalAlpha = .78;
+  c2.stroke();
+  c2.strokeStyle = cssVar('--wall');
+  c2.lineWidth = 5.5;
+  c2.shadowColor = cssVar('--wall');
+  c2.shadowBlur = 8;
+  c2.globalAlpha = 1;
+  c2.stroke();
+  c2.strokeStyle = cssVar('--wall-hi');
+  c2.lineWidth = 1.35;
+  c2.shadowColor = cssVar('--wall-hi');
+  c2.shadowBlur = 4;
+  c2.globalAlpha = .92;
   c2.stroke();
   c2.restore();
 
@@ -3213,7 +3436,7 @@ function checkPowerPelletNearby(){
       if (tileAt(x, y) !== 'o') continue;
       const pdx = x-player.x, pdy = y-player.y;
       if (pdx*pdx + pdy*pdy <= POWER_HINT_TILES*POWER_HINT_TILES){
-        hintOnce('power', '大颗的能量豆：吃掉它，就能反过来吃小夜枭', 0);
+        hintOnce('power', '能量星：收集后就能反击敌人', 0);
         return;
       }
     }
@@ -3341,7 +3564,7 @@ function eatPelletAt(x,y){
     ghostEatChain = 0;
     /* 恐惧时长不乘连击（见 frightSeconds），原来的「幽灵受惊 ×combo」会让玩家
        以为连击越高恐惧越久 —— 不是。toast 只报告真正发生的事。 */
-    toast('能量豆！小夜枭们打起瞌睡了');
+    toast('能量星！现在可以反击敌人');
     Audio2.power();
   }
 }
@@ -3522,11 +3745,11 @@ function handleGhostCollisions(){
       g.eatenThisFright = true;   // 这轮不能再吃第二次，见 isEdible
       ghostsEatenThisRun++;       // 结算页要报这一局吃了几只
       applySpeedModifiers();
-      toast((wasHost?'超级夜枭! +':'小夜枭! +') + fmtNum(pts));
+      toast((wasHost?'超级能量体! +':'反击! +') + fmtNum(pts));
       /* 悬赏是阶梯式的，可玩家第一次只看到"+10,000"这一个数，没法知道它会往上
          涨 —— 而"要不要冒险再追一只"正是这套设计想让他做的决定。晚 1.4 秒发，
          让上面那条加分先显示完，别把两条消息挤成一条。 */
-      hintOnce('bounty', '同一颗能量豆里：第 2 只 2 万，第 3 只 3 万，越吃越值钱', 1400);
+      hintOnce('bounty', '同一颗能量星里：第 2 只 2 万，第 3 只 3 万，越吃越值钱', 1400);
       updateHud();
       Audio2.eatGhost(ghostEatChain);
 
@@ -3540,7 +3763,7 @@ function handleGhostCollisions(){
       if (ghostEatChain >= ghosts.length){
         sweepsThisRun++;
         Audio2.sweep();
-        toast('全灭夜枭！+' + fmtNum(awardBonus('全灭夜枭', BONUS.GHOST_SWEEP, true)));
+        toast('全灭对手！+' + fmtNum(awardBonus('全灭对手', BONUS.GHOST_SWEEP, true)));
       }
     } else if (invuln<=0){
       loseLife();
@@ -3564,7 +3787,7 @@ function handleFusion(){
          记一个时间戳，让 drawGhost 在接下来半秒里自己放大、闪一下白光；
          游戏一帧都不停，孩子却看得见"咦，它俩合体了"。 */
       a.fuseFlashUntil = elapsed + 0.5;
-      toast('夜枭融合！超级夜枭出现');
+      toast('能量融合！超级能量体出现');
       Audio2.fusion();
       return;
     }
@@ -3634,14 +3857,14 @@ function loseLife(){
      提示挑最温和的说法，不点破"你死太多次了"。 */
   if (deathsThisLevel === 3 && mercySpeedMult === 1){
     mercySpeedMult = 0.9;
-    toast('小夜枭们放慢脚步啦');
+    toast('对手们放慢脚步啦');
   }
   updateHud();
   Audio2.death();
   deathFlash = DEATH_FLASH_SECONDS;
   deathPause = DEATH_PAUSE_SECONDS;
   // 第一次死掉的那一刻，正是最想知道"还能怎么办"的时候
-  hintOnce('power', '吃大颗的能量豆，可以反过来吃小夜枭！', 900);
+  hintOnce('power', '收集能量星，可以反击敌人！', 900);
   if (lives<=0){ endGame(false); return; }
   player.x=SPAWN.player.x; player.y=SPAWN.player.y; player.dir={x:0,y:0}; player.want={x:0,y:0};
   player.warpCd=0; player.warpCdCh=null; player.warpChoiceUntil=0; player.warpStandingOn=null;
@@ -4100,7 +4323,7 @@ function renderWelcome(){
   if (!el) return;
   let played = false;
   try { played = loadScores().length > 0; } catch (e) {}
-  el.textContent = played ? '欢迎回来，再闯一次迷宫吧。' : '准备好了吗？一起出发吧。';
+  el.textContent = played ? '欢迎回来，豆豆等你再闯一次。' : '豆豆已就位，准备进入霓虹迷宫！';
 
   /* 老玩家不再显示"滑动转向 · 吃光豆子即可过关"。
      他早就会走了，而这一行占掉的高度，正是那句故事需要的 —— 有纪录的人屏幕上
@@ -4372,7 +4595,7 @@ function buildPracticeSummary(cleared){
   lines.push('<div class="sum-grid">'
     + `<div class="sum-row"><span class="sum-k">关卡</span> <span class="sum-v">第 ${level} 关 · ${levelName(level)}</span></div>`
     + `<div class="sum-row"><span class="sum-k">最高连击</span> <span class="sum-v">x${maxComboSeen}</span></div>`
-    + `<div class="sum-row"><span class="sum-k">吃掉小夜枭</span> <span class="sum-v">${ghostsEatenThisRun} 只</span></div>`
+    + `<div class="sum-row"><span class="sum-k">反击敌人</span> <span class="sum-v">${ghostsEatenThisRun} 只</span></div>`
     + '</div>');
   lines.push(cleared
     ? '<span style="color:var(--cyan)">这一关拿下了，回去正式挑战试试</span>'
@@ -4397,10 +4620,10 @@ function buildSummary(won, rank, prevBest, isNewBest){
   const stats = [
     ['到达关卡', won ? `全 ${MAX_LEVEL} 关通关` : `第 ${level} 关 · ${levelName(level)}`],
     ['最高连击', `x${maxComboSeen}`],
-    ['吃掉小夜枭', `${ghostsEatenThisRun} 只`],
+    ['反击敌人', `${ghostsEatenThisRun} 只`],
   ];
   if (won) stats.push(['无伤关卡', `${perfectLevelsThisRun} / ${MAX_LEVEL}`]);
-  if (sweepsThisRun) stats.push(['全灭夜枭', `${sweepsThisRun} 次`]);
+  if (sweepsThisRun) stats.push(['全灭对手', `${sweepsThisRun} 次`]);
   if (prevBest > 0)  stats.push(['最高纪录', fmtNum(prevBest)]);
   /* 每一行**必须**自己包一个 div，不能把 span 直接摊在网格里。
      微信那两个版本读的是 stripTags 之后的纯文本，而 stripTags 只把 <br> 和
@@ -4512,8 +4735,10 @@ function updateHud(){
   document.getElementById('scoreVal').textContent = fmtNum(score);
   document.getElementById('levelVal').textContent = level + '/' + MAX_LEVEL;
   document.getElementById('livesVal').innerHTML = Array.from({length:Math.max(lives,0)}).map(()=>
-    '<svg width="14" height="14" viewBox="0 0 20 20"><path d="M10 3 A7 7 0 1 1 3 12 L10 17 L17 12 A7 7 0 0 1 10 3 Z" fill="'+cssVar('--amber')+'"/></svg>'
+    '<svg width="14" height="14" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 17.2 3.1 10.8C-.4 7.5 1.9 2.2 6.3 2.2c1.6 0 3 .8 3.7 2 0.7-1.2 2.1-2 3.7-2 4.4 0 6.7 5.3 3.2 8.6L10 17.2Z" fill="'+cssVar('--pink')+'"/></svg>'
   ).join('');
+  const high = document.getElementById('highScoreVal');
+  if (high) high.textContent = fmtNum(Math.max(score, bestScore()));
   const cl = document.getElementById('comboLabel');
   cl.textContent = '连击 x' + combo;
   /* 连击的画面反馈**只在 HUD 上**：玩家这时候正贴着幽灵跑，在迷宫上糊特效
@@ -4550,7 +4775,7 @@ function updateFruit(dt){
     addScore(300*combo);
     sustainCombo();   // 水果原先只拿 combo 当倍率却不续期，等于只吃不喂
     player.phase = FRUIT_PHASE_SECONDS;
-    toast('神秘水果！' + FRUIT_PHASE_SECONDS + ' 秒穿墙');
+    toast('相位晶石！' + FRUIT_PHASE_SECONDS + ' 秒穿墙');
     Audio2.fruit();
   }
 }
@@ -4905,8 +5130,8 @@ function challengeURL(){
 function shareText(){
   const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
   const s = fmtNum(lastFinalScore);
-  const head = won ? `我通关了《豆豆迷宫》全 6 关，${s} 分！敢不敢来超？`
-                   : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
+  const head = won ? `我和豆豆通关了 Neon Maze 全 6 关，${s} 分！敢不敢来超？`
+                   : `我在 Neon Maze 拿了 ${s} 分，来比比？`;
   return head + '\n' + challengeURL();
 }
 
@@ -5327,46 +5552,27 @@ function drawMaze(){
   }
   if (anyDot) ctx.fill();
 
-  /* 小浆果的一片小叶：统一在豆子右上方，形状位置只跟格子有关，所以也能攒成
-     一条路径一次画完。叶子不带光晕 —— 175 团绿光会把豆子自己的呼吸光盖住。 */
-  if (anyDot){
-    ctx.shadowBlur = 0;
-    ctx.fillStyle = '#8fd66b';
-    ctx.beginPath();
-    for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
-      if (grid[y][x] !== '.') continue;
-      const bx = x*TILE+TILE/2 + 1.0, by = y*TILE+TILE/2 - 2.6;
-      ctx.moveTo(bx, by);
-      ctx.quadraticCurveTo(bx + 1.2, by - 3.2, bx + 3.8, by - 3.4);
-      ctx.quadraticCurveTo(bx + 2.6, by - 1.0, bx, by);
-    }
-    ctx.fill();
-    ctx.fillStyle = amber;   // 还给下面的能量豆
-  }
-
+  /* 能量星：五角形轮廓与参考界面一致，机制仍是原来的能量豆。
+     数量很少，但仍合并到同一条路径中，只做一次 fill + stroke。 */
   ctx.shadowBlur = POWER_GLOW;
   ctx.beginPath();
   for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
     if (grid[y][x] !== 'o') continue;
     const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2;
-    ctx.moveTo(cxp+pulse, cyp); ctx.arc(cxp,cyp,pulse,0,TAU); anyPower = true;
-  }
-  if (anyPower) ctx.fill();
-
-  /* 能量豆是"发光星果"：圆果之外加一道十字星光。星光跟着脉动一起呼吸，
-     所有星果也是攒成一条路径一次描边。 */
-  if (anyPower){
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = '#ffffff';
-    ctx.globalAlpha = 0.55 + 0.3 * Math.sin(elapsed*6);
-    ctx.lineWidth = 1.2;
-    ctx.beginPath();
-    for (let y=0;y<ROWS;y++) for (let x=0;x<COLS;x++){
-      if (grid[y][x] !== 'o') continue;
-      const cxp = x*TILE+TILE/2, cyp = y*TILE+TILE/2, arm = pulse*1.7;
-      ctx.moveTo(cxp-arm, cyp); ctx.lineTo(cxp+arm, cyp);
-      ctx.moveTo(cxp, cyp-arm); ctx.lineTo(cxp, cyp+arm);
+    for (let i=0;i<10;i++){
+      const a = -Math.PI/2 + i*Math.PI/5;
+      const sr = i%2===0 ? pulse*1.24 : pulse*.54;
+      const sx = cxp + Math.cos(a)*sr, sy = cyp + Math.sin(a)*sr;
+      if (i===0) ctx.moveTo(sx,sy); else ctx.lineTo(sx,sy);
     }
+    ctx.closePath(); anyPower = true;
+  }
+  if (anyPower){
+    ctx.fillStyle = amber;
+    ctx.fill();
+    ctx.strokeStyle = '#ffffff';
+    ctx.globalAlpha = .68 + .2*Math.sin(elapsed*6);
+    ctx.lineWidth = 1.2;
     ctx.stroke();
     ctx.globalAlpha = 1;
   }
@@ -5416,11 +5622,20 @@ function drawFruit(){
   if (!fruit.active) return;
   const cxp = fruit.x*TILE+TILE/2, cyp = fruit.y*TILE+TILE/2 + Math.sin(elapsed*8)*2;
   ctx.save();
-  ctx.fillStyle = '#7CFF6B';
-  ctx.shadowColor = '#7CFF6B'; ctx.shadowBlur=14;
-  ctx.beginPath(); ctx.arc(cxp,cyp,7,0,Math.PI*2); ctx.fill();
-  ctx.fillStyle='#3f8f2e';
-  ctx.fillRect(cxp-1.5,cyp-11,3,6);
+  ctx.translate(cxp,cyp);
+  ctx.fillStyle = cssVar('--cyan');
+  ctx.strokeStyle = '#e9ffff';
+  ctx.shadowColor = cssVar('--cyan'); ctx.shadowBlur=16;
+  ctx.lineWidth=1.2;
+  ctx.beginPath();
+  ctx.moveTo(0,-10);ctx.lineTo(8,-3);ctx.lineTo(0,10);ctx.lineTo(-8,-3);ctx.closePath();
+  ctx.fill();ctx.stroke();
+  ctx.shadowBlur=0;ctx.globalAlpha=.62;
+  ctx.beginPath();
+  ctx.moveTo(0,-10);ctx.lineTo(0,10);
+  ctx.moveTo(-8,-3);ctx.lineTo(8,-3);
+  ctx.moveTo(-8,-3);ctx.lineTo(0,2);ctx.lineTo(8,-3);
+  ctx.stroke();
   ctx.restore();
 }
 
@@ -5446,25 +5661,15 @@ function drawPlayer(){
     ctx.restore();
   }
 
-  // The bite is driven by pellets swallowed, not by a free-running timer:
-  // triggerChomp() restarts chompT, and one chomp is a single open-and-close.
-  // Coasting through empty corridor keeps a slower idle flap so the character
-  // never looks frozen mid-stride.
-  let openness;
+  /* Doudou 的吃豆反馈由 chompT 驱动：不再是扇形张嘴，而是整只角色短促弹一下。 */
+  let joy;
   if (player.chompT !== undefined && player.chompT < 1){
     player.chompT = Math.min(1, player.chompT + (1/60)/CHOMP_SECONDS);
-    openness = Math.sin(player.chompT * Math.PI);
+    joy = Math.sin(player.chompT * Math.PI);
   } else {
     if (moving) player.mouth += 0.11;
-    openness = Math.abs(Math.sin(player.mouth)) * 0.45;
+    joy = Math.abs(Math.sin(player.mouth)) * 0.12;
   }
-  const MOUTH_CLOSED = 0.03, MOUTH_WIDE = 0.55;
-  const mouthAngle = MOUTH_CLOSED + openness * (MOUTH_WIDE - MOUTH_CLOSED);
-  let ang = 0;
-  if (player.dir.x===1) ang=0; else if (player.dir.x===-1) ang=Math.PI;
-  else if (player.dir.y===1) ang=Math.PI/2; else if (player.dir.y===-1) ang=-Math.PI/2;
-  ctx.save();
-  ctx.translate(cxp,cyp); ctx.rotate(ang);
   /* 无敌和穿墙都靠"闪"来表示，但原来两处都是**硬切**：穿墙 5Hz、无敌 7Hz，
      在 0.4 和 1 之间跳。WCAG 给的上限是每秒 3 次，而穿墙状态一持续就是 10 秒 ——
      十秒钟的 5Hz 频闪盯着看，人是会不舒服的（业主说"看起来有点晕"，当时我
@@ -5474,42 +5679,63 @@ function drawPlayer(){
      用 sin 而不是方波，是因为方波的边沿本身就是刺激源，同样频率下方波比正弦
      难受得多。 */
   const pulse = (hz, lo) => lo + (1 - lo) * (0.5 + 0.5 * Math.sin(elapsed * hz * 2 * Math.PI));
+  const bounce = moving ? Math.sin(elapsed*12)*.62 : Math.sin(elapsed*4)*.22;
+  const lean = player.dir.x*.075;
+  const body = player.phase>0 ? cssVar('--phase') : cssVar('--lantern');
+  const lookX = player.dir.x*.48, lookY = player.dir.y*.38;
+  ctx.save();
+  ctx.translate(cxp,cyp+bounce);ctx.rotate(lean);
+  ctx.scale(1+joy*.07,1-joy*.025);
   ctx.globalAlpha = player.phase > 0 ? pulse(PHASE_PULSE_HZ, 0.62)
                   : invuln > 0       ? pulse(INVULN_PULSE_HZ, 0.45)
                   : 1;
-  ctx.fillStyle = player.phase>0 ? cssVar('--phase') : cssVar('--lantern');
-  ctx.shadowColor = ctx.fillStyle; ctx.shadowBlur = 14 + wind*16; // hotter at full momentum
+
+  /* 手脚先画在身体后面，轮廓不超过半格，碰撞判定不变。 */
+  ctx.fillStyle='#168f96';
+  ctx.beginPath();ctx.arc(-6.1,7.7,2.7,0,Math.PI*2);ctx.arc(6.1,7.7,2.7,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle=body;
+  ctx.beginPath();ctx.arc(-9.1,1.5,2.35,0,Math.PI*2);ctx.arc(9.1,1.5,2.35,0,Math.PI*2);ctx.fill();
+
+  ctx.shadowColor=body;ctx.shadowBlur=14+wind*15;
   ctx.beginPath();
-  const r = TILE*0.42;
-  ctx.arc(0,0,r, mouthAngle*Math.PI, (2-mouthAngle)*Math.PI);
-  ctx.lineTo(0,0);
-  ctx.closePath();
+  ctx.moveTo(0,-9.1);
+  ctx.bezierCurveTo(6.4,-9.2,9.5,-4.9,9.2,1.2);
+  ctx.bezierCurveTo(8.9,7.4,5.3,9.3,0,9.25);
+  ctx.bezierCurveTo(-5.3,9.3,-8.9,7.4,-9.2,1.2);
+  ctx.bezierCurveTo(-9.5,-4.9,-6.4,-9.2,0,-9.1);
   ctx.fill();
 
-  /* 提灯小刺猬：沿外圈均布 8 根短刺，嘴边（嘴张开的扇形里）那根跳过 ——
-     尖端到 r*1.09 ≈ 11.9px，加上 round 线帽外伸的 1px 共 12.9px，
-     收在 TILE*0.5 = 13 的装饰上限以内。别再加长：r*1.15 含线帽就到
-     13.6，会破线（线帽那 1px 最容易漏算）。 */
-  ctx.shadowBlur = 0;
-  ctx.strokeStyle = ctx.fillStyle;
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  const mouthHalf = mouthAngle*Math.PI;
-  for (let i=0;i<8;i++){
-    const a = i * Math.PI/4;
-    const d = a > Math.PI ? Math.PI*2 - a : a;   // 与嘴向（+x）的角差
-    if (d < mouthHalf) continue;
-    ctx.beginPath();
-    ctx.moveTo(Math.cos(a)*r*0.96, Math.sin(a)*r*0.96);
-    ctx.lineTo(Math.cos(a)*r*1.09, Math.sin(a)*r*1.09);
-    ctx.stroke();
+  /* 三片能量芽是 Doudou 的剪影识别点。 */
+  ctx.shadowBlur=5;ctx.fillStyle='#78f3bc';
+  [[0,-10.1,1.7,3.1,0],[-3,-9.4,1.55,2.7,-.65],[3,-9.4,1.55,2.7,.65]].forEach(([x,y,rx,ry,a])=>{
+    ctx.save();ctx.translate(x,y);ctx.rotate(a);ctx.scale(rx/ry,1);
+    ctx.beginPath();ctx.arc(0,0,ry,0,Math.PI*2);ctx.fill();ctx.restore();
+  });
+
+  /* 脸不跟方向旋转；眼珠和身体倾斜负责表达转向。 */
+  ctx.shadowBlur=0;ctx.fillStyle='#07152b';
+  [[-3.45,-2.05],[3.45,-2.05]].forEach(([x,y])=>{
+    ctx.save();ctx.translate(x,y);ctx.scale(.8,1);
+    ctx.beginPath();ctx.arc(0,0,2.05,0,Math.PI*2);ctx.fill();ctx.restore();
+    ctx.fillStyle='#ffffff';ctx.beginPath();ctx.arc(x-.42+lookX,y-.62+lookY,.55,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#07152b';
+  });
+  ctx.fillStyle=cssVar('--pink');ctx.globalAlpha*=.82;
+  ctx.beginPath();ctx.arc(-6.2,1.3,1.25,0,Math.PI*2);ctx.arc(6.2,1.3,1.25,0,Math.PI*2);ctx.fill();
+  ctx.globalAlpha=player.phase > 0 ? pulse(PHASE_PULSE_HZ, 0.62) : invuln > 0 ? pulse(INVULN_PULSE_HZ, 0.45) : 1;
+
+  if (joy>.28){
+    ctx.fillStyle='#4d1235';ctx.beginPath();ctx.arc(0,1.8,1.85,0,Math.PI);ctx.closePath();ctx.fill();
+    ctx.fillStyle='#ff739b';ctx.beginPath();ctx.arc(0,2.5,.8,0,Math.PI);ctx.fill();
+  } else {
+    ctx.strokeStyle='#123449';ctx.lineWidth=1.15;ctx.lineCap='round';
+    ctx.beginPath();ctx.arc(0,1.2,2.0,.15*Math.PI,.85*Math.PI);ctx.stroke();
   }
 
-  /* 圆眼在弧心偏后上方（后 = 背着嘴的方向），配一点白高光。 */
-  ctx.fillStyle = '#26205a';
-  ctx.beginPath(); ctx.arc(-r*0.18, -r*0.40, r*0.15, 0, Math.PI*2); ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-r*0.235, -r*0.455, r*0.055, 0, Math.PI*2); ctx.fill();
+  /* 胸前发光菱形和开始页的 3D 角色共用一个 IP 记忆点。 */
+  ctx.save();ctx.translate(0,5.1);ctx.rotate(Math.PI/4);
+  ctx.fillStyle='#dffcff';ctx.shadowColor=cssVar('--cyan');ctx.shadowBlur=7;
+  ctx.fillRect(-1.25,-1.25,2.5,2.5);ctx.restore();
   ctx.restore();
 }
 
@@ -5555,93 +5781,76 @@ function drawGhost(g){
   ctx.translate(cxp,cyp);
   ctx.scale(scale,scale);
   const r = TILE*0.42;
+  const R = r*.88;
   if (!eyesOnly){
     ctx.fillStyle = color;
     ctx.shadowColor = color; ctx.shadowBlur = g.isFusionHost?18:10;
-    /* 小夜枭的身体：半圆顶、两腰略收、底部一道平缓弧线。
-       圆顶半径微缩到 r*0.88、圆心在 (0,-1)：给头顶的呆毛留出余量，
-       呆毛尖才能收在 TILE*0.5 的装饰上限以内（美术方案的 arc(0,-2,r)
-       本身已经顶到 0.497，呆毛再往上就破线了）。 */
-    const R = r*0.88;
-    ctx.beginPath();
-    ctx.arc(0,-1,R,Math.PI,0,false);
-    ctx.lineTo(R*0.8, R*0.75);
-    ctx.quadraticCurveTo(0, R*0.95, -R*0.8, R*0.75);
-    ctx.closePath();
-    ctx.fill();
-    /* 两侧小三角翅膀，翼尖收在 R 以内 */
-    ctx.beginPath();
-    ctx.moveTo(-R*0.66, -R*0.05);
-    ctx.lineTo(-R*0.92, R*0.25);
-    ctx.lineTo(-R*0.5, R*0.32);
-    ctx.closePath();
-    ctx.moveTo(R*0.66, -R*0.05);
-    ctx.lineTo(R*0.92, R*0.25);
-    ctx.lineTo(R*0.5, R*0.32);
-    ctx.closePath();
-    ctx.fill();
-    /* 头顶呆毛按 id 分个性：冲冲冲天直呆毛、拦拦左勾、躲躲下垂、绕绕打卷。
-       线宽除以 scale：融合大幽灵放大 1.5 倍时呆毛仍是 2px 观感。
-       冲冲的直呆毛最长，尖到 top - R*0.13 ≈ 11.9px，含 1px 圆线帽共
-       12.9px，收在 TILE*0.5 = 13 以内；R*0.2 含帽是 13.5，会破线。 */
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 2/scale;
-    ctx.lineCap = 'round';
-    const top = -1 - R;   // 头顶
-    ctx.beginPath();
+    /* 四种 AI 不只换颜色，轮廓也能一眼认出。这里只是表现层，id 和 AI 状态机完全不动。 */
     if (g.id==='chaser'){
-      ctx.moveTo(0, top + R*0.1); ctx.lineTo(0, top - R*0.13);
+      /* 闪闪：圆润独眼能量兽 + 天线。 */
+      ctx.beginPath();ctx.arc(0,0,R,0,Math.PI*2);ctx.fill();
+      ctx.shadowBlur=0;ctx.strokeStyle=color;ctx.lineWidth=1.8/scale;ctx.lineCap='round';
+      ctx.beginPath();ctx.moveTo(0,-R*.88);ctx.quadraticCurveTo(R*.08,-R*1.18,R*.32,-R*1.16);ctx.stroke();
+      ctx.beginPath();ctx.arc(R*.34,-R*1.16,1.35/scale,0,Math.PI*2);ctx.fill();
     } else if (g.id==='ambush'){
-      ctx.moveTo(0, top + R*0.1);
-      ctx.quadraticCurveTo(-R*0.2, top - R*0.1, -R*0.3, top + R*0.06);
+      /* 狐狐：两只尖耳与宽额，适合表达“预判截路”。 */
+      ctx.beginPath();
+      ctx.moveTo(-R*.78,-R*.42);ctx.lineTo(-R*.62,-R*1.08);ctx.lineTo(-R*.18,-R*.78);
+      ctx.lineTo(R*.18,-R*.78);ctx.lineTo(R*.62,-R*1.08);ctx.lineTo(R*.78,-R*.42);
+      ctx.quadraticCurveTo(R*.92,R*.65,0,R*.92);ctx.quadraticCurveTo(-R*.92,R*.65,-R*.78,-R*.42);
+      ctx.closePath();ctx.fill();
     } else if (g.id==='shy'){
-      ctx.moveTo(0, top + R*0.1);
-      ctx.quadraticCurveTo(R*0.22, top + R*0.12, R*0.26, top + R*0.34);
+      /* 软软：圆角方块身体 + 小芽，跟其他圆形彻底拉开。 */
+      ctx.beginPath();
+      ctx.moveTo(-R*.78,-R*.78);ctx.quadraticCurveTo(-R,-R*.78,-R,-R*.55);
+      ctx.lineTo(-R,R*.62);ctx.quadraticCurveTo(-R,R*.9,-R*.72,R*.9);
+      ctx.lineTo(R*.72,R*.9);ctx.quadraticCurveTo(R,R*.9,R,R*.62);
+      ctx.lineTo(R,-R*.55);ctx.quadraticCurveTo(R,-R*.78,R*.78,-R*.78);ctx.closePath();ctx.fill();
+      ctx.shadowBlur=0;ctx.fillStyle=color;
+      ctx.save();ctx.translate(-1,-R*.95);ctx.rotate(-.7);ctx.scale(.45,1);
+      ctx.beginPath();ctx.arc(0,0,R*.3,0,Math.PI*2);ctx.fill();ctx.restore();
+      ctx.save();ctx.translate(2,-R*.96);ctx.rotate(.7);ctx.scale(.45,1);
+      ctx.beginPath();ctx.arc(0,0,R*.3,0,Math.PI*2);ctx.fill();ctx.restore();
     } else {
-      // 绕绕：在头顶打个小卷
-      ctx.arc(R*0.1, top - R*0.02, R*0.1, -Math.PI*0.4, Math.PI*1.5);
+      /* 慢慢：水母般的半圆顶和波浪底，对应循环巡逻。 */
+      ctx.beginPath();ctx.arc(0,-R*.08,R,Math.PI,0,false);
+      ctx.lineTo(R,R*.55);
+      for (let i=0;i<4;i++){
+        const x0=R-(2*R/4)*i,xm=R-(2*R/4)*(i+.5),x1=R-(2*R/4)*(i+1);
+        ctx.quadraticCurveTo(xm,i%2===0?R*.95:R*.56,x1,R*.55);
+      }
+      ctx.closePath();ctx.fill();
     }
-    ctx.stroke();
     if (g.isFusionHost){
+      ctx.shadowBlur=0;
       ctx.strokeStyle='rgba(255,255,255,.6)'; ctx.lineWidth=1.5;
       ctx.beginPath(); ctx.arc(0,-2,r*0.7,0,Math.PI*2); ctx.stroke();
     }
   }
   ctx.shadowBlur=0;
   if (eyesOnly){
-    /* 一根白色羽毛飘回老巢：椭圆羽片 + 中缝羽轴。
-       不用 ctx.ellipse —— 拿 scale 压出椭圆，微信的 canvas 也能画。
-       坐标系不变（translate/scale 照旧），只是内容从一双眼睛换成羽毛。 */
-    ctx.save();
-    ctx.rotate(-0.55 + Math.sin(elapsed*2.2 + g.wobble)*0.18);   // 轻轻摇摆
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = 6;
-    ctx.save();
-    ctx.scale(1, 0.42);
-    ctx.beginPath(); ctx.arc(0, 0, r*0.5, 0, Math.PI*2); ctx.fill();
-    ctx.restore();
-    ctx.shadowBlur = 0;
-    ctx.strokeStyle = 'rgba(140,130,180,.85)';
-    ctx.lineWidth = 1/scale;
-    ctx.beginPath(); ctx.moveTo(-r*0.48, 0); ctx.lineTo(r*0.62, 0); ctx.stroke();
-    ctx.restore();
+    /* 被吃掉后只剩能量核返回老巢，状态读取清楚且不再是幽灵眼睛。 */
+    ctx.save();ctx.rotate(elapsed*2.4);
+    ctx.fillStyle='#ffffff';ctx.shadowColor=cssVar('--cyan');ctx.shadowBlur=10;
+    ctx.beginPath();ctx.moveTo(0,-6);ctx.lineTo(5,0);ctx.lineTo(0,6);ctx.lineTo(-5,0);ctx.closePath();ctx.fill();
+    ctx.strokeStyle=cssVar('--cyan');ctx.lineWidth=1/scale;ctx.stroke();ctx.restore();
   } else if (dozing){
-    /* 打瞌睡的小夜枭：两条向下的弧线当闭着的眼睛，头顶飘 Zz。 */
+    /* 能量模式统一用“晕晕眼”，轮廓仍保留各自类型。 */
     ctx.strokeStyle = '#26205a';
     ctx.lineWidth = 1.6/scale;
     ctx.lineCap = 'round';
-    [[-r*0.42,0],[r*0.42,0]].forEach(([ex,ey])=>{
-      ctx.beginPath(); ctx.arc(ex, ey-2, 3.6, Math.PI*0.15, Math.PI*0.85); ctx.stroke();
+    [[-r*.34,-1],[r*.34,-1]].forEach(([ex,ey])=>{
+      ctx.beginPath();ctx.moveTo(ex-2,ey-2);ctx.lineTo(ex+2,ey+2);ctx.moveTo(ex+2,ey-2);ctx.lineTo(ex-2,ey+2);ctx.stroke();
     });
-    ctx.fillStyle = color;
-    ctx.font = `700 ${Math.round(r*0.5)}px ${cssVar('--font-display') || 'monospace'}`;
-    ctx.textAlign = 'left';
-    ctx.fillText('Zz', r*0.3, -1 - r*0.5);
   } else {
-    // eyes
     const lookX = g.dir.x, lookY=g.dir.y;
-    [[-r*0.42,0],[r*0.42,0]].forEach(([ex,ey])=>{
+    if (g.id==='chaser'){
+      ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(0,-1,R*.43,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#1c1744';ctx.beginPath();ctx.arc(lookX*1.5,-1+lookY*1.5,R*.2,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#4f1533';ctx.lineWidth=1.1/scale;ctx.beginPath();ctx.arc(0,R*.47,R*.28,.12*Math.PI,.88*Math.PI);ctx.stroke();
+    } else {
+      const spread=g.id==='shy'?R*.32:R*.38;
+      [[-spread,0],[spread,0]].forEach(([ex,ey])=>{
       ctx.fillStyle='#fff';
       ctx.beginPath();
       /* 老微信基础库没有 ctx.ellipse：用 scale 压出同一个椭圆兜底。 */
@@ -5653,8 +5862,16 @@ function drawGhost(g){
       }
       ctx.fill();
       ctx.fillStyle = '#26205a';
-      ctx.beginPath(); ctx.arc(ex+lookX*1.8, ey-2+lookY*1.8, 2.1,0,Math.PI*2); ctx.fill();
-    });
+        ctx.beginPath(); ctx.arc(ex+lookX*1.5, ey-2+lookY*1.5, 2.0,0,Math.PI*2); ctx.fill();
+      });
+      if (g.id==='ambush'){
+        ctx.strokeStyle='#5c2a17';ctx.lineWidth=1.2/scale;
+        ctx.beginPath();ctx.moveTo(-R*.65,-R*.52);ctx.lineTo(-R*.14,-R*.36);ctx.moveTo(R*.65,-R*.52);ctx.lineTo(R*.14,-R*.36);ctx.stroke();
+      } else if (g.id==='patrol'){
+        ctx.strokeStyle='#30205d';ctx.lineWidth=1.3/scale;
+        ctx.beginPath();ctx.moveTo(-R*.72,-R*.37);ctx.lineTo(-R*.08,-R*.32);ctx.moveTo(R*.72,-R*.37);ctx.lineTo(R*.08,-R*.32);ctx.stroke();
+      }
+    }
   }
   ctx.restore();
 }

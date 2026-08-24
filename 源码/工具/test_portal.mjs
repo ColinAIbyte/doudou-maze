@@ -36,7 +36,7 @@ ${body}
    PORTAL_COOLDOWN_SECONDS, WARP_CHOICE_SECONDS, update, requestDir,
    get ghosts(){return ghosts;},
    get player(){return player;}, set level(v){level=v;}, set gameState(v){gameState=v;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);

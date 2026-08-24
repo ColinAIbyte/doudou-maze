@@ -42,7 +42,7 @@ ${body}
    set score(v){score=v;}, set level(v){level=v;}, set lives(v){lives=v;},
    set gameState(v){gameState=v;} };\n}\n`);
 
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const fail=[];
 
 /** 每次都新建一份游戏，因为 shareBase 读的是创建时那个 window。 */

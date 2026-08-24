@@ -42,7 +42,7 @@ ${body}
    get gameState(){return gameState;}, set gameState(v){gameState=v;}, set level(v){level=v;},
    // 直接用游戏自己的帧函数，**不再手抄一份** —— 抄件测不出真实分支被删。
    tick: stepFrame };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env); const el=shim.el; const fail=[];

@@ -67,7 +67,7 @@ writeFileSync(modPath, `export function createGame(){\n${bodyJs}\n
            set gameState(v){gameState=v;}, fullNewGame, COLS, ROWS,
            FRUIT_PHASE_SECONDS, SCORE_MULT, addScore };\n}\n`);
 
-const { installShim } = await import(here('../../微信小游戏版/js/shim.js'));
+const { installShim } = await import(here('../微信小游戏版/js/shim.js'));
 installShim({ maze: fakeCanvas(), fx: fakeCanvas(1,1) });
 const { createGame } = await import(modPath);
 const g = createGame();

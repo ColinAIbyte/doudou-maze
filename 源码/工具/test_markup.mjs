@@ -12,7 +12,7 @@
 //
 // 只查这一件事，所以不引第三方解析器：真正会犯的错是"多一个/少一个闭合标签"，
 // 一个栈就够，而且报得出是哪一行。
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 const VOID = new Set(['area','base','br','col','embed','hr','img','input','link',
                       'meta','param','source','track','wbr']);
@@ -70,9 +70,13 @@ if (mStart <= 0 || mEnd < 0 || mEnd <= mStart){
   fail.push(...checkBalance(head + src.slice(mStart, mEnd), '网页版'));
 }
 
-// 小程序版的 WXML 整份都是标记，直接查
-const wxml = readFileSync(new URL('../../微信小程序版/pages/game/game.wxml', import.meta.url), 'utf8');
-fail.push(...checkBalance(wxml, '小程序 WXML'));
+// 小程序页面工程并不随这个仓库分发；若调用方另行放入，则一并检查。
+const wxmlUrl = new URL('../../微信小程序版/pages/game/game.wxml', import.meta.url);
+const hasWxml = existsSync(wxmlUrl);
+if (hasWxml){
+  const wxml = readFileSync(wxmlUrl, 'utf8');
+  fail.push(...checkBalance(wxml, '小程序 WXML'));
+}
 
 if (fail.length){
   console.log('标签不配对：');
@@ -80,4 +84,6 @@ if (fail.length){
   console.log('\n浏览器不会报错，它会把后面的内容挪到上一层去 —— 表现是布局莫名溢出或错位。');
   process.exit(1);
 }
-console.log('网页版与小程序 WXML 的标签都配对正确。');
+console.log(hasWxml
+  ? '网页版与小程序 WXML 的标签都配对正确。'
+  : '网页版标签配对正确（仓库未包含可选的小程序 WXML，已跳过）。');

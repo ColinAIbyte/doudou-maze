@@ -39,7 +39,7 @@ ${body}
    get level(){return level;}, set level(v){level=v;},
    set score(v){score=v;}, get score(){return score;},
    set lives(v){lives=v;}, set gameState(v){gameState=v;}, get gameState(){return gameState;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env); const el=shim.el;

@@ -37,7 +37,7 @@ ${body}
  return { fullNewGame, resetLevel, update, requestDir, applySpeedModifiers, nearCenter, tileAt,
    MOMENTUM_MAX, FRUIT_PHASE_SPEED_MULT, COLS, ROWS,
    get player(){return player;}, set gameState(v){gameState=v;}, set level(v){level=v;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);

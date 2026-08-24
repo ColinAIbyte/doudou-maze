@@ -36,7 +36,7 @@ ${body}
    render, startSwipeHint, tileAt, COLS, ROWS,
    HINT_KEY, get ghosts(){return ghosts;}, get player(){return player;},
    get gameState(){return gameState;}, set gameState(v){gameState=v;}, set level(v){level=v;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);
@@ -119,17 +119,20 @@ else console.log('开局手势: 进游戏才计数，正确');
 /* 延迟提示如果在弹层盖着的时候到点，不能算"已用掉"——它弹在棋盘上，会被
    结算弹层挡住，玩家根本看不见。丢一条教学提示是永久性的。 */
 await new Promise(r=>setTimeout(r,10));
-const before = seen().slice();
-g.fullNewGame();               // gameState 回到 'ready'，不是 playing
-g.gameState = 'over';
-// 找一条还没用过的：把存档清掉重来一遍，模拟新玩家在延迟窗口内死掉
+// 清存档之后必须像真实刷新页面一样新建游戏闭包：生产代码会把已读提示缓存到
+// 内存，单独删除 localStorage 并不会倒流当前页面的内存状态。
 shim.env.localStorage.removeItem('doudou.hints.v1');
-g.gameState = 'playing';
-for(let i=0;i<6;i++) g.addPelletScore(15);   // 触发 combo（无延迟，应当照常）
+const playingGame = createGame(shim.env);
+playingGame.fullNewGame();
+playingGame.gameState = 'playing';
+for(let i=0;i<6;i++) playingGame.addPelletScore(15);   // 无延迟，应当照常
 if(!seen().includes('combo')) fail.push('无延迟的提示在游戏中没触发');
+
 shim.env.localStorage.removeItem('doudou.hints.v1');
-g.gameState = 'over';
-for(let i=0;i<6;i++) g.addPelletScore(15);   // 弹层状态下，不该消费
+const coveredGame = createGame(shim.env);
+coveredGame.fullNewGame();
+coveredGame.gameState = 'over';
+for(let i=0;i<6;i++) coveredGame.addPelletScore(15);   // 弹层状态下，不该消费
 if(seen().includes('combo')) fail.push('结算状态下提示被白白用掉了');
 console.log('弹层遮挡时:', seen().length ? seen().join('/') : '（未消费，正确）');
 

@@ -40,7 +40,7 @@ ${body}
    get ghosts(){return ghosts;}, get player(){return player;},
    get gameState(){return gameState;}, set gameState(v){gameState=v;},
    set level(v){level=v;}, set score(v){score=v;}, get elapsed(){return elapsed;} };\n}\n`);
-const {installShim}=await import('../../微信小游戏版/js/shim.js');
+const {installShim}=await import('../微信小游戏版/js/shim.js');
 let fails=[];
 const ok=(m)=>console.log('✓ '+m);
 const bad=(m,e)=>{ console.log('✗ '+m+(e?'\n    '+e.message:'')); fails.push(m); };

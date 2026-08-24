@@ -17,7 +17,7 @@ globalThis.wx={createCanvas:()=>fakeCanvas(),getSystemInfoSync:()=>({windowWidth
  onKeyboardInput:noop,onKeyboardConfirm:noop,onShow:noop,onHide:noop,showShareMenu:noop,
  onShareAppMessage:noop,onShareTimeline:noop};
 globalThis.requestAnimationFrame=()=>0;
-const html=readFileSync('/Users/oliver/吃豆豆/v1-发布版/pacman_fragment.html','utf8');
+const html=readFileSync(new URL('../pacman_fragment.html', import.meta.url),'utf8');
 let body=html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>')).trim()
   .replace(/^\(function\(\)\s*\{\s*(?:"use strict";|'use strict';)?/,'').replace(/\}\)\(\);?$/,'').trim();
 const dir=mkdtempSync(join(tmpdir(),'sq-')); const mp=join(dir,'c.mjs');
@@ -30,7 +30,7 @@ ${body}
    get ghosts(){return ghosts;}, get player(){return player;},
    get gameState(){return gameState;}, set gameState(v){gameState=v;},
    set level(v){level=v;}, get frightTimer(){return frightTimer;} };\n}\n`);
-const {installShim}=await import('/Users/oliver/吃豆豆/微信小游戏版/js/shim.js');
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js', import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);

@@ -42,7 +42,7 @@ ${body}
    get level(){return level;}, set level(v){level=v;},
    // 复刻主循环那一段，测的必须是真实的那套分支
    tick(dt){ if(gameState==='playing'){ if(introTimer>0) introTimer-=dt; else update(dt); } render(); } };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env); const el=shim.el;

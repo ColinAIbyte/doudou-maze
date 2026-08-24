@@ -37,7 +37,7 @@ ${body}
    set perfect(v){perfectLevelsThisRun=v;},
    set score(v){score=v;}, set level(v){level=v;}, set lives(v){lives=v;},
    set gameState(v){gameState=v;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env); const el=shim.el;

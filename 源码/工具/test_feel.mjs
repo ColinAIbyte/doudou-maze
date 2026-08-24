@@ -36,7 +36,7 @@ ${body}
  return { fullNewGame, resetLevel, update, render, addPelletScore, Audio2, startPowerMode, handleFusion,
    get combo(){return combo;}, get player(){return player;}, get ghosts(){return ghosts;},
    set gameState(v){gameState=v;}, set level(v){level=v;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env); const el=shim.el; const fail=[];
@@ -47,7 +47,7 @@ g.Audio2.comboMilestone=(m)=>{ hits.push(m); orig&&orig(m); };
 g.fullNewGame(); g.gameState='playing';
 for(let i=0;i<120;i++) g.addPelletScore(15);
 console.log('连到 x'+g.combo+'　里程碑触发:', hits.join(' / '));
-if(hits.join()!=='10,25,50,100') fail.push('里程碑档位不对: '+hits.join());
+if(hits.join()!=='10,20,50') fail.push('里程碑档位不对: '+hits.join());
 console.log('HUD 连击颜色:', el('comboLabel').style.color);
 
 // 断连后重来，里程碑要能再触发

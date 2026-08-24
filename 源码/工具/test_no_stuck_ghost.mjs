@@ -30,7 +30,7 @@ globalThis.requestAnimationFrame=()=>0;
    种子写死，任何一次失败都能原样复现。 */
 let __seed = Number(process.argv[2]) || 20260815;   // 可传参换种子，扫多条轨迹
 Math.random = () => { __seed = (__seed * 1103515245 + 12345) & 0x7fffffff; return __seed / 0x7fffffff; };
-const html=readFileSync('/Users/oliver/吃豆豆/v1-发布版/pacman_fragment.html','utf8');
+const html=readFileSync(new URL('../pacman_fragment.html', import.meta.url),'utf8');
 let body=html.slice(html.indexOf('<script>')+8,html.lastIndexOf('</script>')).trim()
   .replace(/^\(function\(\)\s*\{\s*(?:"use strict";|'use strict';)?/,'').replace(/\}\)\(\);?$/,'').trim();
 const dir=mkdtempSync(join(tmpdir(),'st-')); const mp=join(dir,'c.mjs');
@@ -42,7 +42,7 @@ ${body}
  return { fullNewGame, resetLevel, update, startPowerMode, handleGhostCollisions, requestDir,
    get ghosts(){return ghosts;}, get player(){return player;},
    get gameState(){return gameState;}, set gameState(v){gameState=v;}, set level(v){level=v;} };\n}\n`);
-const {installShim}=await import('/Users/oliver/吃豆豆/微信小游戏版/js/shim.js');
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js', import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);

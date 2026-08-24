@@ -1,4 +1,4 @@
-// 个人纪录系统：BEST 从榜单派生、破纪录判定、"差多少分"、幽灵击杀统计。
+// 个人纪录系统：BEST 从榜单派生、破纪录判定、"差多少分"、反击敌人统计。
 //   用法: node test_best.mjs
 //
 // 这里最容易错的一处是**读旧纪录的时机**：endGame 会先把本局写进榜单，
@@ -37,7 +37,7 @@ ${body}
    get score(){return score;}, set score(v){score=v;}, set level(v){level=v;},
    set lives(v){lives=v;}, set gameState(v){gameState=v;},
    get kills(){return ghostsEatenThisRun;} };\n}\n`);
-const {installShim}=await import(new URL('../../微信小游戏版/js/shim.js',import.meta.url));
+const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
 const shim=installShim({maze:fakeCanvas(),fx:fakeCanvas(1,1)});
 const {createGame}=await import(mp);
 const g=createGame(shim.env);
@@ -106,7 +106,7 @@ console.log('关卡名字:', names.join(' / '));
 if(new Set(names).size!==6) fail.push('关卡名字有重复');
 
 /* 微信两个版本画的是 stripTags 之后的纯文本。战绩表必须**一行一条**，
-   否则就是 "到达关卡第 4 关最高连击x1幽灵击杀0只" 糊成一长串。
+   否则就是 "到达关卡第 4 关最高连击x1反击敌人0只" 糊成一长串。
    网页版看不出这个问题（它有 CSS 网格），只有纯文本这一路会坏。 */
 const raw = el('overSub').textContent;
 const statLines = raw.split('\n').map(s=>s.trim()).filter(Boolean);
@@ -114,7 +114,7 @@ console.log('\n纯文本逐行（微信版看到的）:');
 statLines.forEach(l=>console.log('  | '+l));
 if(!statLines.some(l=>l.startsWith('到达关卡'))) fail.push('纯文本里"到达关卡"没有独占一行');
 if(!statLines.some(l=>l.startsWith('最高连击'))) fail.push('纯文本里"最高连击"没有独占一行');
-if(!statLines.some(l=>l.startsWith('幽灵击杀'))) fail.push('纯文本里"幽灵击杀"没有独占一行');
+if(!statLines.some(l=>l.startsWith('反击敌人'))) fail.push('纯文本里"反击敌人"没有独占一行');
 if(statLines.some(l=>/到达关卡.*最高连击/.test(l))) fail.push('战绩糊成了一行');
 
 console.log('\n'+(fail.length?'失败:\n  '+fail.join('\n  '):'纪录系统全部正确。'));
