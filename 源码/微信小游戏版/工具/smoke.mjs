@@ -184,6 +184,21 @@ try {
   ok('点"开始"进入游戏');
 } catch(e){ fail('开局', e); }
 
+// 微信外壳必须走核心的 acceptSwipe：这样 24px 阈值、立即转向和“首次成功滑动”
+// 的本地记忆才与网页版是同一套，不会每次开局都重新播放教学。
+try {
+  if (typeof game.acceptSwipe !== 'function') throw new Error('核心没有导出 acceptSwipe');
+  globalThis.__touch({ touches:[{ clientX:100, clientY:400 }] });
+  globalThis.__touchMove({ touches:[{ clientX:120, clientY:400 }] });
+  if (String(wx.getStorageSync('doudou.hints.v1')).split(',').includes('move'))
+    throw new Error('不足 24px 的轻触被算成成功滑动');
+  globalThis.__touchMove({ touches:[{ clientX:132, clientY:400 }] });
+  if (!String(wx.getStorageSync('doudou.hints.v1')).split(',').includes('move'))
+    throw new Error('成功滑动后没有记住教学完成');
+  globalThis.__touchEnd({ changedTouches:[{ clientX:132, clientY:400 }] });
+  ok('滑动阈值与首次教学记忆走核心统一逻辑');
+} catch(e){ fail('滑动接线', e); }
+
 // 推进 10 秒，边走边转向
 try {
   const dirs = ['left','up','right','down'];
@@ -397,9 +412,9 @@ try {
 
   if (新玩家.indexOf(line) < 0 || 老玩家.indexOf(line) < 0)
     throw new Error('welcomeLine 的内容没画到开始页上 —— 欢迎语这根线没接');
-  if (新玩家.indexOf('手指滑动屏幕') < 0)
+  if (新玩家.indexOf('在迷宫上滑动') < 0)
     throw new Error('新玩家看不到操作说明了');
-  if (老玩家.indexOf('手指滑动屏幕') >= 0)
+  if (老玩家.indexOf('在迷宫上滑动') >= 0)
     throw new Error('有纪录的老玩家还在看操作说明，网页版这行该收起来');
   if (老玩家.indexOf('吃豆连击叠加倍率') >= 0)
     throw new Error('开始页还留着写死的那两行说明');

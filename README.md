@@ -1,4 +1,4 @@
-# Neon Maze · 豆豆迷宫
+# 豆豆迷宫
 
 在原版 Doudou Maze 引擎上完成的霓虹街机升级版。保留六关地图、移动手感、敌人逻辑和难度节奏，重点升级角色、迷宫光效、UI 与反馈。**打开网址就能玩，手机电脑都支持。**
 
@@ -11,7 +11,7 @@
 ## 玩法
 
 - **电脑**：方向键 / WASD 移动，`P` 暂停
-- **手机**：手指在迷宫上**滑动**转向，也可以点下方的方向键
+- **手机**：手指在迷宫上**滑动**转向
 
 | 机制 | 说明 |
 |---|---|
@@ -47,12 +47,14 @@ assets/doudou-hero.png     原创豆豆主视觉
 
 ```bash
 node 源码/工具/build_web.mjs
+node 源码/工具/build_weapp.mjs
 ```
 
 常用回归检查：
 
 ```bash
 node 源码/工具/test_build_consistency.mjs
+node 源码/工具/test_release_contract.mjs
 node 源码/工具/test_render_cost.mjs
 node 源码/工具/test_chaos.mjs
 node 源码/工具/validate_mazes.mjs

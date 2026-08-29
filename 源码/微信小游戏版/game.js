@@ -251,7 +251,6 @@ let hits = {}, padKeys = {}, hudHits = {};
 // 方向键显隐。存进 storage，不然每开一局都要重按一次，这个开关反而成了负担。
 let padHidden = false;
 try { padHidden = wx.getStorageSync('doudou.padHidden') === '1'; } catch (e) {}
-const SWIPE_MIN = 24;
 let touchStart = null;
 /* 玩法说明比一屏高，要能滑动看。滚动量记在这里，drawOverlays 每帧读它。
    打开说明时归零，否则上次滚到哪儿这次就从哪儿开始，玩家会以为内容缺了一截。 */
@@ -328,11 +327,6 @@ wx.onTouchStart(e => {
   }
 });
 
-function swipeDir(dx, dy){
-  return Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left')
-                                     : (dy > 0 ? 'down'  : 'up');
-}
-
 wx.onTouchMove(e => {
   const t = e.touches[0];
   if (helpDragFrom){
@@ -349,8 +343,7 @@ wx.onTouchMove(e => {
      判定后把起点挪到当前位置，按着不放一路划就能连续拐弯。 */
   if (!touchStart) return;
   const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
-  if (Math.abs(dx) <= SWIPE_MIN && Math.abs(dy) <= SWIPE_MIN) return;
-  game.requestDir(swipeDir(dx, dy));
+  if (!game.acceptSwipe(dx, dy)) return;
   touchStart = { x: t.clientX, y: t.clientY, t: Date.now() };
 });
 
@@ -362,9 +355,7 @@ wx.onTouchEnd(e => {
     /* 兜底：极短的一甩可能整个手势里都没有过阈值的 touchmove，这里补一次。
        已经在 touchmove 里转过向的手势，起点被重置过，剩下的位移通常不到阈值。 */
     const dx = t.clientX - touchStart.x, dy = t.clientY - touchStart.y;
-    if (Math.abs(dx) > SWIPE_MIN || Math.abs(dy) > SWIPE_MIN){
-      game.requestDir(swipeDir(dx, dy));
-    }
+    game.acceptSwipe(dx, dy);
   }
   touchStart = null;
 });

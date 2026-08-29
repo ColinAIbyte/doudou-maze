@@ -91,8 +91,10 @@ async function make(shareUrl){
 const build = readFileSync(new URL('./build_itch.mjs', import.meta.url), 'utf8');
 if (!build.includes('window.DOUDOU_SHARE_URL='))
   fail.push('build_itch.mjs 不再注入 DOUDOU_SHARE_URL 了');
-if (!build.includes("'-j'"))
-  fail.push('build_itch.mjs 打包时没用 -j，index.html 会被塞进子目录，itch 会拒绝');
+if (!build.includes("{ cwd: STAGE }") || !build.includes("'index.html'"))
+  fail.push('build_itch.mjs 没有从暂存目录打包根级 index.html，itch 会拒绝');
+if (!build.includes("'assets/doudou-hero.png'"))
+  fail.push('build_itch.mjs 没把豆豆主视觉资源装进 zip');
 
 console.log(fail.length
   ? '分享链接有问题：\n  ✗ ' + fail.join('\n  ✗ ')

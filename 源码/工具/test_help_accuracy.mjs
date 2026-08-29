@@ -156,8 +156,8 @@ for (const [name, part] of aboutTargets){
   }
 }
 const webAbout = aboutTargets[0][1] || '';
-if (!webAbout.includes('Neon Maze') || !webAbout.includes('这 6 个关卡')){
-  fail.push('网页版「关于」页没有说明 Neon Maze 与六关的创作背景');
+if (!webAbout.includes('豆豆迷宫') || !webAbout.includes('这 6 个关卡')){
+  fail.push('网页版「关于」页没有说明《豆豆迷宫》与六关的创作背景');
 }
 
 // 反过来：玩法说明里不许再出现作者那段话

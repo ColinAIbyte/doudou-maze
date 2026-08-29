@@ -14,7 +14,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
-const OUT_DIR = here('../../微信小游戏版/js');
+const OUT_DIR = here('../微信小游戏版/js');
 const src = readFileSync(here('../pacman_fragment.html'), 'utf8');
 
 /* 用内容指纹而不是生成时间。
@@ -50,7 +50,7 @@ body = body.replace(HEAD, '').replace(TAIL, '').trim();
 // 两次，游戏直接快一倍。
 
 const out = `/* 自动生成，请勿手改。
- * 由 v1-发布版/工具/build_weapp.mjs 从 v1-发布版/pacman_fragment.html 提取。
+ * 由 源码/工具/build_weapp.mjs 从 源码/pacman_fragment.html 提取。
  * 要改游戏逻辑，改网页版那一份，然后重新跑一次生成脚本。
  * 源码指纹: ${srcHash}   （只跟 pacman_fragment.html 的内容走）
  */
@@ -86,7 +86,7 @@ ${body}
     get player(){ return player; },
     get ghosts(){ return ghosts; },
     MAX_LEVEL,
-    requestDir, togglePause, fullNewGame, render, update, Audio2,
+    requestDir, acceptSwipe, togglePause, fullNewGame, render, update, Audio2,
     renderScoreboard, loadScores, recordScore, renameScore, cleanName,
     // 玩法说明的开关。小游戏的 game.js 会调它们来响应「?」和「知道了」——
     // 漏导出的话点下去就是 undefined is not a function，游戏直接崩。
@@ -98,6 +98,8 @@ ${body}
     // 挂的那些 click 监听在垫片上根本不会触发），所以点中之后要能直接调进来。
     // maxLevelReached 一起导出：哪几关解锁了只有逻辑层知道。
     startPractice, maxLevelReached,
+    // 内存告警时外壳调它释放可安全重建的缓存
+    releaseCaches,
   };
 }
 

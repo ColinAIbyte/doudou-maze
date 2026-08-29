@@ -35,7 +35,7 @@ writeFileSync(mp,`export function createGame(env){
    getComputedStyle=env.getComputedStyle,requestAnimationFrame=env.requestAnimationFrame,
    cancelAnimationFrame=env.cancelAnimationFrame,performance=env.performance;
 ${body}
- return { fullNewGame, resetLevel, update, requestDir, tileAt, TURN_BUFFER_TILES,
+ return { fullNewGame, resetLevel, update, requestDir, tileAt, TURN_BUFFER_SECONDS, TURN_ASSIST_TILES,
    gameHasKeyboard, openHelp, closeHelp, currentScreen, handleEnter, endGame, togglePause,
    get player(){return player;}, set level(v){level=v;}, set gameState(v){gameState=v;} };\n}\n`);
 const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
@@ -67,14 +67,17 @@ let maxEarly=0;
 for(const early of [0.5,1,2,3,4]){
   const P=g.player;                 // resetLevel 会新建 player，每轮重取
   P.x=spot.junction-early; P.y=spot.y; P.dir={x:1,y:0}; P.want={x:0,y:0};
-  P.distTravelled=0; P.wantAtDist=0; P.straightTiles=0;
+  P.distTravelled=0; P.wantAtTime=-Infinity; P.straightTiles=0;
   g.requestDir('up');
   let turned=false;
   for(let i=0;i<240;i++){ g.update(1/60); if(g.player.dir.y===-1){turned=true;break;} }
   if(turned) maxEarly=early;
 }
-console.log(`提前按方向：最多提前 ${maxEarly} 格仍然有效（缓存设定 ${g.TURN_BUFFER_TILES} 格）`);
-if(maxEarly < 2) fail.push(`只能提前 ${maxEarly} 格，转弯太容易错过`);
+console.log(`提前按方向：最多提前 ${maxEarly} 格仍然有效（缓存 ${g.TURN_BUFFER_SECONDS}s，吸附 ${g.TURN_ASSIST_TILES} 格）`);
+if(Math.abs(g.TURN_BUFFER_SECONDS - 0.25) > 1e-9) fail.push(`转向缓存应为 0.25s，实际 ${g.TURN_BUFFER_SECONDS}s`);
+if(Math.abs(g.TURN_ASSIST_TILES - 0.22) > 1e-9) fail.push(`路口吸附应为 0.22 格，实际 ${g.TURN_ASSIST_TILES}`);
+if(maxEarly < 1) fail.push(`只能提前 ${maxEarly} 格，转弯太容易错过`);
+if(maxEarly > 1) fail.push(`提前 ${maxEarly} 格的旧指令仍会触发，缓存过长`);
 
 // —— 2) 狂按不能卡死 ——
 g.fullNewGame(); g.level=1; g.resetLevel(false); g.gameState='playing';

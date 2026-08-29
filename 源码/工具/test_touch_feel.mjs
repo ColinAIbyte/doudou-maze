@@ -22,13 +22,27 @@ const fail = [];
 const mv = src.match(/stage\.addEventListener\('touchmove'[\s\S]*?\}, \{ passive: false \}\);/);
 if (!mv) {
   fail.push('找不到 touchmove 监听（锚点变了，去 test_touch_feel 里改）');
-} else if (!/requestDir\(/.test(mv[0])) {
-  fail.push('touchmove 里没有 requestDir —— 转向又回到抬手才判定了，'
+} else if (!/acceptSwipe\(/.test(mv[0])) {
+  fail.push('touchmove 里没有 acceptSwipe —— 转向又回到抬手才判定了，'
           + '手感会比方向键慢将近一格');
 } else if (!/swipeFrom = \{/.test(mv[0])) {
   fail.push('touchmove 判定后没有重置起点 —— 按着不放没法连续拐弯，'
           + '每转一次都得抬手重划');
 }
+
+const accept = src.match(/function acceptSwipe\(dx, dy\)\{[\s\S]*?\n\}/);
+if (!accept || !/requestDir\(swipeDir\(dx, dy\)\)/.test(accept[0]))
+  fail.push('通过阈值的滑动没有立即送进 requestDir');
+if (!accept || !/markHintSeen\('move'\)/.test(accept[0]))
+  fail.push('首次成功滑动后没有记住教学已完成');
+const hintDraw = src.slice(src.indexOf('function drawSwipeHint'), src.indexOf('function markHintSeen'));
+if (/markHintSeen\('move'\)/.test(hintDraw))
+  fail.push('滑动教学刚显示就被记成已完成；必须等玩家真的滑动');
+
+const swipeMin = Number((src.match(/const SWIPE_MIN_PX = ([\d.]+)/) || [])[1]);
+const hintSeconds = Number((src.match(/const SWIPE_HINT_SECONDS = ([\d.]+)/) || [])[1]);
+if (swipeMin !== 24) fail.push(`滑动阈值应为 24px，实际 ${swipeMin}`);
+if (hintSeconds !== 2) fail.push(`首次滑动动画应为 2 秒，实际 ${hintSeconds}`);
 
 // —— 二、尾迹 ——
 const num = (name) => {

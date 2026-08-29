@@ -13,7 +13,7 @@ import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 
 const here = p => fileURLToPath(new URL(p, import.meta.url));
-const OUT_DIR = here('../../微信小程序版/utils');
+const OUT_DIR = here('../微信小程序版/utils');
 const src = readFileSync(here('../pacman_fragment.html'), 'utf8');
 
 /* 用内容指纹而不是生成时间。
@@ -51,7 +51,7 @@ body = body.replace(HEAD, '').replace(TAIL, '').trim();
 // 如何都要做，主循环就没必要再特殊处理。
 
 const out = `/* 自动生成，请勿手改。
- * 由 v1-发布版/工具/build_miniprogram.mjs 从 v1-发布版/pacman_fragment.html 提取。
+ * 由 源码/工具/build_miniprogram.mjs 从 源码/pacman_fragment.html 提取。
  * 要改游戏逻辑，改网页版那一份，然后重新跑一次生成脚本。
  * 源码指纹: ${srcHash}   （只跟 pacman_fragment.html 的内容走）
  */
@@ -100,6 +100,7 @@ ${body}
     commitName,
     // 挑战：微信两版没有 URL，只能由外壳从启动参数传进来
     setChallenge, openHelp, closeHelp, openAbout, closeAbout,
+    releaseCaches,
   };
 }
 

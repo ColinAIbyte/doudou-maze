@@ -33,7 +33,7 @@ writeFileSync(mp,`export function createGame(env){
    cancelAnimationFrame=env.cancelAnimationFrame,performance=env.performance;
 ${body}
  return { fullNewGame, resetLevel, update, startPowerMode, handleGhostCollisions, addPelletScore,
-   render, startSwipeHint, tileAt, COLS, ROWS,
+   render, startSwipeHint, acceptSwipe, tileAt, COLS, ROWS,
    HINT_KEY, get ghosts(){return ghosts;}, get player(){return player;},
    get gameState(){return gameState;}, set gameState(v){gameState=v;}, set level(v){level=v;} };\n}\n`);
 const {installShim}=await import(new URL('../微信小游戏版/js/shim.js',import.meta.url));
@@ -103,7 +103,7 @@ if(far){
   else console.log(`远离能量豆: 在 (${far.x},${far.y}) 不触发，正确`);
 }
 
-/* 开局手势：画出来才算用掉；玩家一动就收起 */
+/* 开局手势：显示不等于学会；只有第一次真的滑过阈值才记住。 */
 shim.env.localStorage.removeItem('doudou.hints.v1');
 g.fullNewGame();
 g.startSwipeHint();
@@ -113,8 +113,12 @@ if(seen().includes('move')) fail.push('还没开打，手势就被算作已显�
 g.gameState='playing';
 g.player.dir={x:0,y:0};
 g.render();
-if(!seen().includes('move')) fail.push('开打后手势没有记为已显示');
-else console.log('开局手势: 进游戏才计数，正确');
+if(seen().includes('move')) fail.push('手势只是显示出来就被算成已学会');
+g.acceptSwipe(12, 0);
+if(seen().includes('move')) fail.push('不足 24px 的轻触被算成成功滑动');
+g.acceptSwipe(30, 0);
+if(!seen().includes('move')) fail.push('第一次成功滑动后没有记住');
+else console.log('开局手势: 只有成功滑过阈值才计数，正确');
 
 /* 延迟提示如果在弹层盖着的时候到点，不能算"已用掉"——它弹在棋盘上，会被
    结算弹层挡住，玩家根本看不见。丢一条教学提示是永久性的。 */

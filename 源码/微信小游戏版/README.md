@@ -50,20 +50,20 @@
   js/
     shim.js          DOM/BOM 垫片（document、localStorage、AudioContext…）
     ui.js            HUD 和弹层的 canvas 绘制
-    核心.js           【自动生成，勿手改】游戏逻辑
+    core.js           【自动生成，勿手改】游戏逻辑
   工具/
     smoke.mjs        无头冒烟测试
 ```
 
 ## 逻辑不在这里维护
 
-`js/核心.js` 顶上写着「自动生成，请勿手改」，是认真的。它由
+`js/core.js` 顶上写着「自动生成，请勿手改」，是认真的。它由
 
 ```bash
-cd ../v1-发布版 && node 工具/build_weapp.mjs
+cd .. && node 工具/build_weapp.mjs
 ```
 
-从 `v1-发布版/pacman_fragment.html` 机械提取。
+从 `pacman_fragment.html` 机械提取。
 
 **要改游戏（关卡、难度、计分、修 bug），改网页版那一份，然后重跑上面这行命令。**
 
@@ -87,7 +87,7 @@ node 工具/smoke.mjs
 | | 网页版 | 小游戏版 |
 |---|---|---|
 | 界面 | HTML + CSS | 全部画在 canvas 上（小游戏没有 DOM） |
-| 操作 | 方向键 / WASD | 滑动 + 屏幕下方虚拟方向键 |
+| 操作 | 方向键 / WASD | 在迷宫上滑动 |
 | 署名 | `<input>` | `wx.showKeyboard` 系统键盘 |
 | 存档 | localStorage | `wx.setStorageSync` |
 | 音效 | Web Audio | `wx.createWebAudioContext`（同一套合成代码） |

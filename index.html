@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no, viewport-fit=cover">
-<title>Neon Maze · 豆豆</title>
-<meta name="description" content="原创霓虹迷宫游戏，六关递进。收集 · 强化 · 智取。">
+<title>豆豆迷宫</title>
+<meta name="description" content="原创六关迷宫游戏。收集 · 强化 · 智取。">
 <meta name="author" content="超级奶爸">
 <meta name="theme-color" content="#020218">
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2032%2032%22%3E%3Crect%20width%3D%2232%22%20height%3D%2232%22%20rx%3D%228%22%20fill%3D%22%2303031a%22%2F%3E%3Cellipse%20cx%3D%2216%22%20cy%3D%2218%22%20rx%3D%2210%22%20ry%3D%229%22%20fill%3D%22%2335e3d1%22%2F%3E%3Cellipse%20cx%3D%2212.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cellipse%20cx%3D%2219.5%22%20cy%3D%2216.5%22%20rx%3D%221.5%22%20ry%3D%222%22%20fill%3D%22%2307152b%22%2F%3E%3Cpath%20d%3D%22M12.5%2021q3.5%203%207%200%22%20fill%3D%22none%22%20stroke%3D%22%2307152b%22%20stroke-width%3D%221.4%22%20stroke-linecap%3D%22round%22%2F%3E%3Cpath%20d%3D%22M12%208q1-5%204%200q3-5%204%201q-2%203-4%203q-3%200-4-4%22%20fill%3D%22%2378f3bc%22%2F%3E%3Cpath%20d%3D%22M16%2020l2%202-2%203-2-3z%22%20fill%3D%22%23dffcff%22%2F%3E%3C%2Fsvg%3E">
@@ -15,8 +15,8 @@
 <meta name="mobile-web-app-capable" content="yes">
 <!-- 分享到微信/群里时的卡片。缺了这些，别人看到的只有一条光秃秃的网址 -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Neon Maze · 豆豆">
-<meta property="og:description" content="原创霓虹迷宫游戏，六关递进。收集 · 强化 · 智取。">
+<meta property="og:title" content="豆豆迷宫">
+<meta property="og:description" content="原创六关迷宫游戏。收集 · 强化 · 智取。">
 <meta name="twitter:card" content="summary">
 <style>
 /* 整页锁死不滚动。手机上边玩边让页面上下弹是最影响手感的一件事，
@@ -297,6 +297,8 @@ body{
      放大、也不跟着手指滚。滑动转向是自己在 JS 里读 touch 事件算的，
      touch-action 只影响浏览器的默认行为，不影响事件本身。 */
   touch-action:none;
+  -webkit-user-select:none;
+  user-select:none;
   position:relative;
   border-radius:14px;
   padding:10px;
@@ -642,6 +644,42 @@ body{
   max-width:none;
 }
 .help-sec b{color:var(--text);font-weight:600;}
+.help-advanced{
+  border:1px solid rgba(138,107,255,.28);
+  border-radius:10px;
+  background:rgba(138,107,255,.06);
+  overflow:hidden;
+}
+.help-advanced summary{
+  min-height:44px;
+  padding:0 12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  list-style:none;
+  cursor:pointer;
+  touch-action:manipulation;
+  color:var(--amber);
+  font-family:var(--font-display);
+  font-size:12px;
+  letter-spacing:.08em;
+  -webkit-tap-highlight-color:transparent;
+}
+.help-advanced summary::-webkit-details-marker{display:none;}
+.help-advanced summary::after{
+  content:'展开';
+  flex-shrink:0;
+  color:var(--text-dim);
+  font-size:10px;
+}
+.help-advanced[open] summary::after{content:'收起';}
+.help-advanced-body{
+  padding:2px 12px 13px;
+  display:flex;
+  flex-direction:column;
+  gap:13px;
+}
 /* 「词条 | 说明」两列。玩家是来查东西的，不是来读文章的 ——
    词条右对齐成一条竖线，眼睛顺着往下扫就能找到要看的那条。 */
 .kv{
@@ -838,6 +876,14 @@ body{
   -webkit-tap-highlight-color:transparent;
 }
 .lang-link:hover, .lang-link:focus-visible{ opacity:.9; text-decoration:underline; }
+.build-version{
+  margin-left:5px;
+  font-family:var(--font-display);
+  font-size:9px;
+  letter-spacing:.08em;
+  color:var(--text-dim);
+  opacity:.72;
+}
 /* 「新」徽章。独立成块，不拼在名字后面 ——
    拼上去读出来就是"超级奶爸新"，看着像名字的一部分或者程序出错。 */
 .board-new{
@@ -1317,8 +1363,10 @@ body.in-game .marquee{
   body{ display:flex; align-items:center; justify-content:center; min-height:100dvh; }
   .marquee{padding:0 0 2px;}
   /* HUD 现在只剩静音一个按钮，宽松了不少，仍略收一点 */
-  .hud{padding:9px 11px;gap:8px;}
-  .icon-btn{width:30px;height:30px;}
+  .hud{padding:8px 8px;gap:6px;}
+  .hud .stat .k, #comboLabel{font-size:12px !important;letter-spacing:.04em !important;}
+  .hud .stat .v{font-size:18px;}
+  .icon-btn{width:32px;height:32px;}
   .icon-btn svg{width:17px;height:17px;}
   .help-pill{font-size:10px;padding:3px 9px 3px 7px;gap:4px;}
   .help-pill svg{width:12px;height:12px;}
@@ -1506,10 +1554,10 @@ body::before{
 
 <div class="cabinet">
   <div class="marquee">
-    <h1 class="brand-lockup" aria-label="Neon Maze · 豆豆">
-      <span class="brand-neon">NEON</span>
-      <span class="brand-maze">MAZE</span>
-      <span class="brand-sub">DOUDOU · 豆豆</span>
+    <h1 class="brand-lockup" aria-label="豆豆迷宫">
+      <span class="brand-neon">豆豆</span>
+      <span class="brand-maze">迷宫</span>
+      <span class="brand-sub">DOUDOU MAZE</span>
     </h1>
     <!-- 「?」跟在副标题后面。原来它和另外两个按钮全塞在 HUD 里，那一行还要
          放分数、连击、关卡、生命，挤得数值都快贴到一起了。副标题这行本来就
@@ -1525,7 +1573,7 @@ body::before{
       </button>
       <!-- 「关于」跟「玩法」并排，同一种胶囊。图标用心形而不是问号：这一页讲的
            不是规则，是这游戏怎么来的，图标先把这件事说清楚。 -->
-      <button class="help-pill" id="aboutBtn" title="关于 Neon Maze" aria-label="关于 Neon Maze">
+      <button class="help-pill" id="aboutBtn" title="关于《豆豆迷宫》" aria-label="关于《豆豆迷宫》">
         <svg viewBox="0 0 24 24" aria-hidden="true">
           <path class="solid" d="M12 20.3s-7.4-4.7-7.4-9.7a4.2 4.2 0 0 1 7.4-2.7 4.2 4.2 0 0 1 7.4 2.7c0 5-7.4 9.7-7.4 9.7z"/>
         </svg>关于
@@ -1620,7 +1668,7 @@ body::before{
     <canvas id="fxCanvas" class="fx"></canvas>
 
     <div class="overlay" id="startOverlay">
-      <h2>NEON READY</h2>
+      <h2>准备出发</h2>
       <!-- 开始页只留一句。原来这里是六行说明，加上榜单和署名之后总高超出
            弹层 61px，"开始"按钮直接被切在屏幕外——第一次玩的人看到的是一屏
            文字和一个找不到的按钮。完整规则已经在标题下方的「?」里了。 -->
@@ -1636,7 +1684,7 @@ body::before{
            撞见的东西，写在这儿只是提高了开始前的阅读量。按设备分文案，用 CSS
            切换而不是 JS：JS 判断要等脚本跑完，会先闪一下错的那句。 -->
       <p class="start-tip">
-        <span class="tip-key">方向键 / WASD 移动</span><span class="tip-touch">滑动转向</span>
+        <span class="tip-key">方向键 / WASD 移动</span><span class="tip-touch">在迷宫上滑动</span>
         　·　吃光豆子即可过关
       </p>
       <div class="challenge hidden" id="challengeBox"></div>
@@ -1660,7 +1708,7 @@ body::before{
            不用再去找标题旁的图标。
            2026-08-21 业主把这句从"♥ 一个爸爸和儿子一起做的小游戏"改成「怀旧游戏」，
            心也一并去掉。那段自述没有丢，它完整地留在「关于」里。 -->
-      <button class="story-line" id="storyLine">原创霓虹迷宫 · 和豆豆一起出发</button>
+      <button class="story-line" id="storyLine">怀旧游戏 <span class="build-version">v1.0.0</span></button>
     </div>
 
     <!-- 暂停页也要能看玩法。开打之后标题栏会收起来（body.in-game），那个「?」
@@ -1685,8 +1733,8 @@ body::before{
       <!-- 内容与 微信小游戏版/js/ui.js 里那份 HELP 保持一致。两处是分开写的
            （一边 HTML、一边 canvas 逐行画），改一处务必改另一处 —— 说明对不上
            比没有说明更糟，玩家会照着做然后发现不是那么回事。 -->
-      <!-- 一份从头读到尾的文档，不折叠。顺序本身就是分层：「怎么玩」在最前面，
-           看完前三行就能开打，剩下的往下滚就是。滚动是零成本的，点开不是。 -->
+      <!-- 先把三条基础规则放在最前面；完整计分和特殊机制收进进阶区。
+           新玩家看完基础规则就能开打，想研究玩法的人再展开细读。 -->
       <div class="help-doc">
         <div class="help-sec">
           <h3>怎么玩</h3>
@@ -1699,13 +1747,9 @@ body::before{
           </dl>
         </div>
 
-        <!-- 全部摊开，不折叠。
-             这里原来是分层的：只留「怎么玩」，其余收进两个折叠条。想法是不让
-             第一次玩的人被 1050px 的规则劝退 —— 但实际用下来是反的：折叠条
-             把"往下读"变成了"先做个决定"，而多数人不会为了一份说明去做决定，
-             于是连想看的人也没看到。滚动是零成本的，点开不是。
-             所以恢复成一份从头读到尾的文档，只保留顺序上的分层：
-             「怎么玩」在最前面，看完前三行就能开打，剩下的往下滚就是。 -->
+        <details class="help-advanced">
+          <summary>进阶规则与完整计分</summary>
+          <div class="help-advanced-body">
           <div class="help-sec">
             <h3>连击</h3>
             <p>每吃一颗涨一级，<b>上不封顶</b>；吃敌人、拿晶石同样算。<br>
@@ -1755,6 +1799,8 @@ body::before{
               <dt>连击倍率</dt><dd>所有吃到的东西都乘这个倍率（敌人悬赏除外）</dd>
             </dl>
           </div>
+          </div>
+        </details>
 
         <!-- 「关于这个游戏」和「反馈」不在这里 —— 它们搬去了 #aboutOverlay。
              玩法说明只讲玩法：来查规则的人要的是"传送门怎么用"，作者的话和
@@ -1781,11 +1827,11 @@ body::before{
            少了这一层包裹，点正文选个字都会把弹层关掉。
            九样东西按阅读顺序排在正常文档流里，没有一处绝对定位。 -->
       <div class="about-card" id="aboutPanel">
-        <h2 id="aboutTitle">关于 Neon Maze</h2>
+        <h2 id="aboutTitle">关于《豆豆迷宫》</h2>
         <!-- 业主 2026-08-21 定的：**一整段，不分段**，也不写任何 <br> ——
              中文该在哪儿断行由宽度决定，手写的换行只在某一个屏幕宽度上好看，
              换台设备就断在奇怪的地方。原文照抄，不要替他改写或压缩。 -->
-        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的 <span class="nb">Neon Maze</span> 和原创主角豆豆，以及这 6 个关卡。</p>
+        <p class="about about-story">暑期，儿子想玩一款简单刺激的小游戏，于是我们一起把它做出来。他负责试玩和提意见，我负责修改完善。后来，其它小朋友也加入试玩队伍，才有了现在的 <span class="nb">《豆豆迷宫》</span>、原创主角豆豆，以及这 6 个关卡。</p>
         <!-- 落款：在正文这一栏里靠右，不是推到卡片外沿。 -->
         <p class="about-by">超级奶爸</p>
         <hr class="about-rule">
@@ -2507,8 +2553,8 @@ function resetLevel(fullReset){
     mouth:0, chompT:1, phase:0, alive:true, kind:'player', warpCd:0, warpCdCh:null,
     warpChoiceUntil:0,   // 传送落地后的思考时间，见 orientAfterWarp
     warpStandingOn:null, // 正踩着的那扇门（落地那扇不再触发）
-    // odometer driving the distance-based turn buffer (see player control)
-    distTravelled:0, wantAtDist:0,
+    // 转向缓存按模拟时间计时；里程表只负责冲刺尾迹
+    distTravelled:0, wantAtTime:-Infinity,
     // tiles run without changing direction, and the fading motion trail it drives
     straightTiles:0, trail:[], trailAt:0,
   };
@@ -2879,13 +2925,13 @@ function checkPortal(ent){
  *   1. a 180 needs no junction at all, so honour it the moment it's pressed
  *   2. a perpendicular turn may begin slightly BEFORE the junction, instead of
  *      demanding pixel-exact alignment and sailing past when you're a hair late
- *   3. a buffered press expires by DISTANCE, so it can't lie dormant and then
+ *   3. a buffered press expires quickly, so it can't lie dormant and then
  *      fire at some unrelated junction many tiles later
- * The expiry window is measured in tiles rather than seconds so the feel stays
- * identical if the player's speed is ever retuned.
+ * 250ms gives touch players enough room to press just before a junction without
+ * making an old command fire at the next unrelated turn.
  */
-const TURN_ASSIST_TILES = 0.45;  // how early a perpendicular turn may start
-const TURN_BUFFER_TILES = 3;     // how far a pending press stays alive
+const TURN_ASSIST_TILES = 0.22;    // only snap the last fifth of a tile
+const TURN_BUFFER_SECONDS = 0.25;  // queued turn lifetime
 
 /** Current cell along an axis. Not Math.round: past the halfway point that
  *  flips to the destination tile early and breaks the distance maths. */
@@ -2895,7 +2941,7 @@ function cellOf(pos, d){
 
 function wantIsFresh(ent){
   if (!(ent.want.x || ent.want.y)) return false;
-  return (ent.distTravelled - ent.wantAtDist) <= TURN_BUFFER_TILES;
+  return (elapsed - ent.wantAtTime) <= TURN_BUFFER_SECONDS;
 }
 
 /** Reversal takes effect immediately, mid-tile — no junction required. */
@@ -2923,7 +2969,7 @@ function applyCornerAssist(ent){
 
   /* 穿墙时转向立刻生效，不必等到前方那个路口。
    *
-   * 平时只允许提前 0.45 格是有道理的：转弯得落在真的路口上，否则会拐进墙里。
+   * 平时只允许提前 0.22 格是有道理的：转弯得落在真的路口上，否则会拐进墙里。
    * 但穿墙时**每一格都是路口**，这条限制就纯粹是在碍事了——玩家眼看着目标在
    * 左边，却要先往前飘过大半格才拐得动。这个道具最大的卖点就是"想去哪去哪"，
    * 转向却不跟手，卖点就没了。
@@ -3443,11 +3489,20 @@ function checkPowerPelletNearby(){
   }
 }
 
-const SWIPE_HINT_SECONDS = 3.2;
+const SWIPE_HINT_SECONDS = 2;
 let swipeHint = null;     // { until } —— until 为 0 表示还没开始计时
 
+function touchFirstDevice(){
+  try { if (typeof wx !== 'undefined') return true; } catch (e) {}
+  try {
+    if (window.matchMedia && window.matchMedia('(hover: none), (pointer: coarse)').matches) return true;
+  } catch (e) {}
+  try { return typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0; }
+  catch (e) { return false; }
+}
+
 function startSwipeHint(){
-  if (hintSeen('move')) return;
+  if (!touchFirstDevice() || hintSeen('move')) return;
   swipeHint = { until: 0 };
 }
 
@@ -3460,7 +3515,6 @@ function drawSwipeHint(){
   if (introTimer > 0) return;
   if (!swipeHint.until){
     swipeHint.until = elapsed + SWIPE_HINT_SECONDS;
-    markHintSeen('move');
   }
   // 玩家一动就收起来
   if (player.dir.x || player.dir.y){ swipeHint = null; return; }
@@ -4323,7 +4377,7 @@ function renderWelcome(){
   if (!el) return;
   let played = false;
   try { played = loadScores().length > 0; } catch (e) {}
-  el.textContent = played ? '欢迎回来，豆豆等你再闯一次。' : '豆豆已就位，准备进入霓虹迷宫！';
+  el.textContent = played ? '欢迎回来，豆豆等你再闯一次。' : '豆豆已就位，准备进入迷宫！';
 
   /* 老玩家不再显示"滑动转向 · 吃光豆子即可过关"。
      他早就会走了，而这一行占掉的高度，正是那句故事需要的 —— 有纪录的人屏幕上
@@ -4794,7 +4848,7 @@ function maybeSpawnFruit(){
 const keyMap = { ArrowUp:'up', ArrowDown:'down', ArrowLeft:'left', ArrowRight:'right',
   w:'up', s:'down', a:'left', d:'right', W:'up', S:'down', A:'left', D:'right' };
 
-/** Stamps the press with the odometer so the turn buffer can age it out. */
+/** Stamps the press in simulation time so pause/background time cannot age it out. */
 function requestDir(dir){
   // An unknown name must be ignored, not stored. Assigning DIRS[dir] blindly
   // puts `undefined` into player.want, and the crash then surfaces several
@@ -4804,7 +4858,7 @@ function requestDir(dir){
   const d = DIRS[dir];
   if (!d) return;
   player.want = d;
-  player.wantAtDist = player.distTravelled;
+  player.wantAtTime = elapsed;
 }
 
 /* 只在**游戏真的掌握控制权**时才拦键盘。
@@ -4929,14 +4983,21 @@ function swipeDir(dx, dy){
                                      : (dy > 0 ? 'down'  : 'up');
 }
 
+function acceptSwipe(dx, dy){
+  if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return false;
+  requestDir(swipeDir(dx, dy));
+  swipeHint = null;
+  if (!hintSeen('move')) markHintSeen('move');
+  return true;
+}
+
 stage.addEventListener('touchmove', (e)=>{
   // 手指在画布上划动时阻止页面跟着滚 —— 否则一边玩一边整页上下弹，没法玩。
   if (!swipeFrom) return;
   e.preventDefault();
   const t = e.changedTouches[0];
   const dx = t.clientX - swipeFrom.x, dy = t.clientY - swipeFrom.y;
-  if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return;
-  requestDir(swipeDir(dx, dy));
+  if (!acceptSwipe(dx, dy)) return;
   swipeFrom = { x: t.clientX, y: t.clientY };   // 重置起点，支持一路连划
 }, { passive: false });
 
@@ -4948,9 +5009,9 @@ stage.addEventListener('touchend', (e)=>{
   const t = e.changedTouches[0];
   const dx = t.clientX - swipeFrom.x, dy = t.clientY - swipeFrom.y;
   swipeFrom = null;
-  if (Math.abs(dx) < SWIPE_MIN_PX && Math.abs(dy) < SWIPE_MIN_PX) return;  // 是点击，不是滑动
-  requestDir(swipeDir(dx, dy));
+  acceptSwipe(dx, dy);  // 距离不够就是点击，不转向
 }, { passive: true });
+stage.addEventListener('touchcancel', ()=>{ swipeFrom = null; }, { passive:true });
 document.getElementById('pauseBtn').addEventListener('click', ()=>{ Audio2.unlock(); togglePause(); });
 /* 静音图标是一个 SVG 里的两组线条，切换的是显隐而不是重画整段 markup ——
    每次点击都重设 innerHTML 会把 SVG 拆了重建，在低端机上看得见闪一下。 */
@@ -4961,6 +5022,8 @@ function paintMute(){
   document.getElementById('soundCross').toggleAttribute('hidden', !muted);
   muteBtn.classList.toggle('off', muted);
   muteBtn.title = muted ? '取消静音' : '静音';
+  muteBtn.setAttribute('aria-label', muted ? '开启声音' : '关闭声音');
+  muteBtn.setAttribute('aria-pressed', muted ? 'true' : 'false');
 }
 muteBtn.addEventListener('click', ()=>{
   Audio2.unlock();
@@ -5130,8 +5193,8 @@ function challengeURL(){
 function shareText(){
   const won = document.getElementById('overTitle').textContent.indexOf('通关') >= 0;
   const s = fmtNum(lastFinalScore);
-  const head = won ? `我和豆豆通关了 Neon Maze 全 6 关，${s} 分！敢不敢来超？`
-                   : `我在 Neon Maze 拿了 ${s} 分，来比比？`;
+  const head = won ? `我和豆豆通关了《豆豆迷宫》全 6 关，${s} 分！敢不敢来超？`
+                   : `我在《豆豆迷宫》拿了 ${s} 分，来比比？`;
   return head + '\n' + challengeURL();
 }
 
@@ -5212,6 +5275,8 @@ document.getElementById('shareBtn').addEventListener('click', async ()=>{
     more.classList.toggle('hidden', atEnd || noScroll);
   };
   doc.addEventListener('scroll', sync, { passive:true });
+  const advanced = document.querySelector('.help-advanced');
+  if (advanced) advanced.addEventListener('toggle', ()=>setTimeout(sync, 0));
   // 打开说明时内容和高度才定下来，所以每次开都要重算一次
   helpSync = sync;
   sync();
@@ -5359,8 +5424,7 @@ function update(dt){
     eatPelletAt(Math.round(ent.x), Math.round(ent.y));
     checkPortal(ent);
   });
-  // advance the odometer, ignoring portal jumps so a warp doesn't instantly
-  // age out a turn the player just pressed
+  // advance the odometer for momentum/trail sampling, ignoring portal jumps
   const moved = Math.abs(player.x - beforeX) + Math.abs(player.y - beforeY);
   if (moved < 1.5) player.distTravelled += moved;
 
